@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,33 +9,57 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, MapPin, Users, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Team {
+  id: string;
+  name: string;
+  city: string;
+}
 
 const CreateMatch = ({ onMatchCreated }) => {
   const [matchData, setMatchData] = useState({
-    team1: "",
-    team2: "",
+    team1_id: "",
+    team2_id: "",
     venue: "",
-    date: "",
-    time: "",
+    match_date: "",
+    match_time: "",
     format: "",
     overs: "",
     tournament: "",
     description: ""
   });
 
-  const [teams] = useState([
-    "Mumbai Warriors",
-    "Delhi Dynamos", 
-    "Chennai Champions",
-    "Kolkata Knights",
-    "Bangalore Bulls",
-    "Hyderabad Hawks",
-    "Rajasthan Royals",
-    "Punjab Kings"
-  ]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreateMatch = () => {
-    if (!matchData.team1 || !matchData.team2 || !matchData.venue || !matchData.date) {
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching teams:', error);
+        return;
+      }
+      
+      setTeams(data || []);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateMatch = async () => {
+    if (!matchData.team1_id || !matchData.team2_id || !matchData.venue || !matchData.match_date) {
       toast({
         title: "Error",
         description: "Please fill all required fields",
@@ -44,7 +68,7 @@ const CreateMatch = ({ onMatchCreated }) => {
       return;
     }
 
-    if (matchData.team1 === matchData.team2) {
+    if (matchData.team1_id === matchData.team2_id) {
       toast({
         title: "Error", 
         description: "Please select different teams",
@@ -53,33 +77,80 @@ const CreateMatch = ({ onMatchCreated }) => {
       return;
     }
 
-    const newMatch = {
-      id: Date.now(),
-      ...matchData,
-      status: "upcoming",
-      created: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .insert([{
+          team1_id: matchData.team1_id,
+          team2_id: matchData.team2_id,
+          venue: matchData.venue,
+          match_date: matchData.match_date,
+          match_time: matchData.match_time || null,
+          format: matchData.format,
+          overs: matchData.overs ? parseInt(matchData.overs) : null,
+          tournament: matchData.tournament || null,
+          description: matchData.description || null
+        }])
+        .select(`
+          *,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `);
 
-    onMatchCreated(newMatch);
-    
-    toast({
-      title: "Success!",
-      description: `Match created: ${matchData.team1} vs ${matchData.team2}`,
-    });
+      if (error) {
+        console.error('Error creating match:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create match",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    // Reset form
-    setMatchData({
-      team1: "",
-      team2: "",
-      venue: "",
-      date: "",
-      time: "",
-      format: "",
-      overs: "",
-      tournament: "",
-      description: ""
-    });
+      const team1Name = teams.find(t => t.id === matchData.team1_id)?.name;
+      const team2Name = teams.find(t => t.id === matchData.team2_id)?.name;
+
+      if (onMatchCreated && data[0]) {
+        onMatchCreated(data[0]);
+      }
+      
+      toast({
+        title: "Success!",
+        description: `Match created: ${team1Name} vs ${team2Name}`,
+      });
+
+      // Reset form
+      setMatchData({
+        team1_id: "",
+        team2_id: "",
+        venue: "",
+        match_date: "",
+        match_time: "",
+        format: "",
+        overs: "",
+        tournament: "",
+        description: ""
+      });
+    } catch (error) {
+      console.error('Error creating match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create match",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Loading teams...</div>
+      </div>
+    );
+  }
+
+  const team1 = teams.find(t => t.id === matchData.team1_id);
+  const team2 = teams.find(t => t.id === matchData.team2_id);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -101,14 +172,14 @@ const CreateMatch = ({ onMatchCreated }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="team1">Team 1 *</Label>
-                <Select onValueChange={(value) => setMatchData({...matchData, team1: value})}>
+                <Select onValueChange={(value) => setMatchData({...matchData, team1_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Team 1" />
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
-                      <SelectItem key={team} value={team} disabled={team === matchData.team2}>
-                        {team}
+                      <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team2_id}>
+                        {team.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -117,14 +188,14 @@ const CreateMatch = ({ onMatchCreated }) => {
 
               <div>
                 <Label htmlFor="team2">Team 2 *</Label>
-                <Select onValueChange={(value) => setMatchData({...matchData, team2: value})}>
+                <Select onValueChange={(value) => setMatchData({...matchData, team2_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Team 2" />
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
-                      <SelectItem key={team} value={team} disabled={team === matchData.team1}>
-                        {team}
+                      <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team1_id}>
+                        {team.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -148,8 +219,8 @@ const CreateMatch = ({ onMatchCreated }) => {
                 <Input
                   id="date"
                   type="date"
-                  value={matchData.date}
-                  onChange={(e) => setMatchData({...matchData, date: e.target.value})}
+                  value={matchData.match_date}
+                  onChange={(e) => setMatchData({...matchData, match_date: e.target.value})}
                 />
               </div>
 
@@ -158,8 +229,8 @@ const CreateMatch = ({ onMatchCreated }) => {
                 <Input
                   id="time"
                   type="time"
-                  value={matchData.time}
-                  onChange={(e) => setMatchData({...matchData, time: e.target.value})}
+                  value={matchData.match_time}
+                  onChange={(e) => setMatchData({...matchData, match_time: e.target.value})}
                 />
               </div>
             </div>
@@ -228,13 +299,13 @@ const CreateMatch = ({ onMatchCreated }) => {
             </div>
 
             {/* Match Preview */}
-            {matchData.team1 && matchData.team2 && (
+            {team1 && team2 && (
               <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
                 <h4 className="font-semibold mb-3">Match Preview</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-blue-600" />
-                    <span>{matchData.team1} vs {matchData.team2}</span>
+                    <span>{team1.name} vs {team2.name}</span>
                   </div>
                   {matchData.venue && (
                     <div className="flex items-center gap-2">
@@ -242,11 +313,11 @@ const CreateMatch = ({ onMatchCreated }) => {
                       <span>{matchData.venue}</span>
                     </div>
                   )}
-                  {matchData.date && (
+                  {matchData.match_date && (
                     <div className="flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-purple-600" />
-                      <span>{new Date(matchData.date).toLocaleDateString()}</span>
-                      {matchData.time && <span>at {matchData.time}</span>}
+                      <span>{new Date(matchData.match_date).toLocaleDateString()}</span>
+                      {matchData.match_time && <span>at {matchData.match_time}</span>}
                     </div>
                   )}
                   {matchData.format && (
@@ -267,8 +338,9 @@ const CreateMatch = ({ onMatchCreated }) => {
         <Button 
           onClick={handleCreateMatch}
           className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 px-8 py-3 text-lg"
+          disabled={teams.length === 0}
         >
-          Create Match & Start Scoring
+          {teams.length === 0 ? "No Teams Available" : "Create Match & Start Scoring"}
         </Button>
       </div>
     </div>
