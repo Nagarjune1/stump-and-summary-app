@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Timer, Target, Users, Activity } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import ScoreCorrection from "./ScoreCorrection";
+import PlayerManagement from "./PlayerManagement";
+import ExportReport from "./ExportReport";
 
 const LiveScoring = ({ currentMatch }) => {
   const [score, setScore] = useState({ runs: 87, wickets: 3, overs: 12.4 });
@@ -40,6 +43,15 @@ const LiveScoring = ({ currentMatch }) => {
     });
   };
 
+  const handleScoreUpdate = (newScore) => {
+    setScore(newScore);
+  };
+
+  const handlePlayerAdded = (newPlayer) => {
+    console.log('New player added:', newPlayer);
+    // You can refresh player lists or handle the new player as needed
+  };
+
   if (!currentMatch) {
     return (
       <Card className="max-w-md mx-auto">
@@ -54,6 +66,20 @@ const LiveScoring = ({ currentMatch }) => {
     );
   }
 
+  if (currentMatch.status !== 'live') {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-center">Match Not Started</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-gray-600 mb-4">Please start the match to begin live scoring</p>
+          <Badge variant="outline" className="mb-4">Status: {currentMatch.status}</Badge>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Live Score Header */}
@@ -61,10 +87,12 @@ const LiveScoring = ({ currentMatch }) => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">Mumbai Warriors vs Delhi Dynamos</h2>
-              <p className="text-blue-100">T20 Match • Over 12.4 of 20</p>
+              <h2 className="text-xl font-bold">{currentMatch.team1?.name || 'Team 1'} vs {currentMatch.team2?.name || 'Team 2'}</h2>
+              <p className="text-blue-100">{currentMatch.format} Match • Over {score.overs} of {currentMatch.overs || 20}</p>
             </div>
-            <Badge className="bg-red-500 text-white animate-pulse">LIVE</Badge>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-red-500 text-white animate-pulse">LIVE</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -85,6 +113,24 @@ const LiveScoring = ({ currentMatch }) => {
                 <div>156</div>
               </div>
             </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-3 mt-4">
+            <ScoreCorrection 
+              currentScore={score} 
+              onScoreUpdate={handleScoreUpdate}
+            />
+            <PlayerManagement 
+              currentMatch={currentMatch}
+              onPlayerAdded={handlePlayerAdded}
+            />
+            <ExportReport 
+              matchData={currentMatch}
+              scoreData={score}
+              currentBatsmen={currentBatsmen}
+              currentBowler={currentBowler}
+            />
           </div>
         </CardContent>
       </Card>
