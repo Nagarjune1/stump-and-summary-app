@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,8 +36,8 @@ const Index = () => {
         .from('players')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch recent matches
-      const { data: recentMatches } = await supabase
+      // Fetch recent matches with proper team relations
+      const { data: recentMatches, error } = await supabase
         .from('matches')
         .select(`
           id,
@@ -48,6 +49,10 @@ const Index = () => {
         `)
         .order('match_date', { ascending: false })
         .limit(3);
+
+      if (error) {
+        console.error('Error fetching recent matches:', error);
+      }
 
       setStats({
         totalMatches: matchCount || 0,
@@ -165,7 +170,9 @@ const Index = () => {
                     stats.recentMatches.map((match, index) => (
                       <div key={match.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-sm">{match.team1.name} vs {match.team2.name}</p>
+                          <p className="font-medium text-sm">
+                            {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'}
+                          </p>
                           <p className="text-xs text-gray-600">
                             {match.result || (match.status === 'live' ? 'In Progress' : 'Upcoming')}
                           </p>
