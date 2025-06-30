@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +57,15 @@ const Index = () => {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
+  };
+
+  const handleMatchCreated = (match) => {
+    setCurrentMatch(match);
+  };
+
+  const handleMatchStarted = (match) => {
+    setCurrentMatch(match);
+    setActiveTab("scoring"); // Switch to scoring tab when match starts
   };
 
   return (
@@ -220,7 +228,10 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="create">
-            <CreateMatch onMatchCreated={setCurrentMatch} />
+            <CreateMatch 
+              onMatchCreated={handleMatchCreated} 
+              onMatchStarted={handleMatchStarted}
+            />
           </TabsContent>
         </Tabs>
       </div>
