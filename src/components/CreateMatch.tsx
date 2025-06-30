@@ -94,7 +94,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           overs: matchData.overs ? parseInt(matchData.overs) : null,
           tournament: matchData.tournament || null,
           description: matchData.description || null,
-          status: 'created'
+          status: 'upcoming'
         }])
         .select(`
           *,
