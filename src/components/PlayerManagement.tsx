@@ -25,6 +25,7 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
     batting_style: "",
     bowling_style: ""
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (currentMatch) {
@@ -43,12 +44,22 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
       
       if (error) {
         console.error('Error fetching teams:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch teams",
+          variant: "destructive"
+        });
         return;
       }
       
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams",
+        variant: "destructive"
+      });
     }
   };
 
@@ -56,12 +67,13 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
     if (!newPlayer.name || !newPlayer.role || !newPlayer.team_id) {
       toast({
         title: "Error",
-        description: "Please fill all required fields",
+        description: "Please fill all required fields (Name, Role, Team)",
         variant: "destructive"
       });
       return;
     }
 
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('players')
@@ -78,7 +90,16 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
         console.error('Error adding player:', error);
         toast({
           title: "Error",
-          description: "Failed to add player",
+          description: `Failed to add player: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Error",
+          description: "No player data returned",
           variant: "destructive"
         });
         return;
@@ -111,6 +132,8 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
         description: "Failed to add player",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -147,12 +170,17 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
               value={newPlayer.name}
               onChange={(e) => setNewPlayer({...newPlayer, name: e.target.value})}
               placeholder="Enter player name"
+              disabled={loading}
             />
           </div>
 
           <div>
             <Label htmlFor="team">Team *</Label>
-            <Select onValueChange={(value) => setNewPlayer({...newPlayer, team_id: value})}>
+            <Select 
+              onValueChange={(value) => setNewPlayer({...newPlayer, team_id: value})}
+              disabled={loading}
+              value={newPlayer.team_id}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select team" />
               </SelectTrigger>
@@ -168,7 +196,11 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
 
           <div>
             <Label htmlFor="role">Role *</Label>
-            <Select onValueChange={(value) => setNewPlayer({...newPlayer, role: value})}>
+            <Select 
+              onValueChange={(value) => setNewPlayer({...newPlayer, role: value})}
+              disabled={loading}
+              value={newPlayer.role}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -184,7 +216,11 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="battingStyle">Batting Style</Label>
-              <Select onValueChange={(value) => setNewPlayer({...newPlayer, batting_style: value})}>
+              <Select 
+                onValueChange={(value) => setNewPlayer({...newPlayer, batting_style: value})}
+                disabled={loading}
+                value={newPlayer.batting_style}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select style" />
                 </SelectTrigger>
@@ -197,7 +233,11 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
 
             <div>
               <Label htmlFor="bowlingStyle">Bowling Style</Label>
-              <Select onValueChange={(value) => setNewPlayer({...newPlayer, bowling_style: value})}>
+              <Select 
+                onValueChange={(value) => setNewPlayer({...newPlayer, bowling_style: value})}
+                disabled={loading}
+                value={newPlayer.bowling_style}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select style" />
                 </SelectTrigger>
@@ -214,13 +254,17 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCancel}>
+            <Button variant="outline" onClick={handleCancel} disabled={loading}>
               <X className="w-4 h-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleAddPlayer} className="bg-green-600 hover:bg-green-700">
+            <Button 
+              onClick={handleAddPlayer} 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={loading}
+            >
               <Save className="w-4 h-4 mr-2" />
-              Add Player
+              {loading ? 'Adding...' : 'Add Player'}
             </Button>
           </div>
         </div>

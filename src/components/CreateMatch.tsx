@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [createdMatch, setCreatedMatch] = useState(null);
+  const [recentMatches, setRecentMatches] = useState([]);
 
   useEffect(() => {
     fetchTeams();
@@ -136,24 +136,17 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
   };
 
-  const handleStartMatch = async () => {
-    if (!matchData.toss_winner || !matchData.elected_to) {
-      toast({
-        title: "Error",
-        description: "Please select toss winner and their election",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleStartMatch = async (matchId) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('matches')
-        .update({
-          status: 'live',
-          description: `${matchData.description || ''} Toss: ${teams.find(t => t.id === matchData.toss_winner)?.name} won and elected to ${matchData.elected_to}.`.trim()
-        })
-        .eq('id', createdMatch.id);
+        .update({ status: 'live' })
+        .eq('id', matchId)
+        .select(`
+          *,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `);
 
       if (error) {
         console.error('Error starting match:', error);
@@ -167,13 +160,14 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
       toast({
         title: "Match Started!",
-        description: "The match is now live and ready for scoring.",
+        description: `${data[0].team1.name} vs ${data[0].team2.name} is now live`,
       });
 
-      if (onMatchStarted) {
-        onMatchStarted({...createdMatch, status: 'live'});
+      if (onMatchStarted && data[0]) {
+        onMatchStarted(data[0]);
       }
 
+      fetchRecentMatches();
     } catch (error) {
       console.error('Error starting match:', error);
       toast({
@@ -200,6 +194,29 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     });
     setCreatedMatch(null);
   };
+
+  const fetchRecentMatches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .order('match_date', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching recent matches:', error);
+        return;
+      }
+
+      setRecentMatches(data || []);
+    } catch (error) {
+      console.error('Error fetching recent matches:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecentMatches();
+  }, []);
 
   if (loading) {
     return (
@@ -483,6 +500,49 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           </Button>
         </div>
       )}
+
+      {/* Recent Matches */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Matches</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentMatches.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No matches created yet</p>
+          ) : (
+            <div className="space-y-3">
+              {recentMatches.map((match) => (
+                <div key={match.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{match.team1.name} vs {match.team2.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {match.venue} • {new Date(match.match_date).toLocaleDateString()}
+                      {match.match_time && ` at ${match.match_time}`}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {match.format} • {match.overs} overs
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={match.status === "live" ? "default" : match.status === "completed" ? "secondary" : "outline"}>
+                      {match.status}
+                    </Badge>
+                    {match.status === 'upcoming' && (
+                      <Button 
+                        onClick={() => handleStartMatch(match.id)}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Start Match
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
