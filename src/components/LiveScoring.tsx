@@ -423,7 +423,7 @@ const LiveScoring = ({ currentMatch }) => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h2>
+              <h2 className="text-xl font-bold text-white">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h2>
               <p className="text-blue-100">{selectedMatch.format} Match • Innings {currentInnings} • Over {currentOver}.{currentBall} of {selectedMatch.overs || 20}</p>
               <p className="text-blue-100 text-sm">{selectedMatch.venue}</p>
               {currentInnings === 2 && (
@@ -436,7 +436,7 @@ const LiveScoring = ({ currentMatch }) => {
                 onClick={endMatch}
                 variant="outline" 
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                className="bg-red-600 hover:bg-red-700 text-white border-red-600 hover:text-white"
               >
                 <StopCircle className="w-4 h-4 mr-1" />
                 End Match
@@ -446,9 +446,9 @@ const LiveScoring = ({ currentMatch }) => {
         </CardHeader>
         <CardContent>
           <div className="text-center">
-            <div className="text-4xl font-bold mb-2">{score.runs}/{score.wickets}</div>
-            <div className="text-lg">({currentOver}.{currentBall} overs)</div>
-            <div className="mt-2 flex items-center justify-center gap-4">
+            <div className="text-4xl font-bold mb-2 text-white">{score.runs}/{score.wickets}</div>
+            <div className="text-lg text-white">({currentOver}.{currentBall} overs)</div>
+            <div className="mt-2 flex items-center justify-center gap-4 text-white">
               <span>Balls: </span>
               <Input
                 type="number"
@@ -456,10 +456,10 @@ const LiveScoring = ({ currentMatch }) => {
                 max="5"
                 value={currentBall}
                 onChange={(e) => editBallCount(parseInt(e.target.value) || 0)}
-                className="w-16 text-center text-black"
+                className="w-16 text-center text-black bg-white"
               />
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+            <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-white">
               <div>
                 <div className="font-semibold">Run Rate</div>
                 <div>{currentOver > 0 ? ((score.runs / (currentOver + currentBall/6)).toFixed(2)) : '0.00'}</div>

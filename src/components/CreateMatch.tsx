@@ -138,9 +138,18 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
   const handleStartMatch = async (match) => {
     try {
-      // Extract the match ID from the match object
-      const matchId = typeof match === 'string' ? match : match.id;
+      // Ensure we have a proper match ID
+      const matchId = match?.id || match;
       
+      if (!matchId) {
+        toast({
+          title: "Error",
+          description: "Invalid match ID",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('matches')
         .update({ status: 'live' })
@@ -161,9 +170,18 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         return;
       }
 
+      if (!data || data.length === 0) {
+        toast({
+          title: "Error",
+          description: "Match not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
       toast({
         title: "Match Started!",
-        description: `${data[0].team1.name} vs ${data[0].team2.name} is now live`,
+        description: `${data[0].team1?.name || 'Team 1'} vs ${data[0].team2?.name || 'Team 2'} is now live`,
       });
 
       if (onMatchStarted && data[0]) {
@@ -547,9 +565,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                     </Badge>
                     {match.status === 'upcoming' && (
                       <Button 
-                        onClick={() => handleStartMatch(match)}
+                        onClick={() => handleStartMatch(match.id)}
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
                         Start Match
                       </Button>
