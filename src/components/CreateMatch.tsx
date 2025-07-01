@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,8 +136,11 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
   };
 
-  const handleStartMatch = async (matchId) => {
+  const handleStartMatch = async (match) => {
     try {
+      // Extract the match ID from the match object
+      const matchId = typeof match === 'string' ? match : match.id;
+      
       const { data, error } = await supabase
         .from('matches')
         .update({ status: 'live' })
@@ -545,7 +547,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                     </Badge>
                     {match.status === 'upcoming' && (
                       <Button 
-                        onClick={() => handleStartMatch(match.id)}
+                        onClick={() => handleStartMatch(match)}
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
                       >
