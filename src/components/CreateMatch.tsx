@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -136,10 +137,31 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
   };
 
-  const handleStartMatch = async (match) => {
+  const handleStartMatch = async (matchToStart = null) => {
     try {
-      // Ensure we have a proper match ID
-      const matchId = match?.id || match;
+      // Use the created match if no specific match is passed
+      const matchToProcess = matchToStart || createdMatch;
+      
+      if (!matchToProcess) {
+        toast({
+          title: "Error",
+          description: "No match selected to start",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // For the created match, check toss details
+      if (!matchToStart && (!matchData.toss_winner || !matchData.elected_to)) {
+        toast({
+          title: "Error",
+          description: "Please set toss winner and election before starting the match",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const matchId = typeof matchToProcess === 'string' ? matchToProcess : matchToProcess.id;
       
       if (!matchId) {
         toast({
@@ -188,6 +210,11 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         onMatchStarted(data[0]);
       }
 
+      // Reset form if we started the created match
+      if (!matchToStart) {
+        resetForm();
+      }
+      
       fetchRecentMatches();
     } catch (error) {
       console.error('Error starting match:', error);
@@ -324,7 +351,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
               <div className="flex justify-center gap-4 mt-6">
                 <Button 
-                  onClick={handleStartMatch}
+                  onClick={() => handleStartMatch()}
                   className="bg-green-600 hover:bg-green-700 px-8 py-3 text-lg"
                   disabled={!matchData.toss_winner || !matchData.elected_to}
                 >
