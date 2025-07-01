@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,18 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     try {
       const { data, error } = await supabase
         .from('matches')
-        .select('*')
+        .select(`
+          id,
+          status,
+          result,
+          match_date,
+          match_time,
+          venue,
+          format,
+          overs,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `)
         .order('match_date', { ascending: false })
         .limit(5);
 
@@ -514,14 +526,18 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
               {recentMatches.map((match) => (
                 <div key={match.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium">{match.team1.name} vs {match.team2.name}</p>
+                    <p className="font-medium">
+                      {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'}
+                    </p>
                     <p className="text-sm text-gray-600">
                       {match.venue} • {new Date(match.match_date).toLocaleDateString()}
                       {match.match_time && ` at ${match.match_time}`}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {match.format} • {match.overs} overs
-                    </p>
+                    {match.format && (
+                      <p className="text-xs text-gray-500">
+                        {match.format}{match.overs && ` • ${match.overs} overs`}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={match.status === "live" ? "default" : match.status === "completed" ? "secondary" : "outline"}>
