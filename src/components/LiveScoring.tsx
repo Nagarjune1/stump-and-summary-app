@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Timer, Target, Users, Activity, StopCircle, Plus, TrendingUp } from "lucide-react";
+import { Timer, Target, Users, Activity, StopCircle, Plus, TrendingUp, Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ScoreCorrection from "./ScoreCorrection";
 import PlayerManagement from "./PlayerManagement";
@@ -13,6 +13,9 @@ import ExportReport from "./ExportReport";
 import PlayerSelector from "./PlayerSelector";
 import ShotSelector from "./ShotSelector";
 import MatchAnalytics from "./MatchAnalytics";
+import ManOfMatchSelector from "./ManOfMatchSelector";
+import BowlerSelector from "./BowlerSelector";
+import CricketScoreboard from "./CricketScoreboard";
 import { supabase } from "@/integrations/supabase/client";
 
 const LiveScoring = ({ currentMatch }) => {
@@ -39,6 +42,11 @@ const LiveScoring = ({ currentMatch }) => {
   const [winner, setWinner] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [mobileView, setMobileView] = useState('scorecard');
+  const [momDialog, setMomDialog] = useState(false);
+  const [bowlerDialog, setBowlerDialog] = useState(false);
+  const [recentBalls, setRecentBalls] = useState([]);
+  const [manOfMatch, setManOfMatch] = useState(null);
+  const [manOfSeries, setManOfSeries] = useState(null);
 
   useEffect(() => {
     fetchLiveMatches();
@@ -121,6 +129,9 @@ const LiveScoring = ({ currentMatch }) => {
     setBattingTeam(1);
     setInnings1Score({ runs: 0, wickets: 0, overs: 0 });
     setWinner(null);
+    setRecentBalls([]);
+    setManOfMatch(null);
+    setManOfSeries(null);
   };
 
   const formatOvers = (overs, balls) => {
@@ -162,7 +173,6 @@ const LiveScoring = ({ currentMatch }) => {
 
   const endInnings = () => {
     if (currentInnings === 1) {
-      // Fix: Proper over calculation for innings end
       const finalOvers = currentBall === 0 ? currentOver : currentOver + 1;
       setInnings1Score({ 
         ...score, 
@@ -190,6 +200,7 @@ const LiveScoring = ({ currentMatch }) => {
     setCurrentBowler(null);
     setBattingTeam(battingTeam === 1 ? 2 : 1);
     setStrikerIndex(0);
+    setRecentBalls([]);
     
     toast({
       title: "Innings 2 Started!",
@@ -224,6 +235,8 @@ const LiveScoring = ({ currentMatch }) => {
       }
 
       setMatchEnded(true);
+      setMomDialog(true); // Show MOM selection dialog
+      
       toast({
         title: "Match Ended!",
         description: result || "Match completed successfully",
@@ -235,6 +248,10 @@ const LiveScoring = ({ currentMatch }) => {
 
   const processDelivery = (runs, isLegalDelivery = true, isWicket = false, shotType = null) => {
     if (matchEnded || isInningsBreak) return;
+
+    // Add to recent balls
+    const ballResult = isWicket ? 'W' : runs.toString();
+    setRecentBalls(prev => [...prev, ballResult]);
 
     // Add runs to score
     setScore(prev => ({ ...prev, runs: prev.runs + runs }));
@@ -251,6 +268,15 @@ const LiveScoring = ({ currentMatch }) => {
         lastShot: shotType
       };
       setCurrentBatsmen(updatedBatsmen);
+    }
+
+    // Update bowler stats if legal delivery
+    if (isLegalDelivery && currentBowler) {
+      setCurrentBowler(prev => ({
+        ...prev,
+        runs: (prev.runs || 0) + runs,
+        wickets: isWicket ? (prev.wickets || 0) + 1 : (prev.wickets || 0)
+      }));
     }
 
     // Handle wicket
@@ -274,13 +300,26 @@ const LiveScoring = ({ currentMatch }) => {
             balls: 0
           }));
           
+          // Update bowler overs
+          if (currentBowler) {
+            setCurrentBowler(prevBowler => ({
+              ...prevBowler,
+              overs: (prevBowler.overs || 0) + 1
+            }));
+          }
+          
           // Change strike at end of over
           if (currentBatsmen.length === 2) {
             setStrikerIndex(strikerIndex === 0 ? 1 : 0);
           }
           
-          // Check if innings is complete
+          // Show bowler selection dialog for next over
           const totalOvers = selectedMatch?.overs || 20;
+          if (newOver < totalOvers && score.wickets + (isWicket ? 1 : 0) < 10) {
+            setBowlerDialog(true);
+          }
+          
+          // Check if innings is complete
           if (newOver >= totalOvers) {
             endInnings();
             return 0;
@@ -343,7 +382,6 @@ const LiveScoring = ({ currentMatch }) => {
 
   const addExtras = () => {
     const { type, runs } = extrasDialog;
-    // Wide and No Ball add 1 extra run plus any additional runs
     processDelivery(runs + 1, false, false);
     setExtrasDialog({ open: false, type: '', runs: 0 });
     
@@ -394,13 +432,6 @@ const LiveScoring = ({ currentMatch }) => {
     }
   };
 
-  const editBallCount = (newBalls) => {
-    if (newBalls >= 0 && newBalls < 6) {
-      setCurrentBall(newBalls);
-      setScore(prev => ({ ...prev, balls: newBalls }));
-    }
-  };
-
   const handleBatsmenSelect = (batsmen) => {
     setCurrentBatsmen(batsmen);
     setStrikerIndex(0);
@@ -408,6 +439,13 @@ const LiveScoring = ({ currentMatch }) => {
 
   const handleBowlerSelect = (bowler) => {
     setCurrentBowler(bowler);
+    setBowlerDialog(false);
+  };
+
+  const handleMomSelected = (mom, mos) => {
+    setManOfMatch(mom);
+    setManOfSeries(mos);
+    setMomDialog(false);
   };
 
   if (liveMatches.length === 0) {
@@ -448,27 +486,37 @@ const LiveScoring = ({ currentMatch }) => {
               <h2 className="text-2xl font-bold text-yellow-800">{winner}</h2>
             </div>
           )}
-          
-          {/* Cricket Style Match Summary */}
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/10 p-4 rounded-lg">
-                <h4 className="font-bold text-lg mb-2">{selectedMatch.team1?.name || 'Team 1'}</h4>
-                <div className="text-2xl font-bold">{innings1Score.runs}/{innings1Score.wickets}</div>
-                <div className="text-sm">({innings1Score.overs}.0 overs)</div>
-                <div className="text-xs mt-1">Run Rate: {calculateRunRate(innings1Score.runs, innings1Score.overs, 0)}</div>
+
+          {(manOfMatch || manOfSeries) && (
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-lg mb-4">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Trophy className="w-6 h-6" />
+                <h3 className="text-xl font-bold">Match Awards</h3>
               </div>
-              {currentInnings === 2 && (
-                <div className="bg-white/10 p-4 rounded-lg">
-                  <h4 className="font-bold text-lg mb-2">{selectedMatch.team2?.name || 'Team 2'}</h4>
-                  <div className="text-2xl font-bold">{score.runs}/{score.wickets}</div>
-                  <div className="text-sm">({formatOvers(currentOver, currentBall)} overs)</div>
-                  <div className="text-xs mt-1">Run Rate: {calculateRunRate(score.runs, currentOver, currentBall)}</div>
-                </div>
+              {manOfMatch && (
+                <p className="font-semibold">Man of the Match: {manOfMatch.name}</p>
+              )}
+              {manOfSeries && (
+                <p className="font-semibold">Man of the Series: {manOfSeries.name}</p>
               )}
             </div>
-          </div>
+          )}
+          
+          <CricketScoreboard
+            matchData={selectedMatch}
+            score={score}
+            currentBatsmen={currentBatsmen}
+            currentBowler={currentBowler}
+            innings1Score={innings1Score}
+            currentInnings={currentInnings}
+            currentOver={currentOver}
+            currentBall={currentBall}
+            battingTeam={battingTeam}
+            target={innings1Score.runs + 1}
+            requiredRunRate={calculateRequiredRunRate()}
+            currentRunRate={calculateRunRate(score.runs, currentOver, currentBall)}
+            recentBalls={recentBalls}
+          />
           
           <div className="flex flex-wrap justify-center gap-2">
             <Button
@@ -487,6 +535,9 @@ const LiveScoring = ({ currentMatch }) => {
               innings1Score={innings1Score}
               currentInnings={currentInnings}
               winner={winner}
+              manOfMatch={manOfMatch}
+              manOfSeries={manOfSeries}
+              recentBalls={recentBalls}
             />
           </div>
           {showAnalytics && (
@@ -535,7 +586,6 @@ const LiveScoring = ({ currentMatch }) => {
 
   return (
     <div className="space-y-4 px-2 md:px-4">
-      {/* Match Selection */}
       {liveMatches.length > 1 && (
         <Card>
           <CardHeader>
@@ -558,7 +608,6 @@ const LiveScoring = ({ currentMatch }) => {
         </Card>
       )}
 
-      {/* Mobile View Toggle */}
       <div className="block md:hidden">
         <div className="flex space-x-2 mb-4">
           <Button 
@@ -578,31 +627,107 @@ const LiveScoring = ({ currentMatch }) => {
         </div>
       </div>
 
-      {/* Cricket Style Live Score Header */}
-      <Card className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div className="text-center md:text-left">
-              <h2 className="text-xl md:text-2xl font-bold text-white">
-                {selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}
-              </h2>
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 text-sm text-white/90 mt-2">
-                <span>{selectedMatch.format} Match</span>
-                <span>•</span>
-                <span>Innings {currentInnings}</span>
-                <span>•</span>
-                <span>Over {formatOvers(currentOver, currentBall)} of {selectedMatch.overs || 20}</span>
-                <span>•</span>
-                <span>{selectedMatch.venue}</span>
-              </div>
-              {currentInnings === 2 && (
-                <p className="text-yellow-200 text-sm font-medium mt-1">
-                  Target: {innings1Score.runs + 1} runs • Need {innings1Score.runs + 1 - score.runs} runs
-                </p>
-              )}
+      <PlayerSelector
+        battingPlayers={currentBattingPlayers}
+        bowlingPlayers={currentBowlingPlayers}
+        onBatsmenSelect={handleBatsmenSelect}
+        onBowlerSelect={handleBowlerSelect}
+        currentBatsmen={currentBatsmen}
+        currentBowler={currentBowler}
+      />
+
+      <CricketScoreboard
+        matchData={selectedMatch}
+        score={score}
+        currentBatsmen={currentBatsmen}
+        currentBowler={currentBowler}
+        innings1Score={innings1Score}
+        currentInnings={currentInnings}
+        currentOver={currentOver}
+        currentBall={currentBall}
+        battingTeam={battingTeam}
+        target={innings1Score.runs + 1}
+        requiredRunRate={calculateRequiredRunRate()}
+        currentRunRate={calculateRunRate(score.runs, currentOver, currentBall)}
+        recentBalls={recentBalls}
+      />
+
+      {(mobileView === 'scoring' || window.innerWidth >= 768) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Target className="w-5 h-5" />
+              Quick Scoring
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {[0, 1, 2, 3, 4, 6].map((runs) => (
+                <Button
+                  key={runs}
+                  onClick={() => addRun(runs)}
+                  className={`h-14 text-xl font-bold text-white ${
+                    runs === 4 ? 'bg-blue-600 hover:bg-blue-700' :
+                    runs === 6 ? 'bg-orange-600 hover:bg-orange-700' :
+                    'bg-gray-700 hover:bg-gray-800'
+                  }`}
+                  disabled={matchEnded || isInningsBreak}
+                >
+                  {runs}
+                </Button>
+              ))}
             </div>
-            <div className="flex items-center justify-center md:justify-end gap-2">
-              <Badge className="bg-red-500 text-white animate-pulse">LIVE</Badge>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <Button 
+                onClick={addWicket} 
+                variant="destructive" 
+                className="h-12 text-white bg-red-600 hover:bg-red-700 font-semibold"
+                disabled={matchEnded || isInningsBreak}
+              >
+                WICKET
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={() => handleExtras('Wide')}
+                  variant="outline" 
+                  className="h-12 text-sm bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600 font-semibold"
+                  disabled={matchEnded || isInningsBreak}
+                >
+                  WIDE
+                </Button>
+                <Button 
+                  onClick={() => handleExtras('No Ball')}
+                  variant="outline" 
+                  className="h-12 text-sm bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-semibold"
+                  disabled={matchEnded || isInningsBreak}
+                >
+                  NO BALL
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              <ScoreCorrection 
+                currentScore={score} 
+                onScoreUpdate={handleScoreUpdate}
+              />
+              <PlayerManagement 
+                currentMatch={selectedMatch}
+                onPlayerAdded={handlePlayerAdded}
+              />
+              <ExportReport 
+                matchData={selectedMatch}
+                scoreData={score}
+                currentBatsmen={currentBatsmen}
+                currentBowler={currentBowler}
+                innings1Score={innings1Score}
+                currentInnings={currentInnings}
+                winner={winner}
+                manOfMatch={manOfMatch}
+                manOfSeries={manOfSeries}
+                recentBalls={recentBalls}
+              />
               <Button 
                 onClick={endMatch}
                 variant="outline" 
@@ -613,254 +738,10 @@ const LiveScoring = ({ currentMatch }) => {
                 End Match
               </Button>
             </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          {/* Main Score Display - Cricket Style */}
-          <div className="text-center mb-6">
-            <div className="bg-white/10 p-6 rounded-lg mb-4">
-              <div className="text-4xl md:text-5xl font-bold mb-2 text-white">
-                {score.runs}/{score.wickets}
-              </div>
-              <div className="text-xl text-white/90">
-                ({formatOvers(currentOver, currentBall)} overs)
-              </div>
-            </div>
-            
-            {/* Cricket Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div className="bg-white/10 p-3 rounded-lg">
-                <div className="font-semibold text-white">Current RR</div>
-                <div className="text-lg text-white">{calculateRunRate(score.runs, currentOver, currentBall)}</div>
-              </div>
-              <div className="bg-white/10 p-3 rounded-lg">
-                <div className="font-semibold text-white">Required RR</div>
-                <div className="text-lg text-white">{calculateRequiredRunRate()}</div>
-              </div>
-              <div className="bg-white/10 p-3 rounded-lg">
-                <div className="font-semibold text-white">Partnership</div>
-                <div className="text-lg text-white">
-                  {currentBatsmen.length === 2 ? 
-                    (currentBatsmen[0].runs + currentBatsmen[1].runs) : 
-                    (currentBatsmen[0]?.runs || 0)
-                  }
-                </div>
-              </div>
-              <div className="bg-white/10 p-3 rounded-lg">
-                <div className="font-semibold text-white">Batting</div>
-                <div className="text-sm text-white">
-                  {battingTeam === 1 ? selectedMatch.team1?.name : selectedMatch.team2?.name}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-2">
-            <ScoreCorrection 
-              currentScore={score} 
-              onScoreUpdate={handleScoreUpdate}
-            />
-            <PlayerManagement 
-              currentMatch={selectedMatch}
-              onPlayerAdded={handlePlayerAdded}
-            />
-            <ExportReport 
-              matchData={selectedMatch}
-              scoreData={score}
-              currentBatsmen={currentBatsmen}
-              currentBowler={currentBowler}
-              innings1Score={innings1Score}
-              currentInnings={currentInnings}
-              winner={winner}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Player Selection */}
-      <PlayerSelector
-        battingPlayers={currentBattingPlayers}
-        bowlingPlayers={currentBowlingPlayers}
-        onBatsmenSelect={handleBatsmenSelect}
-        onBowlerSelect={handleBowlerSelect}
-        currentBatsmen={currentBatsmen}
-        currentBowler={currentBowler}
-      />
-
-      <div className={`grid grid-cols-1 ${mobileView === 'scorecard' || window.innerWidth >= 1024 ? 'lg:grid-cols-2' : ''} gap-4`}>
-        {/* Scoring Controls */}
-        {(mobileView === 'scoring' || window.innerWidth >= 768) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Target className="w-5 h-5" />
-                Quick Scoring
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {[0, 1, 2, 3, 4, 6].map((runs) => (
-                  <Button
-                    key={runs}
-                    onClick={() => addRun(runs)}
-                    className={`h-14 text-xl font-bold text-white ${
-                      runs === 4 ? 'bg-blue-600 hover:bg-blue-700' :
-                      runs === 6 ? 'bg-orange-600 hover:bg-orange-700' :
-                      'bg-gray-700 hover:bg-gray-800'
-                    }`}
-                    disabled={matchEnded || isInningsBreak}
-                  >
-                    {runs}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                <Button 
-                  onClick={addWicket} 
-                  variant="destructive" 
-                  className="h-12 text-white bg-red-600 hover:bg-red-700 font-semibold"
-                  disabled={matchEnded || isInningsBreak}
-                >
-                  WICKET
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    onClick={() => handleExtras('Wide')}
-                    variant="outline" 
-                    className="h-12 text-sm bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600 font-semibold"
-                    disabled={matchEnded || isInningsBreak}
-                  >
-                    WIDE
-                  </Button>
-                  <Button 
-                    onClick={() => handleExtras('No Ball')}
-                    variant="outline" 
-                    className="h-12 text-sm bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-semibold"
-                    disabled={matchEnded || isInningsBreak}
-                  >
-                    NO BALL
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Select disabled={matchEnded || isInningsBreak}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select dismissal type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bowled">Bowled</SelectItem>
-                    <SelectItem value="caught">Caught</SelectItem>
-                    <SelectItem value="lbw">LBW</SelectItem>
-                    <SelectItem value="stumped">Stumped</SelectItem>
-                    <SelectItem value="runout">Run Out</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Current Players - Cricket Style */}
-        {(mobileView === 'scorecard' || window.innerWidth >= 768) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5" />
-                Current Players
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-3 text-green-700">Batsmen</h4>
-                {currentBatsmen.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No batsmen selected yet</p>
-                ) : (
-                  currentBatsmen.map((batsman, index) => (
-                    <div key={index} className={`flex justify-between items-center p-4 rounded-lg mb-3 border-2 ${
-                      index === strikerIndex ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
-                    }`}>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-lg">
-                            {batsman.name} 
-                            {index === strikerIndex && <span className="text-green-600">*</span>}
-                          </p>
-                          {batsman.lastShot && (
-                            <Badge variant="outline" className="text-xs">
-                              {batsman.lastShot}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <span>{batsman.runs || 0}*({batsman.balls || 0})</span>
-                          <span>4s: {batsman.fours || 0}</span>
-                          <span>6s: {batsman.sixes || 0}</span>
-                          <span>SR: {(batsman.balls || 0) > 0 ? (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-700">{batsman.runs || 0}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-3 text-blue-700">Current Bowler</h4>
-                {!currentBowler ? (
-                  <p className="text-gray-500 text-sm">No bowler selected yet</p>
-                ) : (
-                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-                    <div className="flex-1">
-                      <p className="font-semibold text-lg">{currentBowler.name}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <span>{currentBowler.overs || 0} ov</span>
-                        <span>{currentBowler.runs || 0} runs</span>
-                        <span>{currentBowler.wickets || 0} wkts</span>
-                        <span>Econ: {(currentBowler.overs || 0) > 0 ? ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-blue-700">{currentBowler.wickets || 0}/{currentBowler.runs || 0}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Over History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Activity className="w-5 h-5" />
-            Recent Overs
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {overHistory.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No overs completed yet</p>
-            ) : (
-              overHistory.map((over, index) => (
-                <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                  <Badge variant="outline">Over {index + 1}</Badge>
-                  <span className="font-mono text-sm">{over}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
       <Dialog open={extrasDialog.open} onOpenChange={(open) => setExtrasDialog(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -928,6 +809,23 @@ const LiveScoring = ({ currentMatch }) => {
         onClose={() => setShotDialog({ open: false, runs: 0 })}
         onShotSelect={handleShotSelection}
         runs={shotDialog.runs}
+      />
+
+      <ManOfMatchSelector
+        open={momDialog}
+        onClose={() => setMomDialog(false)}
+        matchData={selectedMatch}
+        team1Players={team1Players}
+        team2Players={team2Players}
+        onMomSelected={handleMomSelected}
+      />
+
+      <BowlerSelector
+        open={bowlerDialog}
+        onClose={() => setBowlerDialog(false)}
+        bowlingPlayers={currentBowlingPlayers}
+        onBowlerSelect={handleBowlerSelect}
+        currentOver={currentOver}
       />
     </div>
   );
