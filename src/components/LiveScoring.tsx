@@ -123,6 +123,22 @@ const LiveScoring = ({ currentMatch }) => {
     setWinner(null);
   };
 
+  const formatOvers = (overs, balls) => {
+    return `${overs}.${balls}`;
+  };
+
+  const calculateRunRate = (runs, overs, balls) => {
+    const totalOvers = overs + (balls / 6);
+    return totalOvers > 0 ? (runs / totalOvers).toFixed(2) : '0.00';
+  };
+
+  const calculateRequiredRunRate = () => {
+    if (currentInnings !== 2) return '-';
+    const remainingRuns = innings1Score.runs + 1 - score.runs;
+    const remainingOvers = (selectedMatch?.overs || 20) - currentOver - (currentBall / 6);
+    return remainingOvers > 0 ? (remainingRuns / remainingOvers).toFixed(2) : '-';
+  };
+
   const checkInningsComplete = () => {
     const totalOvers = selectedMatch?.overs || 20;
     return currentOver >= totalOvers || score.wickets >= 10;
@@ -146,11 +162,16 @@ const LiveScoring = ({ currentMatch }) => {
 
   const endInnings = () => {
     if (currentInnings === 1) {
-      setInnings1Score({ ...score, overs: currentOver + (currentBall > 0 ? currentBall / 6 : 0) });
+      // Fix: Proper over calculation for innings end
+      const finalOvers = currentBall === 0 ? currentOver : currentOver + 1;
+      setInnings1Score({ 
+        ...score, 
+        overs: finalOvers
+      });
       setIsInningsBreak(true);
       toast({
         title: "Innings 1 Complete!",
-        description: `Final Score: ${score.runs}/${score.wickets} (${currentOver}.${currentBall})`,
+        description: `Final Score: ${score.runs}/${score.wickets} (${formatOvers(currentOver, currentBall)})`,
       });
     } else {
       const result = determineWinner();
@@ -295,7 +316,7 @@ const LiveScoring = ({ currentMatch }) => {
 
     toast({
       title: isWicket ? "Wicket!" : `${runs} run${runs > 1 ? 's' : ''} ${isLegalDelivery ? '' : '(Extra)'}`,
-      description: `Current score: ${score.runs + runs}/${score.wickets + (isWicket ? 1 : 0)} (${currentOver}.${currentBall + (isLegalDelivery ? 1 : 0)})`,
+      description: `Current score: ${score.runs + runs}/${score.wickets + (isWicket ? 1 : 0)} (${formatOvers(currentOver, currentBall + (isLegalDelivery ? 1 : 0))})`,
     });
   };
 
@@ -427,19 +448,28 @@ const LiveScoring = ({ currentMatch }) => {
               <h2 className="text-2xl font-bold text-yellow-800">{winner}</h2>
             </div>
           )}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-bold mb-2">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Innings 1: {innings1Score.runs}/{innings1Score.wickets} ({innings1Score.overs} overs)</p>
+          
+          {/* Cricket Style Match Summary */}
+          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg">
+            <h3 className="text-xl font-bold mb-4">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/10 p-4 rounded-lg">
+                <h4 className="font-bold text-lg mb-2">{selectedMatch.team1?.name || 'Team 1'}</h4>
+                <div className="text-2xl font-bold">{innings1Score.runs}/{innings1Score.wickets}</div>
+                <div className="text-sm">({innings1Score.overs}.0 overs)</div>
+                <div className="text-xs mt-1">Run Rate: {calculateRunRate(innings1Score.runs, innings1Score.overs, 0)}</div>
               </div>
               {currentInnings === 2 && (
-                <div>
-                  <p className="font-medium">Innings 2: {score.runs}/{score.wickets} ({currentOver}.{currentBall} overs)</p>
+                <div className="bg-white/10 p-4 rounded-lg">
+                  <h4 className="font-bold text-lg mb-2">{selectedMatch.team2?.name || 'Team 2'}</h4>
+                  <div className="text-2xl font-bold">{score.runs}/{score.wickets}</div>
+                  <div className="text-sm">({formatOvers(currentOver, currentBall)} overs)</div>
+                  <div className="text-xs mt-1">Run Rate: {calculateRunRate(score.runs, currentOver, currentBall)}</div>
                 </div>
               )}
             </div>
           </div>
+          
           <div className="flex flex-wrap justify-center gap-2">
             <Button
               onClick={() => setShowAnalytics(!showAnalytics)}
@@ -482,7 +512,7 @@ const LiveScoring = ({ currentMatch }) => {
         <CardContent className="text-center space-y-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <h3 className="font-bold mb-2">Innings 1 Complete</h3>
-            <p className="text-xl font-bold">{innings1Score.runs}/{innings1Score.wickets} ({innings1Score.overs} overs)</p>
+            <p className="text-xl font-bold">{innings1Score.runs}/{innings1Score.wickets} ({innings1Score.overs}.0 overs)</p>
             <p className="text-sm text-gray-600 mt-2">Target: {innings1Score.runs + 1} runs</p>
           </div>
           <Button 
@@ -534,30 +564,41 @@ const LiveScoring = ({ currentMatch }) => {
           <Button 
             variant={mobileView === 'scorecard' ? 'default' : 'outline'}
             onClick={() => setMobileView('scorecard')}
-            className="flex-1 text-white"
+            className="flex-1"
           >
             Scorecard
           </Button>
           <Button 
             variant={mobileView === 'scoring' ? 'default' : 'outline'}
             onClick={() => setMobileView('scoring')}
-            className="flex-1 text-white"
+            className="flex-1"
           >
             Scoring
           </Button>
         </div>
       </div>
 
-      {/* Live Score Header */}
-      <Card className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
+      {/* Cricket Style Live Score Header */}
+      <Card className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
         <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div className="text-center md:text-left">
-              <h2 className="text-lg md:text-xl font-bold text-white">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h2>
-              <p className="text-blue-100 text-sm">{selectedMatch.format} Match • Innings {currentInnings} • Over {currentOver}.{currentBall} of {selectedMatch.overs || 20}</p>
-              <p className="text-blue-100 text-sm">{selectedMatch.venue}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                {selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}
+              </h2>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 text-sm text-white/90 mt-2">
+                <span>{selectedMatch.format} Match</span>
+                <span>•</span>
+                <span>Innings {currentInnings}</span>
+                <span>•</span>
+                <span>Over {formatOvers(currentOver, currentBall)} of {selectedMatch.overs || 20}</span>
+                <span>•</span>
+                <span>{selectedMatch.venue}</span>
+              </div>
               {currentInnings === 2 && (
-                <p className="text-yellow-200 text-sm font-medium">Target: {innings1Score.runs + 1} runs</p>
+                <p className="text-yellow-200 text-sm font-medium mt-1">
+                  Target: {innings1Score.runs + 1} runs • Need {innings1Score.runs + 1 - score.runs} runs
+                </p>
               )}
             </div>
             <div className="flex items-center justify-center md:justify-end gap-2">
@@ -574,33 +615,49 @@ const LiveScoring = ({ currentMatch }) => {
             </div>
           </div>
         </CardHeader>
+        
         <CardContent>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold mb-2 text-white">{score.runs}/{score.wickets}</div>
-            <div className="text-lg text-white">({currentOver}.{currentBall} overs)</div>
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-white">
-              <div>
-                <div className="font-semibold">Run Rate</div>
-                <div>{currentOver > 0 ? ((score.runs / (currentOver + currentBall/6)).toFixed(2)) : '0.00'}</div>
+          {/* Main Score Display - Cricket Style */}
+          <div className="text-center mb-6">
+            <div className="bg-white/10 p-6 rounded-lg mb-4">
+              <div className="text-4xl md:text-5xl font-bold mb-2 text-white">
+                {score.runs}/{score.wickets}
               </div>
-              <div>
-                <div className="font-semibold">Required Rate</div>
-                <div>
-                  {currentInnings === 2 && currentOver < (selectedMatch.overs || 20) ? 
-                    (((innings1Score.runs + 1 - score.runs) / ((selectedMatch.overs || 20) - currentOver - currentBall/6)).toFixed(2)) : 
-                    '-'
+              <div className="text-xl text-white/90">
+                ({formatOvers(currentOver, currentBall)} overs)
+              </div>
+            </div>
+            
+            {/* Cricket Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="bg-white/10 p-3 rounded-lg">
+                <div className="font-semibold text-white">Current RR</div>
+                <div className="text-lg text-white">{calculateRunRate(score.runs, currentOver, currentBall)}</div>
+              </div>
+              <div className="bg-white/10 p-3 rounded-lg">
+                <div className="font-semibold text-white">Required RR</div>
+                <div className="text-lg text-white">{calculateRequiredRunRate()}</div>
+              </div>
+              <div className="bg-white/10 p-3 rounded-lg">
+                <div className="font-semibold text-white">Partnership</div>
+                <div className="text-lg text-white">
+                  {currentBatsmen.length === 2 ? 
+                    (currentBatsmen[0].runs + currentBatsmen[1].runs) : 
+                    (currentBatsmen[0]?.runs || 0)
                   }
                 </div>
               </div>
-              <div className="col-span-2 md:col-span-1">
-                <div className="font-semibold">Batting</div>
-                <div>{battingTeam === 1 ? selectedMatch.team1?.name : selectedMatch.team2?.name}</div>
+              <div className="bg-white/10 p-3 rounded-lg">
+                <div className="font-semibold text-white">Batting</div>
+                <div className="text-sm text-white">
+                  {battingTeam === 1 ? selectedMatch.team1?.name : selectedMatch.team2?.name}
+                </div>
               </div>
             </div>
           </div>
           
           {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-2">
             <ScoreCorrection 
               currentScore={score} 
               onScoreUpdate={handleScoreUpdate}
@@ -643,15 +700,15 @@ const LiveScoring = ({ currentMatch }) => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {[0, 1, 2, 3, 4, 6].map((runs) => (
                   <Button
                     key={runs}
                     onClick={() => addRun(runs)}
-                    className={`h-12 text-lg font-bold ${
-                      runs === 4 ? 'bg-blue-500 hover:bg-blue-600 text-white' :
-                      runs === 6 ? 'bg-orange-500 hover:bg-orange-600 text-white' :
-                      'bg-gray-600 hover:bg-gray-700 text-white'
+                    className={`h-14 text-xl font-bold text-white ${
+                      runs === 4 ? 'bg-blue-600 hover:bg-blue-700' :
+                      runs === 6 ? 'bg-orange-600 hover:bg-orange-700' :
+                      'bg-gray-700 hover:bg-gray-800'
                     }`}
                     disabled={matchEnded || isInningsBreak}
                   >
@@ -660,31 +717,31 @@ const LiveScoring = ({ currentMatch }) => {
                 ))}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <Button 
                   onClick={addWicket} 
                   variant="destructive" 
-                  className="h-12 text-white bg-red-600 hover:bg-red-700"
+                  className="h-12 text-white bg-red-600 hover:bg-red-700 font-semibold"
                   disabled={matchEnded || isInningsBreak}
                 >
-                  Wicket
+                  WICKET
                 </Button>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 gap-2">
                   <Button 
                     onClick={() => handleExtras('Wide')}
                     variant="outline" 
-                    className="h-12 text-sm bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                    className="h-12 text-sm bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600 font-semibold"
                     disabled={matchEnded || isInningsBreak}
                   >
-                    Wide
+                    WIDE
                   </Button>
                   <Button 
                     onClick={() => handleExtras('No Ball')}
                     variant="outline" 
-                    className="h-12 text-sm bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                    className="h-12 text-sm bg-orange-600 hover:bg-orange-700 text-white border-orange-600 font-semibold"
                     disabled={matchEnded || isInningsBreak}
                   >
-                    No Ball
+                    NO BALL
                   </Button>
                 </div>
               </div>
@@ -707,7 +764,7 @@ const LiveScoring = ({ currentMatch }) => {
           </Card>
         )}
 
-        {/* Current Players */}
+        {/* Current Players - Cricket Style */}
         {(mobileView === 'scorecard' || window.innerWidth >= 768) && (
           <Card>
             <CardHeader>
@@ -718,31 +775,35 @@ const LiveScoring = ({ currentMatch }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-medium mb-2">Batsmen</h4>
+                <h4 className="font-medium mb-3 text-green-700">Batsmen</h4>
                 {currentBatsmen.length === 0 ? (
                   <p className="text-gray-500 text-sm">No batsmen selected yet</p>
                 ) : (
                   currentBatsmen.map((batsman, index) => (
-                    <div key={index} className={`flex justify-between items-center p-3 rounded-lg mb-2 ${
-                      index === strikerIndex ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-50'
+                    <div key={index} className={`flex justify-between items-center p-4 rounded-lg mb-3 border-2 ${
+                      index === strikerIndex ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
                     }`}>
-                      <div>
-                        <p className="font-medium">
-                          {batsman.name} 
-                          {index === strikerIndex && <span className="text-green-600 ml-1">*</span>}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {batsman.runs || 0}({batsman.balls || 0}) • 4s: {batsman.fours || 0} • 6s: {batsman.sixes || 0}
-                        </p>
-                        {batsman.lastShot && (
-                          <p className="text-xs text-blue-600">Last: {batsman.lastShot}</p>
-                        )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-lg">
+                            {batsman.name} 
+                            {index === strikerIndex && <span className="text-green-600">*</span>}
+                          </p>
+                          {batsman.lastShot && (
+                            <Badge variant="outline" className="text-xs">
+                              {batsman.lastShot}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                          <span>{batsman.runs || 0}*({batsman.balls || 0})</span>
+                          <span>4s: {batsman.fours || 0}</span>
+                          <span>6s: {batsman.sixes || 0}</span>
+                          <span>SR: {(batsman.balls || 0) > 0 ? (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'}</span>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold">{batsman.runs || 0}</div>
-                        <div className="text-xs text-gray-500">
-                          SR: {(batsman.balls || 0) > 0 ? (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'}
-                        </div>
+                        <div className="text-2xl font-bold text-green-700">{batsman.runs || 0}</div>
                       </div>
                     </div>
                   ))
@@ -750,22 +811,22 @@ const LiveScoring = ({ currentMatch }) => {
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">Current Bowler</h4>
+                <h4 className="font-medium mb-3 text-blue-700">Current Bowler</h4>
                 {!currentBowler ? (
                   <p className="text-gray-500 text-sm">No bowler selected yet</p>
                 ) : (
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{currentBowler.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {currentBowler.overs || 0} overs • {currentBowler.runs || 0} runs • {currentBowler.wickets || 0} wickets
-                      </p>
+                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg">{currentBowler.name}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                        <span>{currentBowler.overs || 0} ov</span>
+                        <span>{currentBowler.runs || 0} runs</span>
+                        <span>{currentBowler.wickets || 0} wkts</span>
+                        <span>Econ: {(currentBowler.overs || 0) > 0 ? ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'}</span>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">{currentBowler.wickets || 0}/{currentBowler.runs || 0}</div>
-                      <div className="text-xs text-gray-500">
-                        Econ: {(currentBowler.overs || 0) > 0 ? ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'}
-                      </div>
+                      <div className="text-xl font-bold text-blue-700">{currentBowler.wickets || 0}/{currentBowler.runs || 0}</div>
                     </div>
                   </div>
                 )}
