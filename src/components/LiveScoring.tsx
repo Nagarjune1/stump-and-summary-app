@@ -1,17 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Timer, Target, Users, Activity, StopCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Timer, Target, Users, Activity, StopCircle, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ScoreCorrection from "./ScoreCorrection";
 import PlayerManagement from "./PlayerManagement";
 import ExportReport from "./ExportReport";
 import PlayerSelector from "./PlayerSelector";
 import { supabase } from "@/integrations/supabase/client";
+import PDFExport from "./PDFExport";
 
 const LiveScoring = ({ currentMatch }) => {
   const [liveMatches, setLiveMatches] = useState([]);
@@ -30,6 +31,7 @@ const LiveScoring = ({ currentMatch }) => {
   const [team2Players, setTeam2Players] = useState([]);
   const [battingTeam, setBattingTeam] = useState(1);
   const [innings1Score, setInnings1Score] = useState({ runs: 0, wickets: 0, overs: 0 });
+  const [extrasDialog, setExtrasDialog] = useState({ open: false, type: '', runs: 0 });
 
   useEffect(() => {
     fetchLiveMatches();
@@ -120,7 +122,7 @@ const LiveScoring = ({ currentMatch }) => {
 
   const endInnings = () => {
     if (currentInnings === 1) {
-      setInnings1Score({ ...score, overs: currentOver });
+      setInnings1Score({ ...score, overs: currentOver + (currentBall > 0 ? currentBall / 6 : 0) });
       setIsInningsBreak(true);
       toast({
         title: "Innings 1 Complete!",
@@ -181,13 +183,14 @@ const LiveScoring = ({ currentMatch }) => {
     }
   };
 
-  const addRun = (runs) => {
+  const processDelivery = (runs, isLegalDelivery = true, isWicket = false) => {
     if (matchEnded || isInningsBreak) return;
 
+    // Add runs to score
     setScore(prev => ({ ...prev, runs: prev.runs + runs }));
     
-    // Update batsman stats
-    if (currentBatsmen.length > strikerIndex) {
+    // Update batsman stats if legal delivery
+    if (isLegalDelivery && currentBatsmen.length > strikerIndex) {
       const updatedBatsmen = [...currentBatsmen];
       updatedBatsmen[strikerIndex] = {
         ...updatedBatsmen[strikerIndex],
@@ -199,80 +202,81 @@ const LiveScoring = ({ currentMatch }) => {
       setCurrentBatsmen(updatedBatsmen);
     }
 
-    // Change strike on odd runs
-    if (runs % 2 === 1 && currentBatsmen.length === 2) {
-      setStrikerIndex(strikerIndex === 0 ? 1 : 0);
+    // Handle wicket
+    if (isWicket) {
+      setScore(prev => ({ ...prev, wickets: prev.wickets + 1 }));
     }
-    
-    setCurrentBall(prev => {
-      const newBall = prev + 1;
-      if (newBall >= 6) {
-        const newOver = currentOver + 1;
-        setCurrentOver(newOver);
-        setScore(prevScore => ({ 
-          ...prevScore, 
-          overs: newOver,
-          balls: 0
-        }));
-        
-        // Change strike at end of over
-        if (currentBatsmen.length === 2) {
-          setStrikerIndex(strikerIndex === 0 ? 1 : 0);
+
+    // Handle ball count and over completion for legal deliveries only
+    if (isLegalDelivery) {
+      setCurrentBall(prev => {
+        const newBall = prev + 1;
+        if (newBall >= 6) {
+          const newOver = currentOver + 1;
+          setCurrentOver(newOver);
+          setScore(prevScore => ({ 
+            ...prevScore, 
+            overs: newOver,
+            balls: 0
+          }));
+          
+          // Change strike at end of over
+          if (currentBatsmen.length === 2) {
+            setStrikerIndex(strikerIndex === 0 ? 1 : 0);
+          }
+          
+          // Check if innings is complete
+          const totalOvers = selectedMatch?.overs || 20;
+          if (newOver >= totalOvers || score.wickets >= 10) {
+            endInnings();
+          }
+          
+          return 0;
+        } else {
+          setScore(prevScore => ({ ...prevScore, balls: newBall }));
+          
+          // Change strike on odd runs for legal deliveries
+          if (runs % 2 === 1 && currentBatsmen.length === 2) {
+            setStrikerIndex(strikerIndex === 0 ? 1 : 0);
+          }
+          
+          return newBall;
         }
-        
-        // Check if innings is complete
-        if (checkInningsComplete()) {
-          endInnings();
-        }
-        
-        return 0;
-      }
-      setScore(prevScore => ({ ...prevScore, balls: newBall }));
-      return newBall;
-    });
+      });
+    }
 
     toast({
-      title: `${runs} run${runs > 1 ? 's' : ''} added!`,
-      description: `Current score: ${score.runs + runs}/${score.wickets} (${currentOver}.${currentBall + 1})`,
+      title: isWicket ? "Wicket!" : `${runs} run${runs > 1 ? 's' : ''} ${isLegalDelivery ? '' : '(Extra)'}`,
+      description: `Current score: ${score.runs + runs}/${score.wickets + (isWicket ? 1 : 0)} (${currentOver}.${currentBall + (isLegalDelivery ? 1 : 0)})`,
     });
   };
 
+  const addRun = (runs) => {
+    processDelivery(runs, true, false);
+  };
+
   const addWicket = () => {
-    if (matchEnded || isInningsBreak) return;
-
-    setScore(prev => ({ ...prev, wickets: prev.wickets + 1 }));
+    processDelivery(0, true, true);
     
-    setCurrentBall(prev => {
-      const newBall = prev + 1;
-      if (newBall >= 6) {
-        const newOver = currentOver + 1;
-        setCurrentOver(newOver);
-        setScore(prevScore => ({ 
-          ...prevScore, 
-          overs: newOver,
-          balls: 0
-        }));
-        
-        if (checkInningsComplete()) {
-          endInnings();
-        }
-        
-        return 0;
-      }
-      setScore(prevScore => ({ ...prevScore, balls: newBall }));
-      return newBall;
-    });
-
-    toast({
-      title: "Wicket fallen!",
-      description: `Current score: ${score.runs}/${score.wickets + 1} (${currentOver}.${currentBall + 1})`,
-      variant: "destructive"
-    });
-
     // Check if innings is complete
     if (score.wickets + 1 >= 10 || checkInningsComplete()) {
       endInnings();
     }
+  };
+
+  const handleExtras = (type) => {
+    setExtrasDialog({ open: true, type, runs: 0 });
+  };
+
+  const addExtras = () => {
+    const { type, runs } = extrasDialog;
+    processDelivery(runs + 1, false, false); // +1 for the extra itself
+    setExtrasDialog({ open: false, type: '', runs: 0 });
+    
+    toast({
+      title: `${type} added!`,
+      description: `${runs + 1} runs added as extras`,
+    });
   };
 
   const handleScoreUpdate = (newScore) => {
@@ -344,7 +348,7 @@ const LiveScoring = ({ currentMatch }) => {
         <CardContent className="text-center space-y-4">
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-bold mb-2">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="font-medium">Innings 1: {innings1Score.runs}/{innings1Score.wickets} ({innings1Score.overs} overs)</p>
               </div>
@@ -394,12 +398,12 @@ const LiveScoring = ({ currentMatch }) => {
   const currentBowlingPlayers = battingTeam === 1 ? team2Players : team1Players;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-4">
       {/* Match Selection */}
       {liveMatches.length > 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Select Live Match</CardTitle>
+            <CardTitle className="text-lg md:text-xl">Select Live Match</CardTitle>
           </CardHeader>
           <CardContent>
             <Select onValueChange={handleMatchSelect} value={selectedMatch?.id}>
@@ -420,17 +424,17 @@ const LiveScoring = ({ currentMatch }) => {
 
       {/* Live Score Header */}
       <Card className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-white">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h2>
-              <p className="text-blue-100">{selectedMatch.format} Match • Innings {currentInnings} • Over {currentOver}.{currentBall} of {selectedMatch.overs || 20}</p>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div className="text-center md:text-left">
+              <h2 className="text-lg md:text-xl font-bold text-white">{selectedMatch.team1?.name || 'Team 1'} vs {selectedMatch.team2?.name || 'Team 2'}</h2>
+              <p className="text-blue-100 text-sm md:text-base">{selectedMatch.format} Match • Innings {currentInnings} • Over {currentOver}.{currentBall} of {selectedMatch.overs || 20}</p>
               <p className="text-blue-100 text-sm">{selectedMatch.venue}</p>
               {currentInnings === 2 && (
                 <p className="text-yellow-200 text-sm font-medium">Target: {innings1Score.runs + 1} runs</p>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center md:justify-end gap-2">
               <Badge className="bg-red-500 text-white animate-pulse">LIVE</Badge>
               <Button 
                 onClick={endMatch}
@@ -446,20 +450,9 @@ const LiveScoring = ({ currentMatch }) => {
         </CardHeader>
         <CardContent>
           <div className="text-center">
-            <div className="text-4xl font-bold mb-2 text-white">{score.runs}/{score.wickets}</div>
+            <div className="text-3xl md:text-4xl font-bold mb-2 text-white">{score.runs}/{score.wickets}</div>
             <div className="text-lg text-white">({currentOver}.{currentBall} overs)</div>
-            <div className="mt-2 flex items-center justify-center gap-4 text-white">
-              <span>Balls: </span>
-              <Input
-                type="number"
-                min="0"
-                max="5"
-                value={currentBall}
-                onChange={(e) => editBallCount(parseInt(e.target.value) || 0)}
-                className="w-16 text-center text-black bg-white"
-              />
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 text-sm text-white">
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-white">
               <div>
                 <div className="font-semibold">Run Rate</div>
                 <div>{currentOver > 0 ? ((score.runs / (currentOver + currentBall/6)).toFixed(2)) : '0.00'}</div>
@@ -473,7 +466,7 @@ const LiveScoring = ({ currentMatch }) => {
                   }
                 </div>
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1">
                 <div className="font-semibold">Batting</div>
                 <div>{battingTeam === 1 ? selectedMatch.team1?.name : selectedMatch.team2?.name}</div>
               </div>
@@ -481,7 +474,7 @@ const LiveScoring = ({ currentMatch }) => {
           </div>
           
           {/* Action Buttons */}
-          <div className="flex justify-center gap-3 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mt-4">
             <ScoreCorrection 
               currentScore={score} 
               onScoreUpdate={handleScoreUpdate}
@@ -495,6 +488,14 @@ const LiveScoring = ({ currentMatch }) => {
               scoreData={score}
               currentBatsmen={currentBatsmen}
               currentBowler={currentBowler}
+            />
+            <PDFExport
+              matchData={selectedMatch}
+              scoreData={score}
+              currentBatsmen={currentBatsmen}
+              currentBowler={currentBowler}
+              innings1Score={innings1Score}
+              currentInnings={currentInnings}
             />
           </div>
         </CardContent>
@@ -510,25 +511,25 @@ const LiveScoring = ({ currentMatch }) => {
         currentBowler={currentBowler}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Scoring Controls */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Target className="w-5 h-5" />
               Quick Scoring
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 mb-4">
               {[0, 1, 2, 3, 4, 6].map((runs) => (
                 <Button
                   key={runs}
                   onClick={() => addRun(runs)}
-                  className={`h-12 text-lg font-bold ${
+                  className={`h-10 md:h-12 text-base md:text-lg font-bold text-white ${
                     runs === 4 ? 'bg-blue-500 hover:bg-blue-600' :
                     runs === 6 ? 'bg-orange-500 hover:bg-orange-600' :
-                    'bg-gray-500 hover:bg-gray-600'
+                    'bg-gray-600 hover:bg-gray-700'
                   }`}
                   disabled={matchEnded || isInningsBreak}
                 >
@@ -537,22 +538,33 @@ const LiveScoring = ({ currentMatch }) => {
               ))}
             </div>
             
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-4">
               <Button 
                 onClick={addWicket} 
                 variant="destructive" 
-                className="h-12"
+                className="h-10 md:h-12 text-white bg-red-600 hover:bg-red-700"
                 disabled={matchEnded || isInningsBreak}
               >
                 Wicket
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-12"
-                disabled={matchEnded || isInningsBreak}
-              >
-                Wide/No Ball
-              </Button>
+              <div className="grid grid-cols-2 gap-1 md:gap-2">
+                <Button 
+                  onClick={() => handleExtras('Wide')}
+                  variant="outline" 
+                  className="h-10 md:h-12 text-sm bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                  disabled={matchEnded || isInningsBreak}
+                >
+                  Wide
+                </Button>
+                <Button 
+                  onClick={() => handleExtras('No Ball')}
+                  variant="outline" 
+                  className="h-10 md:h-12 text-sm bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                  disabled={matchEnded || isInningsBreak}
+                >
+                  No Ball
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -575,7 +587,7 @@ const LiveScoring = ({ currentMatch }) => {
         {/* Current Players */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="w-5 h-5" />
               Current Players
             </CardTitle>
@@ -587,20 +599,20 @@ const LiveScoring = ({ currentMatch }) => {
                 <p className="text-gray-500 text-sm">No batsmen selected yet</p>
               ) : (
                 currentBatsmen.map((batsman, index) => (
-                  <div key={index} className={`flex justify-between items-center p-3 rounded-lg mb-2 ${
+                  <div key={index} className={`flex justify-between items-center p-2 md:p-3 rounded-lg mb-2 ${
                     index === strikerIndex ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-50'
                   }`}>
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-sm md:text-base">
                         {batsman.name} 
                         {index === strikerIndex && <span className="text-green-600 ml-1">*</span>}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs md:text-sm text-gray-600">
                         {batsman.runs || 0}({batsman.balls || 0}) • 4s: {batsman.fours || 0} • 6s: {batsman.sixes || 0}
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">{batsman.runs || 0}</div>
+                      <div className="font-bold text-sm md:text-base">{batsman.runs || 0}</div>
                       <div className="text-xs text-gray-500">
                         SR: {(batsman.balls || 0) > 0 ? (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'}
                       </div>
@@ -615,15 +627,15 @@ const LiveScoring = ({ currentMatch }) => {
               {!currentBowler ? (
                 <p className="text-gray-500 text-sm">No bowler selected yet</p>
               ) : (
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center p-2 md:p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium">{currentBowler.name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="font-medium text-sm md:text-base">{currentBowler.name}</p>
+                    <p className="text-xs md:text-sm text-gray-600">
                       {currentBowler.overs || 0} overs • {currentBowler.runs || 0} runs • {currentBowler.wickets || 0} wickets
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">{currentBowler.wickets || 0}/{currentBowler.runs || 0}</div>
+                    <div className="font-bold text-sm md:text-base">{currentBowler.wickets || 0}/{currentBowler.runs || 0}</div>
                     <div className="text-xs text-gray-500">
                       Econ: {(currentBowler.overs || 0) > 0 ? ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'}
                     </div>
@@ -638,7 +650,7 @@ const LiveScoring = ({ currentMatch }) => {
       {/* Over History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Activity className="w-5 h-5" />
             Recent Overs
           </CardTitle>
@@ -658,6 +670,39 @@ const LiveScoring = ({ currentMatch }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Extras Dialog */}
+      <Dialog open={extrasDialog.open} onOpenChange={(open) => setExtrasDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add {extrasDialog.type}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Additional Runs</label>
+              <Input
+                type="number"
+                min="0"
+                max="6"
+                value={extrasDialog.runs}
+                onChange={(e) => setExtrasDialog(prev => ({ ...prev, runs: parseInt(e.target.value) || 0 }))}
+                placeholder="Enter additional runs"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Total runs will be {extrasDialog.runs + 1} (1 for {extrasDialog.type.toLowerCase()} + {extrasDialog.runs} additional)
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setExtrasDialog({ open: false, type: '', runs: 0 })}>
+                Cancel
+              </Button>
+              <Button onClick={addExtras} className="bg-green-600 hover:bg-green-700">
+                Add {extrasDialog.type}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
