@@ -616,6 +616,7 @@ const LiveScoring = ({ currentMatch }) => {
               currentBowler={currentBowler}
               innings1Score={innings1Score}
               currentInnings={currentInnings}
+              winner={winner}
             />
           </div>
         </CardContent>
