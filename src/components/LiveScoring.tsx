@@ -19,6 +19,7 @@ import EnhancedCricketScoreboard from "./EnhancedCricketScoreboard";
 import TossSelector from "./TossSelector";
 import CompleteMatchScorecard from "./CompleteMatchScorecard";
 import PostMatchPerformers from "./PostMatchPerformers";
+import WicketSelector from "./WicketSelector";
 import { supabase } from "@/integrations/supabase/client";
 
 const LiveScoring = ({ currentMatch }) => {
@@ -56,6 +57,7 @@ const LiveScoring = ({ currentMatch }) => {
   const [tossCompleted, setTossCompleted] = useState(false);
   const [tossDialog, setTossDialog] = useState(false);
   const [tossResult, setTossResult] = useState({ winner: '', decision: '', tossInfo: '' });
+  const [wicketDialog, setWicketDialog] = useState(false);
 
   useEffect(() => {
     fetchLiveMatches();
@@ -246,7 +248,7 @@ const LiveScoring = ({ currentMatch }) => {
       }
 
       setMatchEnded(true);
-      setMomDialog(true); // Show MOM selection dialog
+      setMomDialog(true);
       
       toast({
         title: "Match Ended!",
@@ -257,8 +259,18 @@ const LiveScoring = ({ currentMatch }) => {
     }
   };
 
-  const processDelivery = (runs, isLegalDelivery = true, isWicket = false, shotType = null) => {
+  const processDelivery = (runs, isLegalDelivery = true, isWicket = false, shotType = null, wicketDetails = null) => {
     if (matchEnded || isInningsBreak) return;
+
+    // Safety check for current batsmen
+    if (currentBatsmen.length === 0 || !currentBatsmen[strikerIndex]) {
+      toast({
+        title: "Error",
+        description: "Please select batsmen first",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Add to recent balls
     const ballResult = isWicket ? 'W' : runs.toString();
@@ -268,7 +280,7 @@ const LiveScoring = ({ currentMatch }) => {
     setScore(prev => ({ ...prev, runs: prev.runs + runs }));
     
     // Update batsman stats if legal delivery
-    if (isLegalDelivery && currentBatsmen.length > strikerIndex) {
+    if (isLegalDelivery && currentBatsmen[strikerIndex]) {
       const updatedBatsmen = [...currentBatsmen];
       updatedBatsmen[strikerIndex] = {
         ...updatedBatsmen[strikerIndex],
@@ -298,11 +310,11 @@ const LiveScoring = ({ currentMatch }) => {
       }
       // Add wicket details
       setWickets(prev => [...prev, {
-        player: currentBatsmen[strikerIndex].name,
+        player: currentBatsmen[strikerIndex]?.name || 'Unknown',
         runs: score.runs,
         wicketNumber: score.wickets + 1,
         overs: formatOvers(currentOver, currentBall),
-        dismissal: currentBowler ? `c ${currentBowler.name} b ${currentBowler.name}` : 'bowled'
+        dismissal: wicketDetails || 'bowled'
       }]);
     }
 
@@ -399,7 +411,21 @@ const LiveScoring = ({ currentMatch }) => {
   };
 
   const addWicket = () => {
-    processDelivery(0, true, true);
+    // Safety check for current batsmen
+    if (currentBatsmen.length === 0 || !currentBatsmen[strikerIndex]) {
+      toast({
+        title: "Error",
+        description: "Please select batsmen first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setWicketDialog(true);
+  };
+
+  const handleWicketSelect = (wicketDetails) => {
+    processDelivery(0, true, true, null, wicketDetails);
+    setWicketDialog(false);
   };
 
   const handleExtras = (type) => {
@@ -866,6 +892,15 @@ const LiveScoring = ({ currentMatch }) => {
         onClose={() => setShotDialog({ open: false, runs: 0 })}
         onShotSelect={handleShotSelection}
         runs={shotDialog.runs}
+      />
+
+      <WicketSelector
+        open={wicketDialog}
+        onClose={() => setWicketDialog(false)}
+        onWicketSelect={handleWicketSelect}
+        fieldingPlayers={currentBowlingPlayers}
+        currentBowler={currentBowler}
+        currentBatsman={currentBatsmen[strikerIndex]}
       />
 
       <ManOfMatchSelector
