@@ -348,6 +348,7 @@ export type Database = {
           id: string
           matches: number | null
           name: string
+          photo_url: string | null
           role: string
           runs: number | null
           strike_rate: number | null
@@ -365,6 +366,7 @@ export type Database = {
           id?: string
           matches?: number | null
           name: string
+          photo_url?: string | null
           role: string
           runs?: number | null
           strike_rate?: number | null
@@ -382,6 +384,7 @@ export type Database = {
           id?: string
           matches?: number | null
           name?: string
+          photo_url?: string | null
           role?: string
           runs?: number | null
           strike_rate?: number | null

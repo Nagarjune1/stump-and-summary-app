@@ -75,10 +75,21 @@ const EnhancedPlayerManagement = () => {
     setPlayerStatsDialog(true);
   };
 
-  const handlePhotoUpload = async (file) => {
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
     if (!selectedPlayer || !file) return;
 
     try {
+      // Create a storage bucket for player photos if it doesn't exist
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'player-photos');
+      
+      if (!bucketExists) {
+        await supabase.storage.createBucket('player-photos', {
+          public: true
+        });
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${selectedPlayer.id}.${fileExt}`;
       
@@ -92,10 +103,12 @@ const EnhancedPlayerManagement = () => {
         .from('player-photos')
         .getPublicUrl(fileName);
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('players')
         .update({ photo_url: publicUrl })
         .eq('id', selectedPlayer.id);
+
+      if (updateError) throw updateError;
 
       toast({
         title: "Photo uploaded successfully!",
@@ -281,10 +294,7 @@ const EnhancedPlayerManagement = () => {
             <Input
               type="file"
               accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handlePhotoUpload(file);
-              }}
+              onChange={handlePhotoUpload}
             />
           </div>
         </DialogContent>
