@@ -16,6 +16,9 @@ import MatchAnalytics from "./MatchAnalytics";
 import ManOfMatchSelector from "./ManOfMatchSelector";
 import BowlerSelector from "./BowlerSelector";
 import EnhancedCricketScoreboard from "./EnhancedCricketScoreboard";
+import TossSelector from "./TossSelector";
+import CompleteMatchScorecard from "./CompleteMatchScorecard";
+import PostMatchPerformers from "./PostMatchPerformers";
 import { supabase } from "@/integrations/supabase/client";
 
 const LiveScoring = ({ currentMatch }) => {
@@ -50,6 +53,9 @@ const LiveScoring = ({ currentMatch }) => {
   const [bowlers, setBowlers] = useState([]);
   const [wickets, setWickets] = useState([]);
   const [oversData, setOversData] = useState([]);
+  const [tossCompleted, setTossCompleted] = useState(false);
+  const [tossDialog, setTossDialog] = useState(false);
+  const [tossResult, setTossResult] = useState({ winner: '', decision: '', tossInfo: '' });
 
   useEffect(() => {
     fetchLiveMatches();
@@ -135,6 +141,8 @@ const LiveScoring = ({ currentMatch }) => {
     setRecentBalls([]);
     setManOfMatch(null);
     setManOfSeries(null);
+    setTossCompleted(false);
+    setTossResult({ winner: '', decision: '', tossInfo: '' });
   };
 
   const formatOvers = (overs, balls) => {
@@ -475,6 +483,18 @@ const LiveScoring = ({ currentMatch }) => {
     setMomDialog(false);
   };
 
+  const handleTossComplete = (tossWinner, decision, battingFirst) => {
+    const tossInfo = `${tossWinner} won the toss and elected to ${decision} first`;
+    setTossResult({ winner: tossWinner, decision, tossInfo });
+    setBattingTeam(battingFirst);
+    setTossCompleted(true);
+    
+    toast({
+      title: "Toss Completed!",
+      description: tossInfo,
+    });
+  };
+
   if (liveMatches.length === 0) {
     return (
       <Card className="max-w-md mx-auto">
@@ -502,85 +522,70 @@ const LiveScoring = ({ currentMatch }) => {
   }
 
   if (matchEnded) {
-    return (
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center text-green-600">Match Completed!</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center space-y-4">
-          {winner && (
-            <div className="bg-yellow-50 border-2 border-yellow-300 p-4 rounded-lg mb-4">
-              <h2 className="text-2xl font-bold text-yellow-800">{winner}</h2>
-            </div>
-          )}
+    const allPlayers = [...team1Players, ...team2Players].map(player => {
+      // Find player stats from current match
+      const battingStats = currentBatsmen.find(b => b.id === player.id) || {};
+      const bowlingStats = bowlers.find(b => b.id === player.id) || {};
+      
+      return {
+        ...player,
+        ...battingStats,
+        ...bowlingStats
+      };
+    });
 
-          {(manOfMatch || manOfSeries) && (
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-lg mb-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Trophy className="w-6 h-6" />
-                <h3 className="text-xl font-bold">Match Awards</h3>
-              </div>
-              {manOfMatch && (
-                <p className="font-semibold">Man of the Match: {manOfMatch.name}</p>
-              )}
-              {manOfSeries && (
-                <p className="font-semibold">Man of the Series: {manOfSeries.name}</p>
-              )}
-            </div>
-          )}
-          
-          <EnhancedCricketScoreboard
+    return (
+      <div className="space-y-6">
+        <CompleteMatchScorecard
+          matchData={selectedMatch}
+          innings1Data={innings1Score}
+          innings2Data={currentInnings === 2 ? score : null}
+          team1Players={battingTeam === 1 ? allPlayers.filter(p => team1Players.some(t1 => t1.id === p.id)) : allPlayers.filter(p => team2Players.some(t2 => t2.id === p.id))}
+          team2Players={battingTeam === 1 ? allPlayers.filter(p => team2Players.some(t2 => t2.id === p.id)) : allPlayers.filter(p => team1Players.some(t1 => t1.id === p.id))}
+          result={winner}
+          tossInfo={tossResult.tossInfo}
+        />
+        
+        <PostMatchPerformers
+          allPlayers={allPlayers}
+          matchData={selectedMatch}
+          manOfMatch={manOfMatch}
+          bestBowler={null}
+        />
+        
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="w-4 h-4" />
+            {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
+          </Button>
+          <ExportReport 
             matchData={selectedMatch}
-            score={score}
+            scoreData={score}
             currentBatsmen={currentBatsmen}
             currentBowler={currentBowler}
             innings1Score={innings1Score}
             currentInnings={currentInnings}
-            currentOver={currentOver}
-            currentBall={currentBall}
-            battingTeam={battingTeam}
-            target={innings1Score.runs + 1}
-            requiredRunRate={calculateRequiredRunRate()}
-            currentRunRate={calculateRunRate(score.runs, currentOver, currentBall)}
+            winner={winner}
+            manOfMatch={manOfMatch}
+            manOfSeries={manOfSeries}
             recentBalls={recentBalls}
-            bowlers={bowlers}
-            wickets={wickets}
-            oversData={oversData}
           />
-          
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <TrendingUp className="w-4 h-4" />
-              {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
-            </Button>
-            <ExportReport 
-              matchData={selectedMatch}
-              scoreData={score}
-              currentBatsmen={currentBatsmen}
-              currentBowler={currentBowler}
-              innings1Score={innings1Score}
-              currentInnings={currentInnings}
-              winner={winner}
-              manOfMatch={manOfMatch}
-              manOfSeries={manOfSeries}
-              recentBalls={recentBalls}
-            />
-          </div>
-          {showAnalytics && (
-            <MatchAnalytics
-              matchData={selectedMatch}
-              innings1Score={innings1Score}
-              innings2Score={score}
-              currentBatsmen={currentBatsmen}
-              currentBowler={currentBowler}
-            />
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        
+        {showAnalytics && (
+          <MatchAnalytics
+            matchData={selectedMatch}
+            innings1Score={innings1Score}
+            innings2Score={score}
+            currentBatsmen={currentBatsmen}
+            currentBowler={currentBowler}
+          />
+        )}
+      </div>
     );
   }
 
@@ -605,6 +610,45 @@ const LiveScoring = ({ currentMatch }) => {
           </Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Show toss dialog before starting match
+  if (!tossCompleted && selectedMatch && team1Players.length > 0 && team2Players.length > 0) {
+    return (
+      <div className="space-y-4">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-center">Ready to Start Match</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-bold mb-2">Match Setup Complete</h3>
+              <p className="text-sm text-gray-600">
+                {selectedMatch.team1?.name} vs {selectedMatch.team2?.name}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Teams and players are ready. Complete the toss to begin.
+              </p>
+            </div>
+            <Button 
+              onClick={() => setTossDialog(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
+            >
+              Complete Toss & Start Match
+            </Button>
+          </CardContent>
+        </Card>
+
+        <TossSelector
+          isOpen={tossDialog}
+          onClose={() => setTossDialog(false)}
+          team1Name={selectedMatch.team1?.name}
+          team2Name={selectedMatch.team2?.name}
+          onTossComplete={handleTossComplete}
+        />
+      </div>
     );
   }
 
