@@ -33,6 +33,13 @@ const CricketScoreboard = ({
   const runsNeeded = currentInnings === 2 ? 
     Math.max(0, target - score.runs) : 0;
 
+  // Calculate overs left with proper type handling
+  const oversLeft = () => {
+    const totalOvers = Number(matchData.overs || 20);
+    const currentOversDecimal = Number(currentOver) + (Number(currentBall) / 6);
+    return (totalOvers - currentOversDecimal).toFixed(1);
+  };
+
   return (
     <div className="space-y-4">
       {/* Match Header */}
@@ -94,7 +101,7 @@ const CricketScoreboard = ({
                         {batsman.name} {index === 0 ? '*' : ''}
                       </span>
                       <span className="text-sm text-gray-600">
-                        {index === 0 ? 'batting' : 'batting'}
+                        {batsman.isOut ? `${batsman.dismissalType || 'out'}` : 'batting'}
                       </span>
                     </div>
                     <div className="flex gap-4 text-sm">
@@ -111,7 +118,7 @@ const CricketScoreboard = ({
           </div>
 
           {/* Partnership Info */}
-          {currentBatsmen.length === 2 && (
+          {currentBatsmen.length === 2 && !currentBatsmen.some(b => b.isOut) && (
             <div className="bg-blue-50 p-3 rounded">
               <p className="text-sm font-medium text-blue-800">
                 Partnership: {partnership} ({(currentBatsmen[0].balls || 0) + (currentBatsmen[1].balls || 0)})
@@ -199,7 +206,7 @@ const CricketScoreboard = ({
             </div>
             <div className="text-center">
               <div className="font-semibold">Overs Left</div>
-              <div className="text-lg">{(matchData.overs || 20) - currentOver - (currentBall / 6).toFixed(1)}</div>
+              <div className="text-lg">{oversLeft()}</div>
             </div>
           </div>
         </CardContent>
