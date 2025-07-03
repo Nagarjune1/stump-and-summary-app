@@ -225,15 +225,20 @@ const LiveScoring = ({ currentMatch }) => {
     try {
       const result = determineWinner();
       
+      // Save player stats first
+      await savePlayerStats();
+      
       const { error } = await supabase
         .from('matches')
         .update({ 
           status: 'completed',
-          team1_score: currentInnings === 1 ? `${score.runs}/${score.wickets}` : `${innings1Score.runs}/${innings1Score.wickets}`,
-          team1_overs: currentInnings === 1 ? `${currentOver}.${currentBall}` : `${innings1Score.overs}.0`,
-          team2_score: currentInnings === 2 ? `${score.runs}/${score.wickets}` : null,
-          team2_overs: currentInnings === 2 ? `${currentOver}.${currentBall}` : null,
-          result: result
+          team1_score: battingTeam === 1 ? `${score.runs}/${score.wickets}` : `${innings1Score.runs}/${innings1Score.wickets}`,
+          team1_overs: battingTeam === 1 ? `${currentOver}.${currentBall}` : `${innings1Score.overs}.0`,
+          team2_score: battingTeam === 2 ? `${score.runs}/${score.wickets}` : currentInnings === 2 ? `${score.runs}/${score.wickets}` : null,
+          team2_overs: battingTeam === 2 ? `${currentOver}.${currentBall}` : currentInnings === 2 ? `${currentOver}.${currentBall}` : null,
+          result: result,
+          toss_winner: tossResult.winner,
+          toss_decision: tossResult.decision
         })
         .eq('id', selectedMatch.id);
 
@@ -256,6 +261,93 @@ const LiveScoring = ({ currentMatch }) => {
       });
     } catch (error) {
       console.error('Error ending match:', error);
+    }
+  };
+
+  const savePlayerStats = async () => {
+    if (!selectedMatch) return;
+
+    try {
+      // Save batting stats
+      for (const batsman of currentBatsmen) {
+        if (batsman.runs !== undefined || batsman.balls !== undefined) {
+          await supabase.from('match_stats').upsert({
+            match_id: selectedMatch.id,
+            player_id: batsman.id,
+            innings: currentInnings,
+            runs_scored: batsman.runs || 0,
+            balls_faced: batsman.balls || 0,
+            fours: batsman.fours || 0,
+            sixes: batsman.sixes || 0,
+            strike_rate: (batsman.balls || 0) > 0 ? ((batsman.runs || 0) / (batsman.balls || 0)) * 100 : 0,
+            dismissal_type: batsman.dismissalType || null
+          });
+
+          // Update player career stats
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('*')
+            .eq('id', batsman.id)
+            .single();
+
+          if (playerData) {
+            const newRuns = (playerData.runs || 0) + (batsman.runs || 0);
+            const newMatches = (playerData.matches || 0) + (currentInnings === 1 ? 1 : 0);
+            const newAverage = newMatches > 0 ? newRuns / newMatches : 0;
+
+            await supabase
+              .from('players')
+              .update({
+                runs: newRuns,
+                matches: newMatches,
+                average: newAverage,
+                strike_rate: (batsman.balls || 0) > 0 ? ((batsman.runs || 0) / (batsman.balls || 0)) * 100 : (playerData.strike_rate || 0),
+                best_score: Math.max(batsman.runs || 0, parseInt(playerData.best_score || '0')) + (batsman.isOut ? '' : '*')
+              })
+              .eq('id', batsman.id);
+          }
+        }
+      }
+
+      // Save bowling stats
+      for (const bowler of bowlers) {
+        if (bowler.overs !== undefined || bowler.runs !== undefined) {
+          await supabase.from('match_stats').upsert({
+            match_id: selectedMatch.id,
+            player_id: bowler.id,
+            innings: currentInnings,
+            overs_bowled: bowler.overs || 0,
+            runs_conceded: bowler.runs || 0,
+            wickets_taken: bowler.wickets || 0,
+            economy_rate: (bowler.overs || 0) > 0 ? (bowler.runs || 0) / (bowler.overs || 0) : 0
+          });
+
+          // Update player career stats
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('*')
+            .eq('id', bowler.id)
+            .single();
+
+          if (playerData) {
+            const newWickets = (playerData.wickets || 0) + (bowler.wickets || 0);
+            const newMatches = (playerData.matches || 0) + (currentInnings === 1 ? 1 : 0);
+
+            await supabase
+              .from('players')
+              .update({
+                wickets: newWickets,
+                matches: newMatches,
+                economy: (bowler.overs || 0) > 0 ? (bowler.runs || 0) / (bowler.overs || 0) : (playerData.economy || 0),
+                best_bowling: bowler.wickets > parseInt((playerData.best_bowling || '0/0').split('/')[0]) ? 
+                  `${bowler.wickets}/${bowler.runs}` : playerData.best_bowling
+              })
+              .eq('id', bowler.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving player stats:', error);
     }
   };
 
@@ -515,6 +607,8 @@ const LiveScoring = ({ currentMatch }) => {
     setBattingTeam(battingFirst);
     setTossCompleted(true);
     
+    console.log('Toss completed:', { tossWinner, decision, battingFirst, tossInfo });
+    
     toast({
       title: "Toss Completed!",
       description: tossInfo,
@@ -639,8 +733,8 @@ const LiveScoring = ({ currentMatch }) => {
     );
   }
 
-  // Show toss dialog before starting match
-  if (!tossCompleted && selectedMatch && team1Players.length > 0 && team2Players.length > 0) {
+  // Show toss dialog only once when match is ready but toss not completed
+  if (!tossCompleted && selectedMatch && team1Players.length > 0 && team2Players.length > 0 && !matchEnded) {
     return (
       <div className="space-y-4">
         <Card className="max-w-2xl mx-auto">
