@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, MapPin, Clock, Users } from "lucide-react";
 
-const MatchHeader = ({ matchData, tossInfo, playingXI }) => {
+const MatchHeader = ({ matchData, tossInfo, playingXI }: { matchData: any; tossInfo: any; playingXI?: any }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
