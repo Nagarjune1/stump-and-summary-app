@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trophy, Users, Activity } from "lucide-react";
+import { Plus, Trophy, Users, Activity, BookOpen } from "lucide-react";
 import LiveScoring from "@/components/LiveScoring";
 import PlayerProfiles from "@/components/PlayerProfiles";
 import MatchSummary from "@/components/MatchSummary";
 import CreateMatch from "@/components/CreateMatch";
+import Documentation from "@/components/Documentation";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -19,10 +19,29 @@ const Index = () => {
     totalPlayers: 0,
     recentMatches: []
   });
+  const [showDocumentation, setShowDocumentation] = useState(true);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchAppSettings();
   }, []);
+
+  const fetchAppSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('setting_key, setting_value')
+        .eq('setting_key', 'show_documentation');
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setShowDocumentation(data[0].setting_value === 'true');
+      }
+    } catch (error) {
+      console.error('Error fetching app settings:', error);
+    }
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -85,7 +104,7 @@ const Index = () => {
 
       <div className="max-w-6xl mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className={`grid w-full ${showDocumentation ? 'grid-cols-6' : 'grid-cols-5'} mb-6`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -106,9 +125,16 @@ const Index = () => {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">New Match</span>
             </TabsTrigger>
+            {showDocumentation && (
+              <TabsTrigger value="docs" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Docs</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <CardHeader className="pb-2">
@@ -240,6 +266,12 @@ const Index = () => {
               onMatchStarted={handleMatchStarted}
             />
           </TabsContent>
+
+          {showDocumentation && (
+            <TabsContent value="docs">
+              <Documentation />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
