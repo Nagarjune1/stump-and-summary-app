@@ -152,6 +152,7 @@ const LiveScoring = ({ currentMatch }) => {
     setTossCompleted(false);
     setTossResult({ winner: '', decision: '', tossInfo: '' });
     setMatchInitialized(false);
+    setTossDialog(false);
   };
 
   const formatOvers = (overs, balls) => {
@@ -245,7 +246,9 @@ const LiveScoring = ({ currentMatch }) => {
           team2_overs: battingTeam === 2 ? `${currentOver}.${currentBall}` : currentInnings === 2 ? `${currentOver}.${currentBall}` : null,
           result: result,
           toss_winner: tossResult.winner,
-          toss_decision: tossResult.decision
+          toss_decision: tossResult.decision,
+          man_of_match: manOfMatch?.id,
+          man_of_series: manOfSeries?.id
         })
         .eq('id', selectedMatch.id);
 
@@ -741,8 +744,8 @@ const LiveScoring = ({ currentMatch }) => {
     );
   }
 
-  // Show toss dialog only once when match is ready but toss not completed
-  if (!tossCompleted && selectedMatch && matchInitialized && !matchEnded && !tossDialog) {
+  // Show toss dialog only when match is ready and toss not completed
+  if (!tossCompleted && selectedMatch && matchInitialized && !matchEnded) {
     return (
       <div className="space-y-4">
         <Card className="max-w-2xl mx-auto">
@@ -1021,17 +1024,6 @@ const LiveScoring = ({ currentMatch }) => {
         onBowlerSelect={handleBowlerSelect}
         currentOver={currentOver}
       />
-
-      {/* Only show TossSelector when explicitly opened */}
-      {tossDialog && (
-        <TossSelector
-          isOpen={tossDialog}
-          onClose={() => setTossDialog(false)}
-          team1Name={selectedMatch.team1?.name}
-          team2Name={selectedMatch.team2?.name}
-          onTossComplete={handleTossComplete}
-        />
-      )}
     </div>
   );
 };

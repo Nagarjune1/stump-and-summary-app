@@ -8,28 +8,86 @@ import { toast } from "@/hooks/use-toast";
 
 const ExportReport = ({ 
   matchData, 
-  scoreData, 
-  currentBatsmen, 
-  currentBowler, 
-  innings1Score, 
-  currentInnings, 
-  winner,
-  manOfMatch,
-  manOfSeries,
-  recentBalls = []
+  scoreData = { runs: 0, wickets: 0, overs: 0, balls: 0 }, 
+  currentBatsmen = [], 
+  currentBowler = null, 
+  innings1Score = { runs: 0, wickets: 0, overs: 0 }, 
+  currentInnings = 1, 
+  winner = null,
+  manOfMatch = null,
+  manOfSeries = null,
+  recentBalls = [],
+  allPlayers = []
 }) => {
   const [exporting, setExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState("json");
 
   const generateMatchReport = () => {
+    if (!matchData) {
+      return {
+        matchInfo: {
+          title: "Match Report",
+          venue: "Unknown",
+          date: new Date().toISOString().split('T')[0],
+          format: "T20",
+          overs: 20,
+          result: winner || "Match in progress"
+        },
+        toss: {
+          winner: "Not specified",
+          decision: "Not specified"
+        },
+        innings: {
+          first: {
+            team: "Team 1",
+            score: `${innings1Score.runs}/${innings1Score.wickets}`,
+            overs: `${innings1Score.overs}.0`,
+            runRate: innings1Score.overs > 0 ? (innings1Score.runs / innings1Score.overs).toFixed(2) : '0.00'
+          },
+          second: currentInnings === 2 ? {
+            team: "Team 2",
+            score: `${scoreData.runs}/${scoreData.wickets}`,
+            overs: `${scoreData.overs}.${scoreData.balls || 0}`,
+            runRate: (scoreData.overs + (scoreData.balls || 0) / 6) > 0 ? 
+              (scoreData.runs / (scoreData.overs + (scoreData.balls || 0) / 6)).toFixed(2) : '0.00'
+          } : null
+        },
+        performance: {
+          currentBatsmen: currentBatsmen.map(batsman => ({
+            name: batsman.name || 'Unknown',
+            runs: batsman.runs || 0,
+            balls: batsman.balls || 0,
+            fours: batsman.fours || 0,
+            sixes: batsman.sixes || 0,
+            strikeRate: (batsman.balls || 0) > 0 ? 
+              (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'
+          })),
+          currentBowler: currentBowler ? {
+            name: currentBowler.name || 'Unknown',
+            overs: currentBowler.overs || 0,
+            runs: currentBowler.runs || 0,
+            wickets: currentBowler.wickets || 0,
+            economy: (currentBowler.overs || 0) > 0 ? 
+              ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'
+          } : null
+        },
+        recentBalls: recentBalls.slice(-12),
+        awards: {
+          manOfMatch: manOfMatch?.name || null,
+          manOfSeries: manOfSeries?.name || null
+        },
+        summary: generateMatchSummary()
+      };
+    }
+
     const report = {
       matchInfo: {
-        title: `${matchData.team1?.name} vs ${matchData.team2?.name}`,
-        venue: matchData.venue,
-        date: matchData.match_date,
-        format: matchData.format,
-        overs: matchData.overs,
-        result: winner
+        title: `${matchData.team1?.name || 'Team 1'} vs ${matchData.team2?.name || 'Team 2'}`,
+        venue: matchData.venue || 'Unknown Venue',
+        date: matchData.match_date || new Date().toISOString().split('T')[0],
+        format: matchData.format || 'T20',
+        overs: matchData.overs || 20,
+        result: winner || matchData.result || 'Match in progress'
       },
       toss: {
         winner: matchData.toss_winner || 'Not specified',
@@ -37,22 +95,22 @@ const ExportReport = ({
       },
       innings: {
         first: {
-          team: matchData.team1?.name,
+          team: matchData.team1?.name || 'Team 1',
           score: `${innings1Score.runs}/${innings1Score.wickets}`,
           overs: `${innings1Score.overs}.0`,
           runRate: innings1Score.overs > 0 ? (innings1Score.runs / innings1Score.overs).toFixed(2) : '0.00'
         },
         second: currentInnings === 2 ? {
-          team: matchData.team2?.name,
+          team: matchData.team2?.name || 'Team 2',
           score: `${scoreData.runs}/${scoreData.wickets}`,
-          overs: `${scoreData.overs}.${scoreData.balls}`,
-          runRate: (scoreData.overs + (scoreData.balls / 6)) > 0 ? 
-            (scoreData.runs / (scoreData.overs + (scoreData.balls / 6))).toFixed(2) : '0.00'
+          overs: `${scoreData.overs}.${scoreData.balls || 0}`,
+          runRate: (scoreData.overs + (scoreData.balls || 0) / 6) > 0 ? 
+            (scoreData.runs / (scoreData.overs + (scoreData.balls || 0) / 6)).toFixed(2) : '0.00'
         } : null
       },
       performance: {
-        currentBatsmen: currentBatsmen.map(batsman => ({
-          name: batsman.name,
+        currentBatsmen: (allPlayers.length > 0 ? allPlayers.filter(p => p.runs !== undefined) : currentBatsmen).map(batsman => ({
+          name: batsman.name || 'Unknown',
           runs: batsman.runs || 0,
           balls: batsman.balls || 0,
           fours: batsman.fours || 0,
@@ -61,13 +119,21 @@ const ExportReport = ({
             (((batsman.runs || 0) / (batsman.balls || 0)) * 100).toFixed(1) : '0.0'
         })),
         currentBowler: currentBowler ? {
-          name: currentBowler.name,
+          name: currentBowler.name || 'Unknown',
           overs: currentBowler.overs || 0,
           runs: currentBowler.runs || 0,
           wickets: currentBowler.wickets || 0,
           economy: (currentBowler.overs || 0) > 0 ? 
             ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'
-        } : null
+        } : null,
+        bowlers: allPlayers.filter(p => p.overs !== undefined && p.overs > 0).map(bowler => ({
+          name: bowler.name || 'Unknown',
+          overs: bowler.overs || 0,
+          runs: bowler.runs || 0,
+          wickets: bowler.wickets || 0,
+          economy: (bowler.overs || 0) > 0 ? 
+            ((bowler.runs || 0) / (bowler.overs || 0)).toFixed(1) : '0.0'
+        }))
       },
       recentBalls: recentBalls.slice(-12),
       awards: {
@@ -81,17 +147,18 @@ const ExportReport = ({
   };
 
   const generateMatchSummary = () => {
-    if (!winner) return "Match in progress";
+    if (!winner && !matchData?.result) return "Match in progress";
     
-    const team1Name = matchData.team1?.name;
-    const team2Name = matchData.team2?.name;
-    const topScorer = currentBatsmen.reduce((top, batsman) => 
-      (batsman.runs || 0) > (top.runs || 0) ? batsman : top, currentBatsmen[0] || {});
+    const result = winner || matchData?.result || "Match completed";
+    let summary = result;
     
-    let summary = winner;
-    
-    if (topScorer.name) {
-      summary += `. ${topScorer.name} top scored with ${topScorer.runs || 0}(${topScorer.balls || 0}).`;
+    if (currentBatsmen.length > 0) {
+      const topScorer = currentBatsmen.reduce((top, batsman) => 
+        (batsman.runs || 0) > (top.runs || 0) ? batsman : top, currentBatsmen[0] || {});
+      
+      if (topScorer.name && topScorer.runs > 0) {
+        summary += `. ${topScorer.name} top scored with ${topScorer.runs || 0}(${topScorer.balls || 0}).`;
+      }
     }
     
     if (currentBowler && currentBowler.wickets > 0) {
@@ -198,9 +265,9 @@ Generated on: ${new Date().toLocaleString()}
   const handleExport = () => {
     setExporting(true);
     
-    const report = generateMatchReport();
-    
     try {
+      const report = generateMatchReport();
+      
       switch (exportFormat) {
         case 'json':
           exportAsJSON(report);
@@ -220,6 +287,7 @@ Generated on: ${new Date().toLocaleString()}
         description: `Match report exported as ${exportFormat.toUpperCase()}`,
       });
     } catch (error) {
+      console.error('Export error:', error);
       toast({
         title: "Export Failed",
         description: "There was an error exporting the report",
@@ -231,32 +299,31 @@ Generated on: ${new Date().toLocaleString()}
   };
 
   const shareReport = async () => {
-    const report = generateMatchReport();
-    const shareText = `${report.matchInfo.title}
+    try {
+      const report = generateMatchReport();
+      const shareText = `${report.matchInfo.title}
 ${report.matchInfo.result || 'Match in progress'}
 ${report.summary}`;
 
-    if (navigator.share) {
-      try {
+      if (navigator.share) {
         await navigator.share({
           title: `Cricket Match: ${report.matchInfo.title}`,
           text: shareText,
           url: window.location.href
         });
-      } catch (error) {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(shareText);
+      } else {
+        await navigator.clipboard.writeText(shareText);
         toast({
           title: "Copied to Clipboard!",
           description: "Match summary copied to clipboard",
         });
       }
-    } else {
-      // Fallback to clipboard
-      navigator.clipboard.writeText(shareText);
+    } catch (error) {
+      console.error('Share error:', error);
       toast({
-        title: "Copied to Clipboard!",
-        description: "Match summary copied to clipboard",
+        title: "Share Failed",
+        description: "Unable to share the report",
+        variant: "destructive"
       });
     }
   };

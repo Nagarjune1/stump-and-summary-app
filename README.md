@@ -1,73 +1,230 @@
-# Welcome to your Lovable project
 
-## Project info
+# Cricket Live Scoring App
 
-**URL**: https://lovable.dev/projects/6a42a7d9-96b0-400c-9829-f485c85156ee
+A comprehensive cricket live scoring application built with React, TypeScript, and Supabase. This app allows real-time scoring, player management, match analytics, and detailed reporting for cricket matches.
 
-## How can I edit this code?
+## 🏏 Features
 
-There are several ways of editing your application.
+### Match Management
+- Create and manage cricket matches
+- Support for multiple formats (T20, ODI, Test)
+- Live match status tracking
+- Toss management with team selection
+- Innings management with automatic transitions
 
-**Use Lovable**
+### Live Scoring
+- Real-time ball-by-ball scoring
+- Quick scoring buttons (0, 1, 2, 3, 4, 6)
+- Wicket tracking with detailed dismissal types
+- Extras handling (Wides, No Balls, Byes, Leg Byes)
+- Strike rotation management
+- Over completion tracking
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6a42a7d9-96b0-400c-9829-f485c85156ee) and start prompting.
+### Player Management
+- Comprehensive player profiles with photos
+- Team-wise player organization
+- Player statistics tracking (batting & bowling)
+- Career statistics calculation
+- Player performance analytics
 
-Changes made via Lovable will be committed automatically to this repo.
+### Analytics & Reporting
+- Match analytics with charts and graphs
+- Run rate calculations
+- Partnership tracking
+- Fall of wickets visualization
+- Player performance metrics
+- Man of the Match/Series selection
 
-**Use your preferred IDE**
+### Export & Sharing
+- Multiple export formats (PDF, PNG, JSON, CSV, TXT)
+- Comprehensive match reports
+- Social media sharing capabilities
+- Print-friendly scorecards
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Frontend
+- **React** (^18.3.1) - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool and development server
+- **React Router DOM** (^6.26.2) - Client-side routing
 
-Follow these steps:
+### UI Components & Styling
+- **Tailwind CSS** - Utility-first CSS framework
+- **Shadcn UI** - Pre-built component library
+- **Radix UI** - Primitive components for accessibility
+- **Lucide React** (^0.462.0) - Icon library
+- **Class Variance Authority** (^0.7.1) - Component variants
+- **Tailwind Merge** (^2.5.2) - Conditional CSS classes
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### Backend & Database
+- **Supabase** (^2.50.2) - Backend as a Service
+  - PostgreSQL database
+  - Real-time subscriptions
+  - Authentication
+  - Row Level Security (RLS)
+  - Storage for player photos
+
+### State Management & Data Fetching
+- **TanStack React Query** (^5.56.2) - Server state management
+- **React Hook Form** (^7.53.0) - Form management
+- **Hookform Resolvers** (^3.9.0) - Form validation
+
+### Charts & Visualization
+- **Recharts** (^2.12.7) - Data visualization library
+
+### File Processing & Export
+- **html2canvas** (^1.4.1) - HTML to canvas conversion
+- **jsPDF** (^3.0.1) - PDF generation
+
+### UI Enhancements
+- **Next Themes** (^0.3.0) - Theme management
+- **Sonner** (^1.5.0) - Toast notifications
+- **React Day Picker** (^8.10.1) - Date picker
+- **Input OTP** (^1.2.4) - OTP input component
+- **Embla Carousel React** (^8.3.0) - Carousel component
+- **React Resizable Panels** (^2.1.3) - Resizable layouts
+- **Vaul** (^0.9.3) - Drawer component
+- **CMDK** (^1.0.0) - Command palette
+
+### Utilities & Validation
+- **Date-fns** (^3.6.0) - Date utility library
+- **Zod** (^3.23.8) - Schema validation
+- **clsx** (^2.1.1) - Conditional CSS classes
+
+## 📋 Database Schema
+
+### Tables
+- **teams** - Team information
+- **players** - Player profiles and statistics
+- **matches** - Match details and results
+- **match_stats** - Player performance in matches
+- **ball_by_ball** - Detailed ball-by-ball data
+- **partnerships** - Batting partnerships
+- **series** - Tournament/series information
+
+### Key Features
+- Row Level Security (RLS) policies
+- Real-time data synchronization
+- Foreign key relationships
+- Optimized queries for performance
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn package manager
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Set up environment variables:
+```bash
+# Create .env.local file with your Supabase credentials
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Database Setup
+1. Create a new Supabase project
+2. Run the provided SQL migrations
+3. Set up Row Level Security policies
+4. Configure authentication (if needed)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📱 Usage
 
-**Use GitHub Codespaces**
+### Starting a Match
+1. Create teams and add players
+2. Create a new match with team selection
+3. Complete the toss
+4. Start live scoring
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Live Scoring
+1. Select opening batsmen and bowler
+2. Use quick scoring buttons for runs
+3. Handle wickets with dismissal details
+4. Manage extras and strike rotation
+5. Complete overs and change bowlers
 
-## What technologies are used for this project?
+### Match Completion
+1. Complete both innings
+2. Select Man of the Match
+3. View detailed scorecard
+4. Export match report
 
-This project is built with:
+## 🎯 Roadmap
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Phase 1 (Current)
+- [x] Basic live scoring functionality
+- [x] Player and team management
+- [x] Match creation and management
+- [x] Real-time scoring updates
+- [x] Basic reporting and exports
 
-## How can I deploy this project?
+### Phase 2 (In Progress)
+- [ ] Advanced analytics dashboard
+- [ ] Performance comparison tools
+- [ ] Tournament management
+- [ ] Mobile app optimization
+- [ ] Offline scoring capability
 
-Simply open [Lovable](https://lovable.dev/projects/6a42a7d9-96b0-400c-9829-f485c85156ee) and click on Share -> Publish.
+### Phase 3 (Planned)
+- [ ] Video highlights integration
+- [ ] Social media integration
+- [ ] Multi-language support
+- [ ] Advanced statistics (Wagon wheel, Heat maps)
+- [ ] Commentary system
+- [ ] Live streaming integration
 
-## Can I connect a custom domain to my Lovable project?
+### Phase 4 (Future)
+- [ ] AI-powered insights
+- [ ] Fantasy cricket integration
+- [ ] Betting odds integration
+- [ ] Professional league support
+- [ ] Advanced user roles and permissions
 
-Yes, you can!
+## 🤝 Contributing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## 🆘 Support
+
+For support, please contact us through:
+- GitHub Issues
+- Discord Community
+- Email support
+
+## 🙏 Acknowledgments
+
+- Shadcn UI for the beautiful component library
+- Supabase for the excellent backend platform
+- Recharts for data visualization
+- All contributors and testers
+
+---
+
+Built with ❤️ for cricket enthusiasts worldwide!
