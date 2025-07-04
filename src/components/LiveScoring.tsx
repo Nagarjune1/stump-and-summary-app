@@ -58,6 +58,7 @@ const LiveScoring = ({ currentMatch }) => {
   const [tossDialog, setTossDialog] = useState(false);
   const [tossResult, setTossResult] = useState({ winner: '', decision: '', tossInfo: '' });
   const [wicketDialog, setWicketDialog] = useState(false);
+  const [matchInitialized, setMatchInitialized] = useState(false);
 
   useEffect(() => {
     fetchLiveMatches();
@@ -121,6 +122,11 @@ const LiveScoring = ({ currentMatch }) => {
 
       setTeam1Players(team1Data || []);
       setTeam2Players(team2Data || []);
+      
+      // Mark match as ready for initialization after players are loaded
+      if (!matchInitialized && (team1Data?.length > 0 || team2Data?.length > 0)) {
+        setMatchInitialized(true);
+      }
     } catch (error) {
       console.error('Error fetching players:', error);
     }
@@ -145,6 +151,7 @@ const LiveScoring = ({ currentMatch }) => {
     setManOfSeries(null);
     setTossCompleted(false);
     setTossResult({ winner: '', decision: '', tossInfo: '' });
+    setMatchInitialized(false);
   };
 
   const formatOvers = (overs, balls) => {
@@ -606,6 +613,7 @@ const LiveScoring = ({ currentMatch }) => {
     setTossResult({ winner: tossWinner, decision, tossInfo });
     setBattingTeam(battingFirst);
     setTossCompleted(true);
+    setTossDialog(false);
     
     console.log('Toss completed:', { tossWinner, decision, battingFirst, tossInfo });
     
@@ -734,7 +742,7 @@ const LiveScoring = ({ currentMatch }) => {
   }
 
   // Show toss dialog only once when match is ready but toss not completed
-  if (!tossCompleted && selectedMatch && team1Players.length > 0 && team2Players.length > 0 && !matchEnded) {
+  if (!tossCompleted && selectedMatch && matchInitialized && !matchEnded && !tossDialog) {
     return (
       <div className="space-y-4">
         <Card className="max-w-2xl mx-auto">
@@ -1013,6 +1021,17 @@ const LiveScoring = ({ currentMatch }) => {
         onBowlerSelect={handleBowlerSelect}
         currentOver={currentOver}
       />
+
+      {/* Only show TossSelector when explicitly opened */}
+      {tossDialog && (
+        <TossSelector
+          isOpen={tossDialog}
+          onClose={() => setTossDialog(false)}
+          team1Name={selectedMatch.team1?.name}
+          team2Name={selectedMatch.team2?.name}
+          onTossComplete={handleTossComplete}
+        />
+      )}
     </div>
   );
 };
