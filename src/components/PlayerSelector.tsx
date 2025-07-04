@@ -6,33 +6,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, UserCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PlayerSelector = ({ 
-  battingPlayers, 
-  bowlingPlayers, 
-  onBatsmenSelect, 
-  onBowlerSelect,
-  currentBatsmen,
-  currentBowler 
+  match,
+  onPlayersSelected
+}: {
+  match: any;
+  onPlayersSelected: (batsmen: any[], bowler: any) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedBatsman1, setSelectedBatsman1] = useState("");
   const [selectedBatsman2, setSelectedBatsman2] = useState("");
   const [selectedBowler, setSelectedBowler] = useState("");
   const [striker, setStriker] = useState("batsman1");
+  const [battingPlayers, setBattingPlayers] = useState([]);
+  const [bowlingPlayers, setBowlingPlayers] = useState([]);
+  const [currentBatsmen, setCurrentBatsmen] = useState([]);
+  const [currentBowler, setCurrentBowler] = useState(null);
 
   useEffect(() => {
-    if (currentBatsmen.length > 0) {
-      setSelectedBatsman1(currentBatsmen[0]?.id || "");
-      setSelectedBatsman2(currentBatsmen[1]?.id || "");
+    if (match) {
+      loadPlayers();
     }
-  }, [currentBatsmen]);
+  }, [match]);
 
-  useEffect(() => {
-    if (currentBowler) {
-      setSelectedBowler(currentBowler.id || "");
+  const loadPlayers = async () => {
+    try {
+      // Load batting team players (team that won toss and chose to bat, or lost toss and opponent chose to bowl)
+      const battingTeamId = getBattingTeamId();
+      const bowlingTeamId = getBowlingTeamId();
+
+      const { data: battingPlayersData } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', battingTeamId);
+
+      const { data: bowlingPlayersData } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', bowlingTeamId);
+
+      setBattingPlayers(battingPlayersData || []);
+      setBowlingPlayers(bowlingPlayersData || []);
+    } catch (error) {
+      console.error('Error loading players:', error);
     }
-  }, [currentBowler]);
+  };
+
+  const getBattingTeamId = () => {
+    if (!match.toss_winner || !match.toss_decision) return match.team1_id;
+    
+    if (match.toss_decision === 'bat') {
+      return match.toss_winner === (match.team1?.name || 'Team 1') ? match.team1_id : match.team2_id;
+    } else {
+      return match.toss_winner === (match.team1?.name || 'Team 1') ? match.team2_id : match.team1_id;
+    }
+  };
+
+  const getBowlingTeamId = () => {
+    if (!match.toss_winner || !match.toss_decision) return match.team2_id;
+    
+    if (match.toss_decision === 'bowl') {
+      return match.toss_winner === (match.team1?.name || 'Team 1') ? match.team1_id : match.team2_id;
+    } else {
+      return match.toss_winner === (match.team1?.name || 'Team 1') ? match.team2_id : match.team1_id;
+    }
+  };
 
   const handleConfirmSelection = () => {
     const batsman1 = battingPlayers.find(p => p.id === selectedBatsman1);
@@ -70,17 +110,17 @@ const PlayerSelector = ({
     const batsmenWithStats = [
       {
         ...batsman1,
-        runs: currentBatsmen[0]?.runs || 0,
-        balls: currentBatsmen[0]?.balls || 0,
-        fours: currentBatsmen[0]?.fours || 0,
-        sixes: currentBatsmen[0]?.sixes || 0
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0
       },
       {
         ...batsman2,
-        runs: currentBatsmen[1]?.runs || 0,
-        balls: currentBatsmen[1]?.balls || 0,
-        fours: currentBatsmen[1]?.fours || 0,
-        sixes: currentBatsmen[1]?.sixes || 0
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0
       }
     ];
 
@@ -90,13 +130,14 @@ const PlayerSelector = ({
     // Initialize bowler stats
     const bowlerWithStats = {
       ...bowler,
-      overs: currentBowler?.overs || 0,
-      runs: currentBowler?.runs || 0,
-      wickets: currentBowler?.wickets || 0
+      overs: 0,
+      runs: 0,
+      wickets: 0
     };
 
-    onBatsmenSelect(finalBatsmen);
-    onBowlerSelect(bowlerWithStats);
+    setCurrentBatsmen(finalBatsmen);
+    setCurrentBowler(bowlerWithStats);
+    onPlayersSelected(finalBatsmen, bowlerWithStats);
     setIsOpen(false);
 
     toast({

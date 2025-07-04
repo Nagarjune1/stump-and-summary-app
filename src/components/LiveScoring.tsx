@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import TossSelector from "./TossSelector";
 import PlayerSelector from "./PlayerSelector";
-import BowlerSelector from "./BowlerSelector";
 import ExportReport from "./ExportReport";
 import MatchAnalytics from "./MatchAnalytics";
 import PostMatchPerformers from "./PostMatchPerformers";
@@ -41,6 +39,7 @@ const LiveScoring = ({ currentMatch = null }) => {
   const [tossCompleted, setTossCompleted] = useState(false);
   const [playersSelected, setPlayersSelected] = useState(false);
   const [matchInitialized, setMatchInitialized] = useState(false);
+  const [allPlayers, setAllPlayers] = useState([]);
 
   useEffect(() => {
     if (currentMatch && !matchInitialized) {
@@ -80,8 +79,27 @@ const LiveScoring = ({ currentMatch = null }) => {
 
       // Load existing match data if available
       await loadMatchData(matchData.id);
+      await loadAllPlayers(matchData);
     } catch (error) {
       console.error('Error checking match status:', error);
+    }
+  };
+
+  const loadAllPlayers = async (matchData) => {
+    try {
+      const { data: team1Players } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', matchData.team1_id);
+
+      const { data: team2Players } = await supabase
+        .from('players')
+        .select('*')
+        .eq('team_id', matchData.team2_id);
+
+      setAllPlayers([...(team1Players || []), ...(team2Players || [])]);
+    } catch (error) {
+      console.error('Error loading players:', error);
     }
   };
 
@@ -319,9 +337,9 @@ const LiveScoring = ({ currentMatch = null }) => {
       if (currentInnings === 1) {
         // End of first innings
         setInnings1Score({
-          runs: scoreData.runs,
-          wickets: scoreData.wickets,
-          overs: scoreData.overs
+          runs: runs,
+          wickets: wickets,
+          overs: overs
         });
         
         setCurrentInnings(2);
@@ -632,10 +650,10 @@ const LiveScoring = ({ currentMatch = null }) => {
         <TabsContent value="analytics">
           <MatchAnalytics
             matchData={match}
-            scoreData={scoreData}
             innings1Score={innings1Score}
-            currentInnings={currentInnings}
-            recentBalls={recentBalls}
+            innings2Score={currentInnings === 2 ? scoreData : null}
+            currentBatsmen={currentBatsmen}
+            currentBowler={currentBowler}
           />
         </TabsContent>
 
@@ -655,9 +673,10 @@ const LiveScoring = ({ currentMatch = null }) => {
         {matchEnded && (
           <TabsContent value="awards">
             <PostMatchPerformers
-              matchId={match.id}
-              team1Id={match.team1_id}
-              team2Id={match.team2_id}
+              allPlayers={allPlayers}
+              matchData={match}
+              manOfMatch={allPlayers[0]}
+              bestBowler={allPlayers[1]}
             />
           </TabsContent>
         )}

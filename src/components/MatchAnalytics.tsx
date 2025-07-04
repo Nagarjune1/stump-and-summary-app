@@ -1,170 +1,177 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { TrendingUp, Target, Activity, Clock } from "lucide-react";
 
-const MatchAnalytics = ({ matchData, innings1Score, innings2Score, currentBatsmen, currentBowler }) => {
-  // Sample data for charts - in a real app, this would come from detailed ball-by-ball data
-  const oversData = [
-    { over: 1, runs: 8 },
-    { over: 2, runs: 12 },
-    { over: 3, runs: 6 },
-    { over: 4, runs: 15 },
-    { over: 5, runs: 9 },
-    { over: 6, runs: 11 }
-  ];
-
+const MatchAnalytics = ({ 
+  matchData, 
+  innings1Score, 
+  innings2Score, 
+  currentBatsmen, 
+  currentBowler 
+}) => {
+  // Sample data for demonstration - in real app this would come from ball-by-ball data
   const runRateData = [
-    { over: 1, rate: 8.0 },
-    { over: 2, rate: 10.0 },
-    { over: 3, rate: 8.7 },
-    { over: 4, rate: 10.3 },
-    { over: 5, rate: 10.0 },
-    { over: 6, rate: 10.2 }
+    { over: 1, runRate: 6.0, requiredRate: 8.5 },
+    { over: 2, runRate: 7.5, requiredRate: 8.2 },
+    { over: 3, runRate: 8.0, requiredRate: 8.0 },
+    { over: 4, runRate: 6.5, requiredRate: 8.3 },
+    { over: 5, runRate: 9.0, requiredRate: 7.8 },
   ];
 
-  const batsmenData = currentBatsmen.map(batsman => ({
-    name: batsman.name,
-    runs: batsman.runs || 0,
-    balls: batsman.balls || 0,
-    strikeRate: batsman.balls ? ((batsman.runs / batsman.balls) * 100).toFixed(1) : 0
-  }));
-
-  const wagonWheelData = [
-    { name: 'Leg Side', value: 35, fill: '#8884d8' },
-    { name: 'Off Side', value: 45, fill: '#82ca9d' },
-    { name: 'Straight', value: 20, fill: '#ffc658' }
+  const wormData = [
+    { over: 1, runs: 6 },
+    { over: 2, runs: 21 },
+    { over: 3, runs: 35 },
+    { over: 4, runs: 48 },
+    { over: 5, runs: 65 },
   ];
 
-  const chartConfig = {
-    runs: {
-      label: "Runs",
-      color: "#2563eb",
-    },
-    rate: {
-      label: "Run Rate",
-      color: "#dc2626",
-    },
-  };
+  const currentRunRate = innings2Score?.overs > 0 ? (innings2Score.runs / innings2Score.overs).toFixed(2) : '0.00';
+  const requiredRunRate = innings1Score ? 
+    ((innings1Score.runs + 1 - (innings2Score?.runs || 0)) / (20 - (innings2Score?.overs || 0))).toFixed(2) : '0.00';
 
   return (
-    <div className="space-y-6 mt-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Runs per Over */}
+    <div className="space-y-6">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Runs per Over</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Current RR
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-64">
-              <BarChart data={oversData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="over" />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="runs" fill="var(--color-runs)" />
-              </BarChart>
-            </ChartContainer>
+            <div className="text-2xl font-bold">{currentRunRate}</div>
           </CardContent>
         </Card>
 
-        {/* Run Rate */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Run Rate Progression</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Required RR
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-64">
-              <LineChart data={runRateData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="over" />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="rate" stroke="var(--color-rate)" strokeWidth={2} />
-              </LineChart>
-            </ChartContainer>
+            <div className="text-2xl font-bold">{requiredRunRate}</div>
           </CardContent>
         </Card>
 
-        {/* Batsmen Comparison */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Current Batsmen Stats</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Boundaries
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {batsmenData.map((batsman, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{batsman.name}</p>
-                    <p className="text-sm text-gray-600">{batsman.runs} runs ({batsman.balls} balls)</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">{batsman.strikeRate}</p>
-                    <p className="text-xs text-gray-500">Strike Rate</p>
-                  </div>
-                </div>
-              ))}
+            <div className="text-2xl font-bold">
+              {(currentBatsmen[0]?.fours || 0) + (currentBatsmen[1]?.fours || 0)}×4, {(currentBatsmen[0]?.sixes || 0) + (currentBatsmen[1]?.sixes || 0)}×6
             </div>
           </CardContent>
         </Card>
 
-        {/* Wagon Wheel (Sample) */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Shot Distribution</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Partnership
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-64">
-              <PieChart>
-                <Pie
-                  data={wagonWheelData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {wagonWheelData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
+            <div className="text-2xl font-bold">
+              {((currentBatsmen[0]?.runs || 0) + (currentBatsmen[1]?.runs || 0))} ({((currentBatsmen[0]?.balls || 0) + (currentBatsmen[1]?.balls || 0))})
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Match Summary Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Match Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{innings1Score.runs}</p>
-              <p className="text-sm text-gray-600">Innings 1 Runs</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{innings2Score.runs}</p>
-              <p className="text-sm text-gray-600">Innings 2 Runs</p>
-            </div>
-            <div className="p-4 bg-yellow-50 rounded-lg">
-              <p className="text-2xl font-bold text-yellow-600">{innings1Score.wickets + innings2Score.wickets}</p>
-              <p className="text-sm text-gray-600">Total Wickets</p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">
-                {currentBatsmen.reduce((acc, b) => acc + (b.fours || 0) + (b.sixes || 0), 0)}
-              </p>
-              <p className="text-sm text-gray-600">Boundaries</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Run Rate Comparison */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Run Rate Comparison</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={runRateData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="over" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="runRate" stroke="#8884d8" name="Current RR" />
+                <Line type="monotone" dataKey="requiredRate" stroke="#82ca9d" name="Required RR" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Score Progression */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Score Progression</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={wormData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="over" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="runs" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Player Performance */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Batsmen</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {currentBatsmen.map((batsman, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <div>
+                  <p className="font-semibold">{batsman.name} {index === 0 ? '*' : ''}</p>
+                  <p className="text-sm text-gray-600">
+                    {batsman.runs} ({batsman.balls}b) • SR: {batsman.balls > 0 ? ((batsman.runs / batsman.balls) * 100).toFixed(1) : '0.0'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <Badge variant="outline">{batsman.fours}×4</Badge>
+                  <Badge variant="outline" className="ml-1">{batsman.sixes}×6</Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Bowler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {currentBowler ? (
+              <div className="p-3 bg-gray-50 rounded">
+                <p className="font-semibold">{currentBowler.name}</p>
+                <p className="text-sm text-gray-600">
+                  {currentBowler.overs}-{currentBowler.runs}-{currentBowler.wickets} • 
+                  Econ: {currentBowler.overs > 0 ? (currentBowler.runs / currentBowler.overs).toFixed(2) : '0.00'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray-500">No bowler selected</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
