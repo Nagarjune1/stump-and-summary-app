@@ -4,13 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wifi, WifiOff, Upload, Download, Sync, AlertCircle, CheckCircle } from "lucide-react";
+import { Wifi, WifiOff, Upload, Download, RotateCw, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+interface OfflineDataItem {
+  timestamp: number;
+  synced: boolean;
+  [key: string]: any;
+}
 
 const OfflineScoring = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [offlineData, setOfflineData] = useState([]);
-  const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, success, error
+  const [offlineData, setOfflineData] = useState<OfflineDataItem[]>([]);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     // Check online status
@@ -40,7 +46,7 @@ const OfflineScoring = () => {
     }
   };
 
-  const saveOfflineData = (data) => {
+  const saveOfflineData = (data: any) => {
     try {
       const updatedData = [...offlineData, { ...data, timestamp: Date.now(), synced: false }];
       localStorage.setItem('cricket_offline_data', JSON.stringify(updatedData));
@@ -109,7 +115,7 @@ const OfflineScoring = () => {
     }
   };
 
-  const syncSingleItem = async (item) => {
+  const syncSingleItem = async (item: OfflineDataItem) => {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -158,7 +164,7 @@ const OfflineScoring = () => {
 
   const getSyncStatusIcon = () => {
     switch (syncStatus) {
-      case 'syncing': return <Sync className="w-4 h-4 animate-spin" />;
+      case 'syncing': return <RotateCw className="w-4 h-4 animate-spin" />;
       case 'success': return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'error': return <AlertCircle className="w-4 h-4 text-red-600" />;
       default: return <Upload className="w-4 h-4" />;

@@ -10,15 +10,68 @@ import { TrendingUp, Target, Award, Users, Activity, Download } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+interface Match {
+  id: string;
+  match_date: string;
+  team1?: { name: string };
+  team2?: { name: string };
+  status: string;
+}
+
+interface Player {
+  id: string;
+  name: string;
+  role: string;
+  team_id: string;
+  teams?: { name: string };
+}
+
+interface MatchStat {
+  runs_scored?: number;
+  wickets_taken?: number;
+  strike_rate?: number;
+  economy_rate?: number;
+  players?: { name: string; role: string };
+  matches?: {
+    match_date: string;
+    team1?: { name: string };
+    team2?: { name: string };
+  };
+}
+
+interface PerformanceMetric {
+  player: string;
+  runs: number;
+  wickets: number;
+  strikeRate: number;
+  economy: number;
+  match: string;
+}
+
+interface TrendData {
+  date: string;
+  runs: number;
+  wickets: number;
+  matches: number;
+}
+
+interface PlayerComparison {
+  name: string;
+  totalRuns: number;
+  totalWickets: number;
+  matches: number;
+  role: string;
+}
+
 const AdvancedAnalytics = () => {
   const [selectedMatch, setSelectedMatch] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState("");
-  const [matches, setMatches] = useState([]);
-  const [players, setPlayers] = useState([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [analytics, setAnalytics] = useState({
-    performanceMetrics: [],
-    trendAnalysis: [],
-    playerComparison: [],
+    performanceMetrics: [] as PerformanceMetric[],
+    trendAnalysis: [] as TrendData[],
+    playerComparison: [] as PlayerComparison[],
     teamPerformance: []
   });
 
@@ -111,7 +164,7 @@ const AdvancedAnalytics = () => {
     }
   };
 
-  const processPerformanceMetrics = (data) => {
+  const processPerformanceMetrics = (data: MatchStat[]): PerformanceMetric[] => {
     if (!data?.length) return [];
     
     return data.map(stat => ({
@@ -124,12 +177,14 @@ const AdvancedAnalytics = () => {
     }));
   };
 
-  const processTrendAnalysis = (data) => {
+  const processTrendAnalysis = (data: MatchStat[]): TrendData[] => {
     if (!data?.length) return [];
     
-    const trends = {};
+    const trends: { [key: string]: TrendData } = {};
     data.forEach(stat => {
       const date = stat.matches?.match_date;
+      if (!date) return;
+      
       if (!trends[date]) {
         trends[date] = { date, runs: 0, wickets: 0, matches: 0 };
       }
@@ -138,13 +193,13 @@ const AdvancedAnalytics = () => {
       trends[date].matches += 1;
     });
     
-    return Object.values(trends).sort((a, b) => new Date(a.date) - new Date(b.date));
+    return Object.values(trends).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
-  const processPlayerComparison = (data) => {
+  const processPlayerComparison = (data: MatchStat[]): PlayerComparison[] => {
     if (!data?.length) return [];
     
-    const playerStats = {};
+    const playerStats: { [key: string]: PlayerComparison } = {};
     data.forEach(stat => {
       const player = stat.players?.name || 'Unknown';
       if (!playerStats[player]) {
@@ -164,7 +219,7 @@ const AdvancedAnalytics = () => {
     return Object.values(playerStats);
   };
 
-  const processTeamPerformance = (data) => {
+  const processTeamPerformance = (data: MatchStat[]) => {
     // This would require more complex team-based analysis
     return [];
   };
