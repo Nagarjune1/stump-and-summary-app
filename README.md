@@ -1,7 +1,7 @@
 
 # Cricket Live Scoring App
 
-A comprehensive cricket live scoring application built with React, TypeScript, and Supabase. This app allows real-time scoring, player management, match analytics, and detailed reporting for cricket matches.
+A comprehensive cricket live scoring application built with React, TypeScript, and Supabase. This app allows real-time scoring, player management, match analytics, tournament management, and detailed reporting for cricket matches.
 
 ## 🏏 Features
 
@@ -20,6 +20,29 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 - Strike rotation management
 - Over completion tracking
 
+### Advanced Analytics (NEW in v1.2.0)
+- Interactive performance dashboards with charts
+- Player comparison tools across matches
+- Trend analysis with time-series data
+- Performance metrics visualization
+- Data export capabilities
+- AI-powered insights (beta)
+
+### Offline Scoring (NEW in v1.2.0)
+- Score matches without internet connection
+- Automatic online/offline detection
+- Smart data synchronization when reconnected
+- Local data backup and export
+- Seamless offline-to-online transitions
+
+### Tournament Management
+- Create and manage cricket tournaments
+- Team registration with payment tracking
+- Match fixtures and scheduling
+- Officials and sponsor management
+- Venue booking with cost management
+- Prize money distribution tracking
+
 ### Player Management
 - Comprehensive player profiles with photos
 - Team-wise player organization
@@ -29,8 +52,8 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 
 ### Analytics & Reporting
 - Match analytics with charts and graphs
-- Run rate calculations
-- Partnership tracking
+- Run rate calculations and visualizations
+- Partnership tracking and analysis
 - Fall of wickets visualization
 - Player performance metrics
 - Man of the Match/Series selection
@@ -40,6 +63,7 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 - Comprehensive match reports
 - Social media sharing capabilities
 - Print-friendly scorecards
+- Offline data export for backup
 
 ## 🛠️ Tech Stack
 
@@ -97,11 +121,17 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 ### Tables
 - **teams** - Team information
 - **players** - Player profiles and statistics
-- **matches** - Match details and results
+- **matches** - Match details and results with toss information
 - **match_stats** - Player performance in matches
 - **ball_by_ball** - Detailed ball-by-ball data
 - **partnerships** - Batting partnerships
 - **series** - Tournament/series information
+- **tournaments** - Tournament management
+- **venues** - Venue information and facilities
+- **tournament_teams** - Team registrations
+- **tournament_officials** - Officials management
+- **tournament_sponsors** - Sponsor management
+- **app_settings** - Application configuration
 
 ### Key Features
 - Row Level Security (RLS) policies
@@ -162,6 +192,18 @@ npm run dev
 4. Manage extras and strike rotation
 5. Complete overs and change bowlers
 
+### Offline Scoring (NEW)
+1. App automatically detects connectivity
+2. Continue scoring when offline
+3. Data saved locally and synced when online
+4. Export offline data for backup
+
+### Advanced Analytics (NEW)
+1. Access analytics from the main dashboard
+2. Filter by matches, players, or date ranges
+3. View interactive charts and performance metrics
+4. Export analytics data in multiple formats
+
 ### Match Completion
 1. Complete both innings
 2. Select Man of the Match
@@ -170,21 +212,21 @@ npm run dev
 
 ## 🎯 Roadmap
 
-### Phase 1 (Current)
+### Phase 1 - Core Features ✅
 - [x] Basic live scoring functionality
 - [x] Player and team management
 - [x] Match creation and management
 - [x] Real-time scoring updates
 - [x] Basic reporting and exports
 
-### Phase 2 (In Progress)
-- [ ] Advanced analytics dashboard
-- [ ] Performance comparison tools
-- [ ] Tournament management
-- [ ] Mobile app optimization
-- [ ] Offline scoring capability
+### Phase 2 - Enhanced Analytics ✅ (v1.2.0)
+- [x] Advanced analytics dashboard
+- [x] Performance comparison tools
+- [x] Tournament management
+- [x] Mobile app optimization
+- [x] Offline scoring capability
 
-### Phase 3 (Planned)
+### Phase 3 - Advanced Features (In Progress)
 - [ ] Video highlights integration
 - [ ] Social media integration
 - [ ] Multi-language support
@@ -192,12 +234,53 @@ npm run dev
 - [ ] Commentary system
 - [ ] Live streaming integration
 
-### Phase 4 (Future)
-- [ ] AI-powered insights
+### Phase 4 - AI & Professional (Planned)
+- [ ] AI-powered insights & predictions
 - [ ] Fantasy cricket integration
 - [ ] Betting odds integration
 - [ ] Professional league support
 - [ ] Advanced user roles and permissions
+- [ ] API for third-party integrations
+
+### Phase 5 - Enterprise & Cloud (Future)
+- [ ] Multi-tenant architecture
+- [ ] Advanced reporting & business intelligence
+- [ ] Custom branding & white-labeling
+- [ ] Enterprise security features
+- [ ] Data import/export tools
+- [ ] Performance optimization at scale
+
+## 📦 Release Notes
+
+### v1.2.0 (January 5, 2025) - Major Update
+**New Features:**
+- Advanced Analytics Dashboard with interactive charts
+- Offline Scoring Mode with automatic synchronization
+- Performance Comparison Tools for detailed player analysis
+- Enhanced Mobile Experience with improved responsive design
+- Release Notes tracking system
+
+**Improvements:**
+- Better toss management with streamlined UI
+- Enhanced tournament management system
+- Improved error handling and user feedback
+- Optimized database queries for better performance
+
+**Bug Fixes:**
+- Fixed toss completion errors
+- Resolved database column mapping issues
+- Improved responsive layout on mobile devices
+
+### v1.1.0 (December 28, 2024) - Tournament Management
+- Tournament creation and management system
+- Venue management with facilities tracking
+- Enhanced documentation and project structure
+
+### v1.0.0 (December 15, 2024) - Initial Release
+- Core cricket scoring functionality
+- Player and team management
+- Basic analytics and reporting
+- Multi-format export capabilities
 
 ## 🤝 Contributing
 
@@ -228,3 +311,5 @@ For support, please contact us through:
 ---
 
 Built with ❤️ for cricket enthusiasts worldwide!
+
+**Current Version: 1.2.0** | **Last Updated: January 5, 2025**

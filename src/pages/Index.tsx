@@ -1,15 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trophy, Users, Activity, BookOpen } from "lucide-react";
+import { Plus, Trophy, Users, Activity, BookOpen, BarChart3, WifiOff, Rocket } from "lucide-react";
 import LiveScoring from "@/components/LiveScoring";
 import PlayerProfiles from "@/components/PlayerProfiles";
 import MatchSummary from "@/components/MatchSummary";
 import CreateMatch from "@/components/CreateMatch";
 import Documentation from "@/components/Documentation";
+import AdvancedAnalytics from "@/components/AdvancedAnalytics";
+import OfflineScoring from "@/components/OfflineScoring";
+import ReleaseNotes from "@/components/ReleaseNotes";
 import { supabase } from "@/integrations/supabase/client";
 import TournamentManagement from "@/components/TournamentManagement";
 
@@ -47,17 +49,14 @@ const Index = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch total matches
       const { count: matchCount } = await supabase
         .from('matches')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch total players
       const { count: playerCount } = await supabase
         .from('players')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch recent matches with proper team relations
       const { data: recentMatches, error } = await supabase
         .from('matches')
         .select(`
@@ -91,7 +90,7 @@ const Index = () => {
 
   const handleMatchStarted = (match) => {
     setCurrentMatch(match);
-    setActiveTab("scoring"); // Switch to scoring tab when match starts
+    setActiveTab("scoring");
   };
 
   return (
@@ -99,14 +98,21 @@ const Index = () => {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold mb-2">Cricket Scorer Pro</h1>
-          <p className="text-green-100">Professional Cricket Scoring & Analytics</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">Cricket Scorer Pro</h1>
+              <p className="text-green-100">Professional Cricket Scoring & Analytics</p>
+            </div>
+            <Badge className="bg-white/10 text-white border-white/20">
+              v1.2.0
+            </Badge>
+          </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${showDocumentation ? 'grid-cols-7' : 'grid-cols-6'} mb-6`}>
+          <TabsList className={`grid w-full ${showDocumentation ? 'grid-cols-10' : 'grid-cols-9'} mb-6`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -119,6 +125,14 @@ const Index = () => {
               <Trophy className="w-4 h-4" />
               <span className="hidden sm:inline">Live Score</span>
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="offline" className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4" />
+              <span className="hidden sm:inline">Offline</span>
+            </TabsTrigger>
             <TabsTrigger value="players" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Players</span>
@@ -130,6 +144,10 @@ const Index = () => {
             <TabsTrigger value="create" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">New Match</span>
+            </TabsTrigger>
+            <TabsTrigger value="releases" className="flex items-center gap-2">
+              <Rocket className="w-4 h-4" />
+              <span className="hidden sm:inline">Releases</span>
             </TabsTrigger>
             {showDocumentation && (
               <TabsTrigger value="docs" className="flex items-center gap-2">
@@ -233,20 +251,28 @@ const Index = () => {
                     Create New Match
                   </Button>
                   <Button 
+                    onClick={() => setActiveTab("analytics")} 
+                    variant="outline" 
+                    className="w-full justify-start"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Analytics
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab("offline")} 
+                    variant="outline" 
+                    className="w-full justify-start"
+                  >
+                    <WifiOff className="w-4 h-4 mr-2" />
+                    Offline Scoring
+                  </Button>
+                  <Button 
                     onClick={() => setActiveTab("players")} 
                     variant="outline" 
                     className="w-full justify-start"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Manage Players
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab("matches")} 
-                    variant="outline" 
-                    className="w-full justify-start"
-                  >
-                    <Trophy className="w-4 h-4 mr-2" />
-                    View Match History
                   </Button>
                 </CardContent>
               </Card>
@@ -259,6 +285,14 @@ const Index = () => {
 
           <TabsContent value="scoring">
             <LiveScoring currentMatch={currentMatch} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AdvancedAnalytics />
+          </TabsContent>
+
+          <TabsContent value="offline">
+            <OfflineScoring />
           </TabsContent>
 
           <TabsContent value="players">
@@ -274,6 +308,10 @@ const Index = () => {
               onMatchCreated={handleMatchCreated} 
               onMatchStarted={handleMatchStarted}
             />
+          </TabsContent>
+
+          <TabsContent value="releases">
+            <ReleaseNotes />
           </TabsContent>
 
           {showDocumentation && (

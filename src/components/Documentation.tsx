@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { BookOpen, MapPin, Settings, Check, Clock, Zap } from "lucide-react";
+import { BookOpen, MapPin, Settings, Check, Clock, Zap, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,7 +12,7 @@ const Documentation = () => {
   const [settings, setSettings] = useState({
     show_documentation: true,
     show_roadmap: true,
-    app_version: '1.0.0'
+    app_version: '1.2.0'
   });
 
   useEffect(() => {
@@ -86,27 +85,27 @@ const Documentation = () => {
       phase: "Phase 1 - Core Features",
       status: "completed",
       items: [
-        "Live scoring functionality",
-        "Player and team management",
-        "Match creation and management",
-        "Real-time scoring updates",
-        "Basic reporting and exports"
+        "Live scoring functionality ✅",
+        "Player and team management ✅",
+        "Match creation and management ✅",
+        "Real-time scoring updates ✅",
+        "Basic reporting and exports ✅"
       ]
     },
     {
-      phase: "Phase 2 - Enhanced Analytics",
-      status: "in-progress",
+      phase: "Phase 2 - Enhanced Analytics (v1.2.0)",
+      status: "completed",
       items: [
-        "Advanced analytics dashboard",
-        "Performance comparison tools",
-        "Tournament management",
-        "Mobile app optimization",
-        "Offline scoring capability"
+        "Advanced analytics dashboard ✅",
+        "Performance comparison tools ✅",
+        "Tournament management ✅",
+        "Mobile app optimization ✅",
+        "Offline scoring capability ✅"
       ]
     },
     {
       phase: "Phase 3 - Advanced Features",
-      status: "planned",
+      status: "in-progress",
       items: [
         "Video highlights integration",
         "Social media integration",
@@ -118,13 +117,26 @@ const Documentation = () => {
     },
     {
       phase: "Phase 4 - AI & Professional",
-      status: "future",
+      status: "planned",
       items: [
-        "AI-powered insights",
+        "AI-powered insights & predictions",
         "Fantasy cricket integration",
         "Betting odds integration",
         "Professional league support",
-        "Advanced user roles and permissions"
+        "Advanced user roles and permissions",
+        "API for third-party integrations"
+      ]
+    },
+    {
+      phase: "Phase 5 - Enterprise & Cloud",
+      status: "future",
+      items: [
+        "Multi-tenant architecture",
+        "Advanced reporting & business intelligence",
+        "Custom branding & white-labeling",
+        "Enterprise security features",
+        "Data import/export tools",
+        "Performance optimization at scale"
       ]
     }
   ];
@@ -183,6 +195,7 @@ const Documentation = () => {
               <label className="font-medium">App Version</label>
               <p className="text-sm text-gray-600">Current version: {settings.app_version}</p>
             </div>
+            <Badge className="bg-blue-100 text-blue-800">Latest</Badge>
           </div>
         </CardContent>
       </Card>
@@ -222,6 +235,20 @@ const Documentation = () => {
                   <h3 className="font-semibold text-purple-900">Export & Share</h3>
                   <p className="text-sm text-purple-700">Multiple export formats and social sharing capabilities</p>
                 </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-l-4 border-green-500">
+                <h3 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  What's New in v1.2.0
+                </h3>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• Advanced Analytics Dashboard with interactive charts</li>
+                  <li>• Offline Scoring Mode with automatic synchronization</li>
+                  <li>• Enhanced Performance Comparison Tools</li>
+                  <li>• Improved Mobile Experience and UI optimization</li>
+                  <li>• Better Tournament Management System</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
@@ -279,24 +306,46 @@ const Documentation = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3 text-purple-900">Player Management</h3>
+                  <h3 className="font-semibold mb-3 text-purple-900">Advanced Analytics (NEW)</h3>
                   <ul className="space-y-2 text-sm">
-                    <li>• Comprehensive player profiles with photos</li>
-                    <li>• Team-wise player organization</li>
-                    <li>• Player statistics tracking (batting & bowling)</li>
-                    <li>• Career statistics calculation</li>
-                    <li>• Player performance analytics</li>
+                    <li>• Interactive performance dashboards</li>
+                    <li>• Player comparison tools</li>
+                    <li>• Trend analysis with charts</li>
+                    <li>• AI-powered insights (coming soon)</li>
+                    <li>• Data export in multiple formats</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3 text-orange-900">Analytics & Reporting</h3>
+                  <h3 className="font-semibold mb-3 text-orange-900">Offline Features (NEW)</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li>• Score matches without internet</li>
+                    <li>• Automatic online/offline detection</li>
+                    <li>• Smart data synchronization</li>
+                    <li>• Local data backup and export</li>
+                    <li>• Seamless online/offline transitions</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3 text-red-900">Tournament Management</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li>• Create and manage tournaments</li>
+                    <li>• Team registration and fixtures</li>
+                    <li>• Officials and sponsor management</li>
+                    <li>• Venue booking and cost tracking</li>
+                    <li>• Prize money and fee management</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3 text-indigo-900">Export & Reporting</h3>
                   <ul className="space-y-2 text-sm">
                     <li>• Match analytics with charts and graphs</li>
-                    <li>• Run rate calculations</li>
-                    <li>• Partnership tracking</li>
-                    <li>• Fall of wickets visualization</li>
+                    <li>• Partnership tracking and visualization</li>
+                    <li>• Fall of wickets analysis</li>
                     <li>• Multiple export formats (PDF, PNG, JSON, CSV, TXT)</li>
+                    <li>• Print-friendly scorecards</li>
                   </ul>
                 </div>
               </div>
