@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -138,9 +139,7 @@ const Index = () => {
             )}
           </TabsList>
 
-          
-            <TabsContent value="dashboard" className="space-y-6">
-            
+          <TabsContent value="dashboard" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <CardHeader className="pb-2">
@@ -258,8 +257,7 @@ const Index = () => {
             <TournamentManagement />
           </TabsContent>
 
-          
-            <TabsContent value="scoring">
+          <TabsContent value="scoring">
             <LiveScoring currentMatch={currentMatch} />
           </TabsContent>
 
@@ -283,7 +281,7 @@ const Index = () => {
               <Documentation />
             </TabsContent>
           )}
-        
+        </Tabs>
       </div>
     </div>
   );
