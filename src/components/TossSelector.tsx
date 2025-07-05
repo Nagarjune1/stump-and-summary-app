@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const TossSelector = ({ 
   match,
@@ -15,9 +16,51 @@ const TossSelector = ({
   const [tossWinner, setTossWinner] = useState("");
   const [decision, setDecision] = useState("");
 
-  const handleTossComplete = () => {
-    if (!tossWinner || !decision) return;
-    onTossComplete(tossWinner, decision);
+  const handleTossComplete = async () => {
+    if (!tossWinner || !decision) {
+      toast({
+        title: "Error",
+        description: "Please select both toss winner and decision",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('Updating match with toss details:', { tossWinner, decision });
+      
+      const { error } = await supabase
+        .from('matches')
+        .update({
+          toss_winner: tossWinner,
+          toss_decision: decision
+        })
+        .eq('id', match.id);
+
+      if (error) {
+        console.error('Error updating toss:', error);
+        toast({
+          title: "Error",
+          description: "Failed to complete toss",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Toss Completed!",
+        description: `${tossWinner} won the toss and chose to ${decision}`,
+      });
+
+      onTossComplete(tossWinner, decision);
+    } catch (error) {
+      console.error('Error completing toss:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete toss",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!match) return null;

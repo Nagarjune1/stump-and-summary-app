@@ -217,6 +217,8 @@ export type Database = {
           team2_id: string
           team2_overs: string | null
           team2_score: string | null
+          toss_decision: string | null
+          toss_winner: string | null
           tournament: string | null
           venue: string
         }
@@ -239,6 +241,8 @@ export type Database = {
           team2_id: string
           team2_overs?: string | null
           team2_score?: string | null
+          toss_decision?: string | null
+          toss_winner?: string | null
           tournament?: string | null
           venue: string
         }
@@ -261,6 +265,8 @@ export type Database = {
           team2_id?: string
           team2_overs?: string | null
           team2_score?: string | null
+          toss_decision?: string | null
+          toss_winner?: string | null
           tournament?: string | null
           venue?: string
         }

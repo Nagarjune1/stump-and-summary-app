@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarDays, MapPin, Users, Settings, Play } from "lucide-react";
+import { CalendarDays, MapPin, Users, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,18 +27,16 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     format: "",
     overs: "",
     tournament: "",
-    description: "",
-    toss_winner: "",
-    elected_to: ""
+    description: ""
   });
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createdMatch, setCreatedMatch] = useState(null);
   const [recentMatches, setRecentMatches] = useState([]);
 
   useEffect(() => {
     fetchTeams();
+    fetchRecentMatches();
   }, []);
 
   const fetchTeams = async () => {
@@ -115,8 +112,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
       const team1Name = teams.find(t => t.id === matchData.team1_id)?.name;
       const team2Name = teams.find(t => t.id === matchData.team2_id)?.name;
-
-      setCreatedMatch(data[0]);
       
       if (onMatchCreated && data[0]) {
         onMatchCreated(data[0]);
@@ -124,8 +119,23 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
       
       toast({
         title: "Success!",
-        description: `Match created: ${team1Name} vs ${team2Name}. Now set toss details to start.`,
+        description: `Match created: ${team1Name} vs ${team2Name}`,
       });
+
+      // Reset form
+      setMatchData({
+        team1_id: "",
+        team2_id: "",
+        venue: "",
+        match_date: "",
+        match_time: "",
+        format: "",
+        overs: "",
+        tournament: "",
+        description: ""
+      });
+
+      fetchRecentMatches();
 
     } catch (error) {
       console.error('Error creating match:', error);
@@ -137,31 +147,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
   };
 
-  const handleStartMatch = async (matchToStart = null) => {
+  const handleStartMatch = async (matchToStart) => {
     try {
-      // Use the created match if no specific match is passed
-      const matchToProcess = matchToStart || createdMatch;
-      
-      if (!matchToProcess) {
-        toast({
-          title: "Error",
-          description: "No match selected to start",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // For the created match, check toss details
-      if (!matchToStart && (!matchData.toss_winner || !matchData.elected_to)) {
-        toast({
-          title: "Error",
-          description: "Please set toss winner and election before starting the match",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const matchId = typeof matchToProcess === 'string' ? matchToProcess : matchToProcess.id;
+      const matchId = typeof matchToStart === 'string' ? matchToStart : matchToStart.id;
       
       if (!matchId) {
         toast({
@@ -209,11 +197,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
       if (onMatchStarted && data[0]) {
         onMatchStarted(data[0]);
       }
-
-      // Reset form if we started the created match
-      if (!matchToStart) {
-        resetForm();
-      }
       
       fetchRecentMatches();
     } catch (error) {
@@ -224,23 +207,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         variant: "destructive"
       });
     }
-  };
-
-  const resetForm = () => {
-    setMatchData({
-      team1_id: "",
-      team2_id: "",
-      venue: "",
-      match_date: "",
-      match_time: "",
-      format: "",
-      overs: "",
-      tournament: "",
-      description: "",
-      toss_winner: "",
-      elected_to: ""
-    });
-    setCreatedMatch(null);
   };
 
   const fetchRecentMatches = async () => {
@@ -273,10 +239,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
   };
 
-  useEffect(() => {
-    fetchRecentMatches();
-  }, []);
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -291,274 +253,194 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">
-          {createdMatch ? "Set Toss Details & Start Match" : "Create New Match"}
-        </h2>
-        <p className="text-gray-600">
-          {createdMatch ? "Configure toss details to begin live scoring" : "Set up a new cricket match for live scoring"}
-        </p>
+        <h2 className="text-2xl font-bold mb-2">Create New Match</h2>
+        <p className="text-gray-600">Set up a new cricket match for live scoring</p>
       </div>
 
-      {createdMatch && (
-        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Match Details */}
+        <Card>
           <CardHeader>
-            <CardTitle className="text-green-800">Match Created Successfully!</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Match Details
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-xl font-bold">{team1?.name} vs {team2?.name}</h3>
-                <p className="text-gray-600">{matchData.venue} • {new Date(matchData.match_date).toLocaleDateString()}</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label className="text-base font-medium">Who won the toss? *</Label>
-                  <RadioGroup
-                    value={matchData.toss_winner}
-                    onValueChange={(value) => setMatchData({...matchData, toss_winner: value})}
-                    className="mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value={matchData.team1_id} id="team1_toss" />
-                      <Label htmlFor="team1_toss">{team1?.name}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value={matchData.team2_id} id="team2_toss" />
-                      <Label htmlFor="team2_toss">{team2?.name}</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div>
-                  <Label className="text-base font-medium">They elected to: *</Label>
-                  <RadioGroup
-                    value={matchData.elected_to}
-                    onValueChange={(value) => setMatchData({...matchData, elected_to: value})}
-                    className="mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="bat" id="elect_bat" />
-                      <Label htmlFor="elect_bat">Bat</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="bowl" id="elect_bowl" />
-                      <Label htmlFor="elect_bowl">Bowl</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
-              <div className="flex justify-center gap-4 mt-6">
-                <Button 
-                  onClick={() => handleStartMatch()}
-                  className="bg-green-600 hover:bg-green-700 px-8 py-3 text-lg"
-                  disabled={!matchData.toss_winner || !matchData.elected_to}
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                  Start Match & Begin Scoring
-                </Button>
-                <Button 
-                  onClick={resetForm}
-                  variant="outline"
-                  className="px-6 py-3"
-                >
-                  Create Another Match
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {!createdMatch && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Match Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Match Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="team1">Team 1 *</Label>
-                  <Select onValueChange={(value) => setMatchData({...matchData, team1_id: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Team 1" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team2_id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="team2">Team 2 *</Label>
-                  <Select onValueChange={(value) => setMatchData({...matchData, team2_id: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Team 2" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team1_id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="venue">Venue *</Label>
-                <Input
-                  id="venue"
-                  value={matchData.venue}
-                  onChange={(e) => setMatchData({...matchData, venue: e.target.value})}
-                  placeholder="Enter venue name"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={matchData.match_date}
-                    onChange={(e) => setMatchData({...matchData, match_date: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="time">Time</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={matchData.match_time}
-                    onChange={(e) => setMatchData({...matchData, match_time: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="tournament">Tournament/Series</Label>
-                <Input
-                  id="tournament"
-                  value={matchData.tournament}
-                  onChange={(e) => setMatchData({...matchData, tournament: e.target.value})}
-                  placeholder="Enter tournament name (optional)"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Match Format */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Match Format
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="format">Format</Label>
-                <Select onValueChange={(value) => setMatchData({...matchData, format: value})}>
+                <Label htmlFor="team1">Team 1 *</Label>
+                <Select onValueChange={(value) => setMatchData({...matchData, team1_id: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select match format" />
+                    <SelectValue placeholder="Select Team 1" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="T20">T20 (20 overs)</SelectItem>
-                    <SelectItem value="ODI">ODI (50 overs)</SelectItem>
-                    <SelectItem value="Test">Test Match</SelectItem>
-                    <SelectItem value="T10">T10 (10 overs)</SelectItem>
-                    <SelectItem value="Custom">Custom</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team2_id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {matchData.format === "Custom" && (
-                <div>
-                  <Label htmlFor="overs">Number of Overs</Label>
-                  <Input
-                    id="overs"
-                    type="number"
-                    value={matchData.overs}
-                    onChange={(e) => setMatchData({...matchData, overs: e.target.value})}
-                    placeholder="Enter number of overs"
-                    min="1"
-                    max="50"
-                  />
-                </div>
-              )}
-
               <div>
-                <Label htmlFor="description">Match Description</Label>
-                <Textarea
-                  id="description"
-                  value={matchData.description}
-                  onChange={(e) => setMatchData({...matchData, description: e.target.value})}
-                  placeholder="Add any additional details about the match..."
-                  rows={4}
+                <Label htmlFor="team2">Team 2 *</Label>
+                <Select onValueChange={(value) => setMatchData({...matchData, team2_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Team 2" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id} disabled={team.id === matchData.team1_id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="venue">Venue *</Label>
+              <Input
+                id="venue"
+                value={matchData.venue}
+                onChange={(e) => setMatchData({...matchData, venue: e.target.value})}
+                placeholder="Enter venue name"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="date">Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={matchData.match_date}
+                  onChange={(e) => setMatchData({...matchData, match_date: e.target.value})}
                 />
               </div>
 
-              {/* Match Preview */}
-              {team1 && team2 && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
-                  <h4 className="font-semibold mb-3">Match Preview</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-600" />
-                      <span>{team1.name} vs {team2.name}</span>
-                    </div>
-                    {matchData.venue && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-green-600" />
-                        <span>{matchData.venue}</span>
-                      </div>
-                    )}
-                    {matchData.match_date && (
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-purple-600" />
-                        <span>{new Date(matchData.match_date).toLocaleDateString()}</span>
-                        {matchData.match_time && <span>at {matchData.match_time}</span>}
-                      </div>
-                    )}
-                    {matchData.format && (
-                      <div>
-                        <Badge variant="outline">
-                          {matchData.format} {matchData.format === "Custom" && matchData.overs ? `(${matchData.overs} overs)` : ""}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              <div>
+                <Label htmlFor="time">Time</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={matchData.match_time}
+                  onChange={(e) => setMatchData({...matchData, match_time: e.target.value})}
+                />
+              </div>
+            </div>
 
-      {!createdMatch && (
-        <div className="flex justify-center">
-          <Button 
-            onClick={handleCreateMatch}
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 px-8 py-3 text-lg"
-            disabled={teams.length === 0}
-          >
-            {teams.length === 0 ? "No Teams Available" : "Create Match"}
-          </Button>
-        </div>
-      )}
+            <div>
+              <Label htmlFor="tournament">Tournament/Series</Label>
+              <Input
+                id="tournament"
+                value={matchData.tournament}
+                onChange={(e) => setMatchData({...matchData, tournament: e.target.value})}
+                placeholder="Enter tournament name (optional)"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Match Format */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Match Format
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="format">Format</Label>
+              <Select onValueChange={(value) => setMatchData({...matchData, format: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select match format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="T20">T20 (20 overs)</SelectItem>
+                  <SelectItem value="ODI">ODI (50 overs)</SelectItem>
+                  <SelectItem value="Test">Test Match</SelectItem>
+                  <SelectItem value="T10">T10 (10 overs)</SelectItem>
+                  <SelectItem value="Custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {matchData.format === "Custom" && (
+              <div>
+                <Label htmlFor="overs">Number of Overs</Label>
+                <Input
+                  id="overs"
+                  type="number"
+                  value={matchData.overs}
+                  onChange={(e) => setMatchData({...matchData, overs: e.target.value})}
+                  placeholder="Enter number of overs"
+                  min="1"
+                  max="50"
+                />
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="description">Match Description</Label>
+              <Textarea
+                id="description"
+                value={matchData.description}
+                onChange={(e) => setMatchData({...matchData, description: e.target.value})}
+                placeholder="Add any additional details about the match..."
+                rows={4}
+              />
+            </div>
+
+            {/* Match Preview */}
+            {team1 && team2 && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
+                <h4 className="font-semibold mb-3">Match Preview</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span>{team1.name} vs {team2.name}</span>
+                  </div>
+                  {matchData.venue && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                      <span>{matchData.venue}</span>
+                    </div>
+                  )}
+                  {matchData.match_date && (
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-purple-600" />
+                      <span>{new Date(matchData.match_date).toLocaleDateString()}</span>
+                      {matchData.match_time && <span>at {matchData.match_time}</span>}
+                    </div>
+                  )}
+                  {matchData.format && (
+                    <div>
+                      <Badge variant="outline">
+                        {matchData.format} {matchData.format === "Custom" && matchData.overs ? `(${matchData.overs} overs)` : ""}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-center">
+        <Button 
+          onClick={handleCreateMatch}
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 px-8 py-3 text-lg"
+          disabled={teams.length === 0}
+        >
+          {teams.length === 0 ? "No Teams Available" : "Create Match"}
+        </Button>
+      </div>
 
       {/* Recent Matches */}
       <Card>
