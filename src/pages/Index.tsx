@@ -10,6 +10,7 @@ import MatchSummary from "@/components/MatchSummary";
 import CreateMatch from "@/components/CreateMatch";
 import Documentation from "@/components/Documentation";
 import { supabase } from "@/integrations/supabase/client";
+import TournamentManagement from "@/components/TournamentManagement";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -104,10 +105,14 @@ const Index = () => {
 
       <div className="max-w-6xl mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid w-full ${showDocumentation ? 'grid-cols-6' : 'grid-cols-5'} mb-6`}>
+          <TabsList className={`grid w-full ${showDocumentation ? 'grid-cols-7' : 'grid-cols-6'} mb-6`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="tournaments" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              <span className="hidden sm:inline">Tournaments</span>
             </TabsTrigger>
             <TabsTrigger value="scoring" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
@@ -133,7 +138,8 @@ const Index = () => {
             )}
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
+          
+            <TabsContent value="dashboard" className="space-y-6">
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -248,7 +254,12 @@ const Index = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="scoring">
+          <TabsContent value="tournaments">
+            <TournamentManagement />
+          </TabsContent>
+
+          
+            <TabsContent value="scoring">
             <LiveScoring currentMatch={currentMatch} />
           </TabsContent>
 
@@ -272,7 +283,7 @@ const Index = () => {
               <Documentation />
             </TabsContent>
           )}
-        </Tabs>
+        
       </div>
     </div>
   );

@@ -487,6 +487,297 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_matches: {
+        Row: {
+          id: string
+          match_id: string
+          match_number: number
+          round_name: string
+          scheduled_date: string | null
+          scheduled_time: string | null
+          tournament_id: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          match_number: number
+          round_name: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          tournament_id: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          match_number?: number
+          round_name?: string
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_officials: {
+        Row: {
+          contact_info: string | null
+          id: string
+          matches_assigned: number | null
+          official_name: string
+          official_type: string
+          rate_per_match: number | null
+          tournament_id: string
+        }
+        Insert: {
+          contact_info?: string | null
+          id?: string
+          matches_assigned?: number | null
+          official_name: string
+          official_type: string
+          rate_per_match?: number | null
+          tournament_id: string
+        }
+        Update: {
+          contact_info?: string | null
+          id?: string
+          matches_assigned?: number | null
+          official_name?: string
+          official_type?: string
+          rate_per_match?: number | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_officials_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_sponsors: {
+        Row: {
+          created_at: string | null
+          id: string
+          sponsor_amount: number | null
+          sponsor_logo_url: string | null
+          sponsor_name: string
+          sponsor_type: string | null
+          tournament_id: string
+          visibility_package: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sponsor_amount?: number | null
+          sponsor_logo_url?: string | null
+          sponsor_name: string
+          sponsor_type?: string | null
+          tournament_id: string
+          visibility_package?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sponsor_amount?: number | null
+          sponsor_logo_url?: string | null
+          sponsor_name?: string
+          sponsor_type?: string | null
+          tournament_id?: string
+          visibility_package?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_sponsors_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_teams: {
+        Row: {
+          id: string
+          payment_status: string | null
+          registration_date: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Insert: {
+          id?: string
+          payment_status?: string | null
+          registration_date?: string | null
+          team_id: string
+          tournament_id: string
+        }
+        Update: {
+          id?: string
+          payment_status?: string | null
+          registration_date?: string | null
+          team_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          ball_type: string
+          category: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          logo_url: string | null
+          max_teams: number | null
+          name: string
+          organizer_contact: string | null
+          organizer_email: string | null
+          organizer_name: string
+          prize_money: number | null
+          registration_fee: number | null
+          rules: string | null
+          start_date: string
+          status: string
+          tournament_style: string
+          updated_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          ball_type: string
+          category: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          logo_url?: string | null
+          max_teams?: number | null
+          name: string
+          organizer_contact?: string | null
+          organizer_email?: string | null
+          organizer_name: string
+          prize_money?: number | null
+          registration_fee?: number | null
+          rules?: string | null
+          start_date: string
+          status?: string
+          tournament_style: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          ball_type?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          logo_url?: string | null
+          max_teams?: number | null
+          name?: string
+          organizer_contact?: string | null
+          organizer_email?: string | null
+          organizer_name?: string
+          prize_money?: number | null
+          registration_fee?: number | null
+          rules?: string | null
+          start_date?: string
+          status?: string
+          tournament_style?: string
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venues: {
+        Row: {
+          capacity: number | null
+          city: string | null
+          contact_number: string | null
+          contact_person: string | null
+          cost_per_match: number | null
+          created_at: string | null
+          facilities: string[] | null
+          id: string
+          location: string
+          name: string
+          photos: string[] | null
+          pitch_type: string | null
+          rating: number | null
+          total_matches: number | null
+        }
+        Insert: {
+          capacity?: number | null
+          city?: string | null
+          contact_number?: string | null
+          contact_person?: string | null
+          cost_per_match?: number | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: string
+          location: string
+          name: string
+          photos?: string[] | null
+          pitch_type?: string | null
+          rating?: number | null
+          total_matches?: number | null
+        }
+        Update: {
+          capacity?: number | null
+          city?: string | null
+          contact_number?: string | null
+          contact_person?: string | null
+          cost_per_match?: number | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: string
+          location?: string
+          name?: string
+          photos?: string[] | null
+          pitch_type?: string | null
+          rating?: number | null
+          total_matches?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
