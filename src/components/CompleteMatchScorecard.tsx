@@ -2,16 +2,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trophy, Target, Clock } from "lucide-react";
 
 const CompleteMatchScorecard = ({ 
   matchData, 
   innings1Data, 
   innings2Data, 
-  team1Players,
-  team2Players,
+  team1Players = [],
+  team2Players = [],
   result,
-  tossInfo
+  tossInfo,
+  fallOfWickets1 = [],
+  fallOfWickets2 = []
 }) => {
   const formatBattingStats = (players) => {
     return players.filter(p => p.runs !== undefined).map(player => ({
@@ -71,7 +74,7 @@ const CompleteMatchScorecard = ({
         </Card>
       )}
 
-      {/* Innings Cards */}
+      {/* Innings Scorecards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* First Innings */}
         <Card>
@@ -79,59 +82,92 @@ const CompleteMatchScorecard = ({
             <CardTitle className="flex justify-between items-center">
               <span>{matchData.team1?.name} Innings</span>
               <span className="text-blue-600">
-                {innings1Data.runs}/{innings1Data.wickets} ({innings1Data.overs}.0)
+                {innings1Data?.runs || 0}/{innings1Data?.wickets || 0} ({innings1Data?.overs || 0}.0)
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Batting Stats */}
+            {/* Batting */}
             <div>
               <h4 className="font-semibold mb-3">Batting</h4>
-              <div className="space-y-2">
-                <div className="grid grid-cols-7 gap-2 text-xs font-medium text-gray-600 border-b pb-1">
-                  <span className="col-span-2">Batsman</span>
-                  <span>R</span>
-                  <span>B</span>
-                  <span>4s</span>
-                  <span>6s</span>
-                  <span>SR</span>
-                </div>
-                {formatBattingStats(team1Players).map((player, idx) => (
-                  <div key={idx} className="grid grid-cols-7 gap-2 text-sm py-1">
-                    <span className="col-span-2 font-medium truncate">{player.name}</span>
-                    <span>{player.runs}</span>
-                    <span>{player.balls}</span>
-                    <span>{player.fours}</span>
-                    <span>{player.sixes}</span>
-                    <span>{player.strikeRate}</span>
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[150px]">Batsman</TableHead>
+                    <TableHead className="text-center w-12">R</TableHead>
+                    <TableHead className="text-center w-12">B</TableHead>
+                    <TableHead className="text-center w-12">4s</TableHead>
+                    <TableHead className="text-center w-12">6s</TableHead>
+                    <TableHead className="text-center w-16">SR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formatBattingStats(team1Players).map((player, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{player.name}</span>
+                          {player.isOut && (
+                            <span className="text-xs text-red-600">{player.dismissalType}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-semibold">{player.runs}</TableCell>
+                      <TableCell className="text-center">{player.balls}</TableCell>
+                      <TableCell className="text-center">{player.fours}</TableCell>
+                      <TableCell className="text-center">{player.sixes}</TableCell>
+                      <TableCell className="text-center">{player.strikeRate}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
             <Separator />
 
-            {/* Bowling Stats */}
+            {/* Fall of Wickets */}
+            {fallOfWickets1.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Fall of Wickets</h4>
+                <div className="text-sm space-y-1">
+                  {fallOfWickets1.map((wicket, idx) => (
+                    <div key={idx} className="text-gray-700">
+                      {wicket.runs}-{wicket.wicketNumber} ({wicket.player}, {wicket.overs} ov)
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Bowling */}
             <div>
               <h4 className="font-semibold mb-3">Bowling</h4>
-              <div className="space-y-2">
-                <div className="grid grid-cols-6 gap-2 text-xs font-medium text-gray-600 border-b pb-1">
-                  <span className="col-span-2">Bowler</span>
-                  <span>O</span>
-                  <span>R</span>
-                  <span>W</span>
-                  <span>Econ</span>
-                </div>
-                {formatBowlingStats(team2Players).map((player, idx) => (
-                  <div key={idx} className="grid grid-cols-6 gap-2 text-sm py-1">
-                    <span className="col-span-2 font-medium truncate">{player.name}</span>
-                    <span>{player.overs}</span>
-                    <span>{player.runs}</span>
-                    <span>{player.wickets}</span>
-                    <span>{player.economy}</span>
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[150px]">Bowler</TableHead>
+                    <TableHead className="text-center w-12">O</TableHead>
+                    <TableHead className="text-center w-12">M</TableHead>
+                    <TableHead className="text-center w-12">R</TableHead>
+                    <TableHead className="text-center w-12">W</TableHead>
+                    <TableHead className="text-center w-16">Econ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formatBowlingStats(team2Players).map((player, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium text-sm">{player.name}</TableCell>
+                      <TableCell className="text-center">{player.overs}</TableCell>
+                      <TableCell className="text-center">{player.maidens}</TableCell>
+                      <TableCell className="text-center">{player.runs}</TableCell>
+                      <TableCell className="text-center font-semibold">{player.wickets}</TableCell>
+                      <TableCell className="text-center">{player.economy}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -148,54 +184,87 @@ const CompleteMatchScorecard = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Batting Stats */}
+              {/* Batting */}
               <div>
                 <h4 className="font-semibold mb-3">Batting</h4>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-7 gap-2 text-xs font-medium text-gray-600 border-b pb-1">
-                    <span className="col-span-2">Batsman</span>
-                    <span>R</span>
-                    <span>B</span>
-                    <span>4s</span>
-                    <span>6s</span>
-                    <span>SR</span>
-                  </div>
-                  {formatBattingStats(team2Players).map((player, idx) => (
-                    <div key={idx} className="grid grid-cols-7 gap-2 text-sm py-1">
-                      <span className="col-span-2 font-medium truncate">{player.name}</span>
-                      <span>{player.runs}</span>
-                      <span>{player.balls}</span>
-                      <span>{player.fours}</span>
-                      <span>{player.sixes}</span>
-                      <span>{player.strikeRate}</span>
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[150px]">Batsman</TableHead>
+                      <TableHead className="text-center w-12">R</TableHead>
+                      <TableHead className="text-center w-12">B</TableHead>
+                      <TableHead className="text-center w-12">4s</TableHead>
+                      <TableHead className="text-center w-12">6s</TableHead>
+                      <TableHead className="text-center w-16">SR</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formatBattingStats(team2Players).map((player, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{player.name}</span>
+                            {player.isOut && (
+                              <span className="text-xs text-red-600">{player.dismissalType}</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center font-semibold">{player.runs}</TableCell>
+                        <TableCell className="text-center">{player.balls}</TableCell>
+                        <TableCell className="text-center">{player.fours}</TableCell>
+                        <TableCell className="text-center">{player.sixes}</TableCell>
+                        <TableCell className="text-center">{player.strikeRate}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               <Separator />
 
-              {/* Bowling Stats */}
+              {/* Fall of Wickets */}
+              {fallOfWickets2.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Fall of Wickets</h4>
+                  <div className="text-sm space-y-1">
+                    {fallOfWickets2.map((wicket, idx) => (
+                      <div key={idx} className="text-gray-700">
+                        {wicket.runs}-{wicket.wicketNumber} ({wicket.player}, {wicket.overs} ov)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Bowling */}
               <div>
                 <h4 className="font-semibold mb-3">Bowling</h4>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-6 gap-2 text-xs font-medium text-gray-600 border-b pb-1">
-                    <span className="col-span-2">Bowler</span>
-                    <span>O</span>
-                    <span>R</span>
-                    <span>W</span>
-                    <span>Econ</span>
-                  </div>
-                  {formatBowlingStats(team1Players).map((player, idx) => (
-                    <div key={idx} className="grid grid-cols-6 gap-2 text-sm py-1">
-                      <span className="col-span-2 font-medium truncate">{player.name}</span>
-                      <span>{player.overs}</span>
-                      <span>{player.runs}</span>
-                      <span>{player.wickets}</span>
-                      <span>{player.economy}</span>
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[150px]">Bowler</TableHead>
+                      <TableHead className="text-center w-12">O</TableHead>
+                      <TableHead className="text-center w-12">M</TableHead>
+                      <TableHead className="text-center w-12">R</TableHead>
+                      <TableHead className="text-center w-12">W</TableHead>
+                      <TableHead className="text-center w-16">Econ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formatBowlingStats(team1Players).map((player, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-medium text-sm">{player.name}</TableCell>
+                        <TableCell className="text-center">{player.overs}</TableCell>
+                        <TableCell className="text-center">{player.maidens}</TableCell>
+                        <TableCell className="text-center">{player.runs}</TableCell>
+                        <TableCell className="text-center font-semibold">{player.wickets}</TableCell>
+                        <TableCell className="text-center">{player.economy}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>

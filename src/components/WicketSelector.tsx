@@ -11,7 +11,7 @@ const WicketSelector = ({
   open, 
   onClose, 
   onWicketSelect,
-  fieldingPlayers,
+  fieldingPlayers = [],
   currentBowler,
   currentBatsman
 }) => {
