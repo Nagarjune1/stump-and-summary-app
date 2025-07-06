@@ -2,274 +2,243 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trophy, Target, Clock } from "lucide-react";
+import { Trophy, Users, Target, BarChart3 } from "lucide-react";
 
 const CompleteMatchScorecard = ({ 
   matchData, 
-  innings1Data, 
-  innings2Data, 
-  team1Players = [],
-  team2Players = [],
-  result,
-  tossInfo,
-  fallOfWickets1 = [],
-  fallOfWickets2 = []
+  innings1Score, 
+  innings2Score, 
+  currentBatsmen = [], 
+  currentBowler = null,
+  topPerformers = [],
+  fallOfWickets = [],
+  bowlingFigures = [],
+  matchResult = ""
 }) => {
-  const formatBattingStats = (players) => {
-    return players.filter(p => p.runs !== undefined).map(player => ({
-      name: player.name,
-      runs: player.runs || 0,
-      balls: player.balls || 0,
-      fours: player.fours || 0,
-      sixes: player.sixes || 0,
-      strikeRate: player.balls > 0 ? ((player.runs / player.balls) * 100).toFixed(1) : '0.0',
-      isOut: player.isOut || false,
-      dismissalType: player.dismissalType || 'not out'
-    }));
-  };
-
-  const formatBowlingStats = (players) => {
-    return players.filter(p => p.overs !== undefined && p.overs > 0).map(player => ({
-      name: player.name,
-      overs: player.overs || 0,
-      maidens: player.maidens || 0,
-      runs: player.runs || 0,
-      wickets: player.wickets || 0,
-      economy: player.overs > 0 ? (player.runs / player.overs).toFixed(1) : '0.0'
-    }));
+  const formatScore = (score) => {
+    if (!score) return "Yet to bat";
+    return `${score.runs}/${score.wickets} (${score.overs}.${score.balls || 0} ov)`;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Match Header */}
-      <Card className="bg-gradient-to-r from-blue-900 to-green-900 text-white">
-        <CardHeader>
+      <Card className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
+        <CardContent className="p-6">
           <div className="text-center">
-            <CardTitle className="text-2xl mb-2">
-              {matchData.team1?.name} vs {matchData.team2?.name}
-            </CardTitle>
-            <p className="text-sm opacity-90">
-              {matchData.venue} • {new Date(matchData.match_date).toLocaleDateString()}
-            </p>
-            {tossInfo && (
-              <p className="text-sm mt-2 opacity-90">{tossInfo}</p>
+            <h1 className="text-2xl font-bold mb-2">
+              {matchData?.team1?.name || 'Team 1'} vs {matchData?.team2?.name || 'Team 2'}
+            </h1>
+            <p className="text-green-100 mb-2">{matchData?.venue} • {matchData?.format}</p>
+            <p className="text-green-100">{new Date(matchData?.match_date).toLocaleDateString()}</p>
+            {matchResult && (
+              <div className="mt-3">
+                <Badge className="bg-yellow-500 text-yellow-900 text-lg px-4 py-1">
+                  {matchResult}
+                </Badge>
+              </div>
             )}
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
 
-      {/* Match Result */}
-      {result && (
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Trophy className="w-6 h-6 text-yellow-600" />
-                <h3 className="text-xl font-bold text-yellow-800">Match Result</h3>
+      {/* Toss Information */}
+      {matchData?.toss_winner && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-center text-gray-600">
+              <strong>{matchData.toss_winner}</strong> won the toss and elected to <strong>{matchData.toss_decision}</strong>
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Match Scores */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {matchData?.team1?.name || 'Team 1'} - 1st Innings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600 mb-2">
+              {formatScore(innings1Score)}
+            </div>
+            {innings1Score && (
+              <div className="text-sm text-gray-600">
+                Run Rate: {innings1Score.overs > 0 ? (innings1Score.runs / innings1Score.overs).toFixed(2) : '0.00'}
               </div>
-              <p className="text-lg font-semibold text-yellow-700">{result}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {matchData?.team2?.name || 'Team 2'} - 2nd Innings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600 mb-2">
+              {formatScore(innings2Score)}
+            </div>
+            {innings2Score && (
+              <div className="text-sm text-gray-600">
+                Run Rate: {innings2Score.overs > 0 ? (innings2Score.runs / innings2Score.overs).toFixed(2) : '0.00'}
+                {innings1Score && innings2Score.runs < innings1Score.runs && (
+                  <div>Required Rate: {((innings1Score.runs - innings2Score.runs + 1) / (20 - innings2Score.overs)).toFixed(2)}</div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Current Players */}
+      {currentBatsmen.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Current Partnership
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h4 className="font-semibold mb-2">Batsmen</h4>
+                {currentBatsmen.map((batsman, index) => (
+                  <div key={index} className="p-3 bg-blue-50 rounded-lg mb-2">
+                    <div className="font-medium">{batsman.name} {index === 0 ? '*' : ''}</div>
+                    <div className="text-sm text-gray-600">
+                      {batsman.runs || 0} ({batsman.balls || 0}) • SR: {batsman.balls > 0 ? ((batsman.runs || 0) / batsman.balls * 100).toFixed(1) : '0.0'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {currentBowler && (
+                <div>
+                  <h4 className="font-semibold mb-2">Current Bowler</h4>
+                  <div className="p-3 bg-red-50 rounded-lg">
+                    <div className="font-medium">{currentBowler.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {currentBowler.overs || 0}-{currentBowler.runs || 0}-{currentBowler.wickets || 0}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold mb-2">Partnership</h4>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="font-medium">
+                    {(currentBatsmen[0]?.runs || 0) + (currentBatsmen[1]?.runs || 0)} runs
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {(currentBatsmen[0]?.balls || 0) + (currentBatsmen[1]?.balls || 0)} balls
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Innings Scorecards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* First Innings */}
+      {/* Top Performers */}
+      {topPerformers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>{matchData.team1?.name} Innings</span>
-              <span className="text-blue-600">
-                {innings1Data?.runs || 0}/{innings1Data?.wickets || 0} ({innings1Data?.overs || 0}.0)
-              </span>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5" />
+              Top Performers
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Batting */}
-            <div>
-              <h4 className="font-semibold mb-3">Batting</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[150px]">Batsman</TableHead>
-                    <TableHead className="text-center w-12">R</TableHead>
-                    <TableHead className="text-center w-12">B</TableHead>
-                    <TableHead className="text-center w-12">4s</TableHead>
-                    <TableHead className="text-center w-12">6s</TableHead>
-                    <TableHead className="text-center w-16">SR</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {formatBattingStats(team1Players).map((player, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{player.name}</span>
-                          {player.isOut && (
-                            <span className="text-xs text-red-600">{player.dismissalType}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center font-semibold">{player.runs}</TableCell>
-                      <TableCell className="text-center">{player.balls}</TableCell>
-                      <TableCell className="text-center">{player.fours}</TableCell>
-                      <TableCell className="text-center">{player.sixes}</TableCell>
-                      <TableCell className="text-center">{player.strikeRate}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <Separator />
-
-            {/* Fall of Wickets */}
-            {fallOfWickets1.length > 0 && (
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold mb-2">Fall of Wickets</h4>
-                <div className="text-sm space-y-1">
-                  {fallOfWickets1.map((wicket, idx) => (
-                    <div key={idx} className="text-gray-700">
-                      {wicket.runs}-{wicket.wicketNumber} ({wicket.player}, {wicket.overs} ov)
-                    </div>
-                  ))}
-                </div>
+                <h4 className="font-semibold mb-3">Top Batsmen</h4>
+                {topPerformers.filter(p => p.type === 'batsman').slice(0, 3).map((player, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded mb-2">
+                    <span className="font-medium">{player.name}</span>
+                    <span className="text-blue-600 font-bold">{player.runs} ({player.balls})</span>
+                  </div>
+                ))}
               </div>
-            )}
-
-            <Separator />
-
-            {/* Bowling */}
-            <div>
-              <h4 className="font-semibold mb-3">Bowling</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[150px]">Bowler</TableHead>
-                    <TableHead className="text-center w-12">O</TableHead>
-                    <TableHead className="text-center w-12">M</TableHead>
-                    <TableHead className="text-center w-12">R</TableHead>
-                    <TableHead className="text-center w-12">W</TableHead>
-                    <TableHead className="text-center w-16">Econ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {formatBowlingStats(team2Players).map((player, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-medium text-sm">{player.name}</TableCell>
-                      <TableCell className="text-center">{player.overs}</TableCell>
-                      <TableCell className="text-center">{player.maidens}</TableCell>
-                      <TableCell className="text-center">{player.runs}</TableCell>
-                      <TableCell className="text-center font-semibold">{player.wickets}</TableCell>
-                      <TableCell className="text-center">{player.economy}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              
+              <div>
+                <h4 className="font-semibold mb-3">Top Bowlers</h4>
+                {topPerformers.filter(p => p.type === 'bowler').slice(0, 3).map((player, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded mb-2">
+                    <span className="font-medium">{player.name}</span>
+                    <span className="text-red-600 font-bold">{player.wickets}/{player.runs} ({player.overs})</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Second Innings */}
-        {innings2Data && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>{matchData.team2?.name} Innings</span>
-                <span className="text-green-600">
-                  {innings2Data.runs}/{innings2Data.wickets} ({innings2Data.overs}.{innings2Data.balls || 0})
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Batting */}
-              <div>
-                <h4 className="font-semibold mb-3">Batting</h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Batsman</TableHead>
-                      <TableHead className="text-center w-12">R</TableHead>
-                      <TableHead className="text-center w-12">B</TableHead>
-                      <TableHead className="text-center w-12">4s</TableHead>
-                      <TableHead className="text-center w-12">6s</TableHead>
-                      <TableHead className="text-center w-16">SR</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {formatBattingStats(team2Players).map((player, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">{player.name}</span>
-                            {player.isOut && (
-                              <span className="text-xs text-red-600">{player.dismissalType}</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center font-semibold">{player.runs}</TableCell>
-                        <TableCell className="text-center">{player.balls}</TableCell>
-                        <TableCell className="text-center">{player.fours}</TableCell>
-                        <TableCell className="text-center">{player.sixes}</TableCell>
-                        <TableCell className="text-center">{player.strikeRate}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <Separator />
-
-              {/* Fall of Wickets */}
-              {fallOfWickets2.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Fall of Wickets</h4>
-                  <div className="text-sm space-y-1">
-                    {fallOfWickets2.map((wicket, idx) => (
-                      <div key={idx} className="text-gray-700">
-                        {wicket.runs}-{wicket.wicketNumber} ({wicket.player}, {wicket.overs} ov)
-                      </div>
-                    ))}
+      {/* Fall of Wickets */}
+      {fallOfWickets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fall of Wickets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {fallOfWickets.map((wicket, index) => (
+                <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded border-l-4 border-red-500">
+                  <div>
+                    <span className="font-medium">{wicket.runs}-{wicket.wicketNumber}</span>
+                    <span className="text-gray-600 ml-2">({wicket.overs} ov)</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">{wicket.player}</div>
+                    <div className="text-sm text-red-600">{wicket.dismissal}</div>
                   </div>
                 </div>
-              )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-              <Separator />
-
-              {/* Bowling */}
-              <div>
-                <h4 className="font-semibold mb-3">Bowling</h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[150px]">Bowler</TableHead>
-                      <TableHead className="text-center w-12">O</TableHead>
-                      <TableHead className="text-center w-12">M</TableHead>
-                      <TableHead className="text-center w-12">R</TableHead>
-                      <TableHead className="text-center w-12">W</TableHead>
-                      <TableHead className="text-center w-16">Econ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {formatBowlingStats(team1Players).map((player, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium text-sm">{player.name}</TableCell>
-                        <TableCell className="text-center">{player.overs}</TableCell>
-                        <TableCell className="text-center">{player.maidens}</TableCell>
-                        <TableCell className="text-center">{player.runs}</TableCell>
-                        <TableCell className="text-center font-semibold">{player.wickets}</TableCell>
-                        <TableCell className="text-center">{player.economy}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+      {/* Match Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Match Statistics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="p-3 bg-blue-50 rounded">
+              <div className="text-xl font-bold text-blue-600">{innings1Score?.runs || 0}</div>
+              <div className="text-sm text-gray-600">Runs Scored</div>
+            </div>
+            <div className="p-3 bg-red-50 rounded">
+              <div className="text-xl font-bold text-red-600">{innings1Score?.wickets || 0}</div>
+              <div className="text-sm text-gray-600">Wickets Lost</div>
+            </div>
+            <div className="p-3 bg-green-50 rounded">
+              <div className="text-xl font-bold text-green-600">{innings1Score?.overs || 0}</div>
+              <div className="text-sm text-gray-600">Overs Bowled</div>
+            </div>
+            <div className="p-3 bg-purple-50 rounded">
+              <div className="text-xl font-bold text-purple-600">
+                {innings1Score?.overs > 0 ? (innings1Score.runs / innings1Score.overs).toFixed(2) : '0.00'}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              <div className="text-sm text-gray-600">Run Rate</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

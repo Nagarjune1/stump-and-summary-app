@@ -122,6 +122,41 @@ export type Database = {
           },
         ]
       }
+      match_permissions: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          match_id: string | null
+          permission_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          match_id?: string | null
+          permission_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          match_id?: string | null
+          permission_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_permissions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_stats: {
         Row: {
           balls_faced: number | null
@@ -200,6 +235,7 @@ export type Database = {
       matches: {
         Row: {
           created_at: string
+          created_by: string | null
           description: string | null
           format: string
           id: string
@@ -224,6 +260,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           format: string
           id?: string
@@ -248,6 +285,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           description?: string | null
           format?: string
           id?: string
@@ -433,6 +471,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       series: {
         Row: {

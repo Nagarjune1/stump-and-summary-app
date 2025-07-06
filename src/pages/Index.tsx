@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trophy, Users, Activity, BookOpen, BarChart3, WifiOff, Rocket } from "lucide-react";
+import { Plus, Trophy, Users, Activity, BookOpen, BarChart3, WifiOff, Rocket, LogOut, Play } from "lucide-react";
+import { useAuth } from "@/components/AuthProvider";
 import LiveScoring from "@/components/LiveScoring";
 import PlayerProfiles from "@/components/PlayerProfiles";
 import MatchSummary from "@/components/MatchSummary";
@@ -12,23 +14,34 @@ import Documentation from "@/components/Documentation";
 import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import OfflineScoring from "@/components/OfflineScoring";
 import ReleaseNotes from "@/components/ReleaseNotes";
-import { supabase } from "@/integrations/supabase/client";
 import TournamentManagement from "@/components/TournamentManagement";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentMatch, setCurrentMatch] = useState(null);
+  const [selectedLiveMatch, setSelectedLiveMatch] = useState(null);
   const [stats, setStats] = useState({
     totalMatches: 0,
     totalPlayers: 0,
-    recentMatches: []
+    recentMatches: [],
+    liveMatches: []
   });
   const [showDocumentation, setShowDocumentation] = useState(true);
 
   useEffect(() => {
-    fetchDashboardStats();
-    fetchAppSettings();
-  }, []);
+    if (!loading && !user) {
+      navigate('/auth');
+      return;
+    }
+    
+    if (user) {
+      fetchDashboardStats();
+      fetchAppSettings();
+    }
+  }, [user, loading, navigate]);
 
   const fetchAppSettings = async () => {
     try {
@@ -64,20 +77,38 @@ const Index = () => {
           status,
           result,
           match_date,
+          venue,
+          format,
           team1:teams!matches_team1_id_fkey(name),
           team2:teams!matches_team2_id_fkey(name)
         `)
         .order('match_date', { ascending: false })
-        .limit(3);
+        .limit(5);
 
       if (error) {
         console.error('Error fetching recent matches:', error);
       }
 
+      // Fetch live matches separately
+      const { data: liveMatches } = await supabase
+        .from('matches')
+        .select(`
+          id,
+          status,
+          venue,
+          format,
+          match_date,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `)
+        .eq('status', 'live')
+        .order('match_date', { ascending: false });
+
       setStats({
         totalMatches: matchCount || 0,
         totalPlayers: playerCount || 0,
-        recentMatches: recentMatches || []
+        recentMatches: recentMatches || [],
+        liveMatches: liveMatches || []
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -93,6 +124,32 @@ const Index = () => {
     setActiveTab("scoring");
   };
 
+  const handleLiveMatchSelect = (match) => {
+    setSelectedLiveMatch(match);
+    setCurrentMatch(match);
+    setActiveTab("scoring");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100 flex items-center justify-center">
+        <div className="text-center">
+          <Trophy className="w-16 h-16 mx-auto mb-4 text-green-600 animate-spin" />
+          <p className="text-lg text-gray-600">Loading Cricket Scorer Pro...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // This will redirect to auth page via useEffect
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100">
       {/* Header */}
@@ -103,9 +160,19 @@ const Index = () => {
               <h1 className="text-2xl font-bold mb-2">Cricket Scorer Pro</h1>
               <p className="text-green-100">Professional Cricket Scoring & Analytics</p>
             </div>
-            <Badge className="bg-white/10 text-white border-white/20">
-              v1.2.0
-            </Badge>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm text-green-100">Welcome back,</p>
+                <p className="font-semibold">{user.email}</p>
+              </div>
+              <Button onClick={handleSignOut} variant="outline" className="text-green-600 border-white hover:bg-white">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+              <Badge className="bg-white/10 text-white border-white/20">
+                v1.3.0
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
@@ -158,6 +225,43 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Live Matches Section */}
+            {stats.liveMatches.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Play className="w-5 h-5 text-red-500" />
+                  Live Matches ({stats.liveMatches.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:graph-cols-3 gap-4">
+                  {stats.liveMatches.map((match) => (
+                    <Card 
+                      key={match.id} 
+                      className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-red-500"
+                      onClick={() => handleLiveMatchSelect(match)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge className="bg-red-100 text-red-800 animate-pulse">
+                            LIVE
+                          </Badge>
+                          <span className="text-sm text-gray-500">{match.format}</span>
+                        </div>
+                        <h4 className="font-semibold mb-1">
+                          {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'}
+                        </h4>
+                        <p className="text-sm text-gray-600">{match.venue}</p>
+                        <p className="text-xs text-gray-500">{new Date(match.match_date).toLocaleDateString()}</p>
+                        <Button className="w-full mt-3" size="sm">
+                          <Play className="w-4 h-4 mr-2" />
+                          View Live Score
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <CardHeader className="pb-2">
@@ -179,15 +283,13 @@ const Index = () => {
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Live Matches</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {stats.recentMatches.filter(m => m.status === 'live').length}
-                  </div>
-                  <p className="text-xs text-purple-100">Currently active</p>
+                  <div className="text-2xl font-bold">{stats.liveMatches.length}</div>
+                  <p className="text-xs text-red-100">Currently active</p>
                 </CardContent>
               </Card>
               
