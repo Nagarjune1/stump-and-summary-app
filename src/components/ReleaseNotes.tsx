@@ -8,9 +8,60 @@ import { Separator } from "@/components/ui/separator";
 import { Rocket, Bug, Zap, Plus, Calendar, Star, CheckCircle, AlertTriangle } from "lucide-react";
 
 const ReleaseNotes = () => {
-  const [currentVersion, setCurrentVersion] = useState("1.2.0");
+  const [currentVersion, setCurrentVersion] = useState("1.3.0");
 
   const releases = [
+    {
+      version: "1.3.0",
+      date: "2025-01-06",
+      type: "major",
+      title: "Multi-Language Support & Social Integration",
+      description: "Major update introducing multi-language support, social media integration, and enhanced commentary features",
+      features: [
+        {
+          type: "feature",
+          title: "Multi-Language Support",
+          description: "Added support for English, Hindi, and Spanish with real-time language switching and cricket-specific terminology",
+          icon: <Plus className="w-4 h-4" />
+        },
+        {
+          type: "feature", 
+          title: "Social Media Integration",
+          description: "Share match updates, scorecards, and highlights directly to Twitter, Facebook, and WhatsApp with custom templates",
+          icon: <Plus className="w-4 h-4" />
+        },
+        {
+          type: "feature",
+          title: "Advanced Statistics Dashboard",
+          description: "Comprehensive player and team analytics with AI-powered insights and performance predictions",
+          icon: <Star className="w-4 h-4" />
+        },
+        {
+          type: "feature",
+          title: "Enhanced Commentary System",
+          description: "Live commentary feed with voice input, AI-assisted generation, and professional templates",
+          icon: <Plus className="w-4 h-4" />
+        },
+        {
+          type: "enhancement",
+          title: "Professional Scoreboard",
+          description: "Complete cricket scoreboard with batting/bowling stats, fall of wickets, and dismissal tracking",
+          icon: <CheckCircle className="w-4 h-4" />
+        }
+      ],
+      bugFixes: [
+        "Fixed wicket dismissal tracking and display issues",
+        "Resolved scoreboard layout problems on mobile devices",
+        "Improved data synchronization for offline scoring",
+        "Fixed export functionality for match reports"
+      ],
+      technicalChanges: [
+        "Implemented internationalization (i18n) framework",
+        "Added social sharing APIs and image generation",
+        "Enhanced analytics data processing algorithms",
+        "Improved component architecture for better maintainability"
+      ]
+    },
     {
       version: "1.2.0",
       date: "2025-01-05",

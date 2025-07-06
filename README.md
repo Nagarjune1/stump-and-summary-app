@@ -20,7 +20,7 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 - Strike rotation management
 - Over completion tracking
 
-### Advanced Analytics (NEW in v1.2.0)
+### Advanced Analytics (v1.2.0)
 - Interactive performance dashboards with charts
 - Player comparison tools across matches
 - Trend analysis with time-series data
@@ -28,7 +28,35 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 - Data export capabilities
 - AI-powered insights (beta)
 
-### Offline Scoring (NEW in v1.2.0)
+### Multi-Language Support (NEW in v1.3.0)
+- Support for English, Hindi, and Spanish
+- Real-time language switching
+- Cricket-specific terminology translation
+- Cultural number formatting
+- RTL (Right-to-Left) support preparation
+
+### Social Media Integration (NEW in v1.3.0)
+- Share match updates to Twitter, Facebook, WhatsApp
+- Generate shareable scorecards and match images
+- Custom sharing templates
+- Social media analytics (coming soon)
+
+### Enhanced Commentary System (NEW in v1.3.0)
+- Live commentary feed with real-time updates
+- Voice input for commentary
+- AI-assisted commentary generation
+- Professional commentary templates
+- Audio playback support
+
+### Professional Scoreboard (Enhanced in v1.3.0)
+- Complete cricket scoreboard like Cricbuzz/ESPN
+- Detailed batting and bowling statistics
+- Fall of wickets tracking and visualization
+- Partnership analysis and breakdown
+- Over-by-over commentary
+- Comprehensive match summary
+
+### Offline Scoring (v1.2.0)
 - Score matches without internet connection
 - Automatic online/offline detection
 - Smart data synchronization when reconnected
@@ -192,13 +220,31 @@ npm run dev
 4. Manage extras and strike rotation
 5. Complete overs and change bowlers
 
-### Offline Scoring (NEW)
+### Multi-Language Support (NEW)
+1. Select language from settings
+2. Switch between English, Hindi, and Spanish
+3. All cricket terminology is translated
+4. Number formatting follows cultural preferences
+
+### Social Media Sharing (NEW)
+1. Create shareable content from match results
+2. Generate professional scorecards as images
+3. Share directly to Twitter, Facebook, WhatsApp
+4. Use pre-built templates for quick sharing
+
+### Commentary System (NEW)
+1. Add live commentary during matches
+2. Use voice input for hands-free commentary
+3. AI-assisted commentary generation
+4. Access professional commentary templates
+
+### Offline Scoring
 1. App automatically detects connectivity
 2. Continue scoring when offline
 3. Data saved locally and synced when online
 4. Export offline data for backup
 
-### Advanced Analytics (NEW)
+### Advanced Analytics
 1. Access analytics from the main dashboard
 2. Filter by matches, players, or date ranges
 3. View interactive charts and performance metrics
@@ -226,18 +272,17 @@ npm run dev
 - [x] Mobile app optimization
 - [x] Offline scoring capability
 
-### Phase 3 - Advanced Features (In Progress)
-- [ ] Video highlights integration
-- [ ] Social media integration
-- [ ] Multi-language support
-- [ ] Advanced statistics (Wagon wheel, Heat maps)
-- [ ] Commentary system
-- [ ] Live streaming integration
+### Phase 3 - Advanced Features ✅ (v1.3.0)
+- [x] Multi-language support
+- [x] Social media integration
+- [x] Advanced statistics tracking
+- [x] Enhanced commentary system
+- [x] Professional scoreboard features
 
-### Phase 4 - AI & Professional (Planned)
-- [ ] AI-powered insights & predictions
-- [ ] Fantasy cricket integration
-- [ ] Betting odds integration
+### Phase 4 - AI & Professional (In Progress)
+- [ ] AI-powered match predictions
+- [ ] Advanced player analytics with ML
+- [ ] Video highlights integration
 - [ ] Professional league support
 - [ ] Advanced user roles and permissions
 - [ ] API for third-party integrations
@@ -252,7 +297,28 @@ npm run dev
 
 ## 📦 Release Notes
 
-### v1.2.0 (January 5, 2025) - Major Update
+### v1.3.0 (January 6, 2025) - Multi-Language & Social Integration
+**New Features:**
+- Multi-Language Support with English, Hindi, and Spanish
+- Social Media Integration for Twitter, Facebook, and WhatsApp
+- Advanced Statistics Dashboard with AI-powered insights
+- Enhanced Commentary System with voice input
+- Professional Scoreboard with complete match details
+- Improved wicket tracking and dismissal features
+
+**Improvements:**
+- Better language localization for cricket terminology
+- Enhanced social sharing capabilities with custom templates
+- Improved mobile responsiveness and user experience
+- Better data visualization and analytics
+
+**Bug Fixes:**
+- Fixed wicket dismissal tracking and display issues
+- Resolved scoreboard layout problems on mobile devices
+- Improved data synchronization for offline scoring
+- Fixed export functionality for match reports
+
+### v1.2.0 (January 5, 2025) - Advanced Analytics & Offline Scoring
 **New Features:**
 - Advanced Analytics Dashboard with interactive charts
 - Offline Scoring Mode with automatic synchronization
@@ -312,4 +378,4 @@ For support, please contact us through:
 
 Built with ❤️ for cricket enthusiasts worldwide!
 
-**Current Version: 1.2.0** | **Last Updated: January 5, 2025**
+**Current Version: 1.3.0** | **Last Updated: January 6, 2025**

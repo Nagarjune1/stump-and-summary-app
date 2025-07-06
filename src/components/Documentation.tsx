@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,7 @@ const Documentation = () => {
   const [settings, setSettings] = useState({
     show_documentation: true,
     show_roadmap: true,
-    app_version: '1.2.0'
+    app_version: '1.3.0'
   });
 
   useEffect(() => {
@@ -104,24 +105,23 @@ const Documentation = () => {
       ]
     },
     {
-      phase: "Phase 3 - Advanced Features",
-      status: "in-progress",
+      phase: "Phase 3 - Advanced Features (v1.3.0)",
+      status: "completed",
       items: [
-        "Video highlights integration",
-        "Social media integration",
-        "Multi-language support",
-        "Advanced statistics (Wagon wheel, Heat maps)",
-        "Commentary system",
-        "Live streaming integration"
+        "Multi-language support ✅",
+        "Social media integration ✅",
+        "Advanced statistics tracking ✅",
+        "Enhanced commentary system ✅",
+        "Professional scoreboard features ✅"
       ]
     },
     {
-      phase: "Phase 4 - AI & Professional",
-      status: "planned",
+      phase: "Phase 4 - AI & Professional Features",
+      status: "in-progress",
       items: [
-        "AI-powered insights & predictions",
-        "Fantasy cricket integration",
-        "Betting odds integration",
+        "AI-powered match predictions 🔄",
+        "Advanced player analytics 🔄",
+        "Video highlights integration",
         "Professional league support",
         "Advanced user roles and permissions",
         "API for third-party integrations"
@@ -129,7 +129,7 @@ const Documentation = () => {
     },
     {
       phase: "Phase 5 - Enterprise & Cloud",
-      status: "future",
+      status: "planned",
       items: [
         "Multi-tenant architecture",
         "Advanced reporting & business intelligence",
@@ -240,14 +240,15 @@ const Documentation = () => {
               <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-l-4 border-green-500">
                 <h3 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
                   <Star className="w-4 h-4" />
-                  What's New in v1.2.0
+                  What's New in v1.3.0
                 </h3>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Advanced Analytics Dashboard with interactive charts</li>
-                  <li>• Offline Scoring Mode with automatic synchronization</li>
-                  <li>• Enhanced Performance Comparison Tools</li>
-                  <li>• Improved Mobile Experience and UI optimization</li>
-                  <li>• Better Tournament Management System</li>
+                  <li>• Multi-language support with 3+ languages</li>
+                  <li>• Social media integration for easy sharing</li>
+                  <li>• Advanced statistics and player analytics</li>
+                  <li>• Enhanced commentary system with voice input</li>
+                  <li>• Professional scoreboard with complete match details</li>
+                  <li>• Improved wicket tracking and dismissal features</li>
                 </ul>
               </div>
             </CardContent>
@@ -306,35 +307,35 @@ const Documentation = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3 text-purple-900">Advanced Analytics (NEW)</h3>
+                  <h3 className="font-semibold mb-3 text-purple-900">Advanced Analytics</h3>
                   <ul className="space-y-2 text-sm">
                     <li>• Interactive performance dashboards</li>
                     <li>• Player comparison tools</li>
                     <li>• Trend analysis with charts</li>
-                    <li>• AI-powered insights (coming soon)</li>
+                    <li>• AI-powered insights and predictions</li>
                     <li>• Data export in multiple formats</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3 text-orange-900">Offline Features (NEW)</h3>
+                  <h3 className="font-semibold mb-3 text-orange-900">Multi-Language & Social (NEW)</h3>
                   <ul className="space-y-2 text-sm">
-                    <li>• Score matches without internet</li>
-                    <li>• Automatic online/offline detection</li>
-                    <li>• Smart data synchronization</li>
-                    <li>• Local data backup and export</li>
-                    <li>• Seamless online/offline transitions</li>
+                    <li>• Support for English, Hindi, and Spanish</li>
+                    <li>• Real-time language switching</li>
+                    <li>• Social media sharing integration</li>
+                    <li>• Shareable scorecards and match images</li>
+                    <li>• Cultural number formatting</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3 text-red-900">Tournament Management</h3>
+                  <h3 className="font-semibold mb-3 text-red-900">Commentary System (NEW)</h3>
                   <ul className="space-y-2 text-sm">
-                    <li>• Create and manage tournaments</li>
-                    <li>• Team registration and fixtures</li>
-                    <li>• Officials and sponsor management</li>
-                    <li>• Venue booking and cost tracking</li>
-                    <li>• Prize money and fee management</li>
+                    <li>• Live commentary feed</li>
+                    <li>• Voice input for commentary</li>
+                    <li>• AI-assisted commentary generation</li>
+                    <li>• Commentary templates and shortcuts</li>
+                    <li>• Audio playback support</li>
                   </ul>
                 </div>
 
