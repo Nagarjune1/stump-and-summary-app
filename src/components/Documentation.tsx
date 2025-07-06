@@ -1,352 +1,276 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { BookOpen, MapPin, Settings, Check, Clock, Zap, Star } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { BookOpen, Users, Trophy, BarChart3, Settings, Shield, Zap, Globe, Share2, MessageSquare, PieChart, FileText, Award, Clock, Target } from "lucide-react";
 
 const Documentation = () => {
-  const [settings, setSettings] = useState({
-    show_documentation: true,
-    show_roadmap: true,
-    app_version: '1.3.0'
-  });
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('setting_key, setting_value');
-
-      if (error) throw error;
-
-      const settingsMap = {};
-      data?.forEach(item => {
-        settingsMap[item.setting_key] = item.setting_value === 'true' || item.setting_value;
-      });
-      
-      setSettings(prev => ({ ...prev, ...settingsMap }));
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  };
-
-  const updateSetting = async (key: string, value: string) => {
-    try {
-      const { error } = await supabase
-        .from('app_settings')
-        .update({ setting_value: value })
-        .eq('setting_key', key);
-
-      if (error) throw error;
-
-      setSettings(prev => ({ ...prev, [key]: value === 'true' }));
-      toast({
-        title: "Settings Updated",
-        description: `${key.replace('_', ' ')} setting updated successfully`,
-      });
-    } catch (error) {
-      console.error('Error updating setting:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update setting",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const libraries = [
-    { name: "React", version: "^18.3.1", description: "UI library" },
-    { name: "TypeScript", version: "Latest", description: "Type safety" },
-    { name: "Vite", version: "Latest", description: "Build tool" },
-    { name: "Tailwind CSS", version: "Latest", description: "Styling" },
-    { name: "Shadcn UI", version: "Latest", description: "Component library" },
-    { name: "Supabase", version: "^2.50.2", description: "Backend & Database" },
-    { name: "TanStack Query", version: "^5.56.2", description: "Data fetching" },
-    { name: "React Router", version: "^6.26.2", description: "Routing" },
-    { name: "Recharts", version: "^2.12.7", description: "Data visualization" },
-    { name: "Lucide React", version: "^0.462.0", description: "Icons" },
-    { name: "React Hook Form", version: "^7.53.0", description: "Form management" },
-    { name: "Zod", version: "^3.23.8", description: "Schema validation" },
-    { name: "Date-fns", version: "^3.6.0", description: "Date utilities" },
-    { name: "html2canvas", version: "^1.4.1", description: "Export to image" },
-    { name: "jsPDF", version: "^3.0.1", description: "PDF generation" }
-  ];
-
-  const roadmapItems = [
-    {
-      phase: "Phase 1 - Core Features",
-      status: "completed",
-      items: [
-        "Live scoring functionality ✅",
-        "Player and team management ✅",
-        "Match creation and management ✅",
-        "Real-time scoring updates ✅",
-        "Basic reporting and exports ✅"
-      ]
-    },
-    {
-      phase: "Phase 2 - Enhanced Analytics (v1.2.0)",
-      status: "completed",
-      items: [
-        "Advanced analytics dashboard ✅",
-        "Performance comparison tools ✅",
-        "Tournament management ✅",
-        "Mobile app optimization ✅",
-        "Offline scoring capability ✅"
-      ]
-    },
-    {
-      phase: "Phase 3 - Advanced Features (v1.3.0)",
-      status: "completed",
-      items: [
-        "Multi-language support ✅",
-        "Social media integration ✅",
-        "Advanced statistics tracking ✅",
-        "Enhanced commentary system ✅",
-        "Professional scoreboard features ✅"
-      ]
-    },
-    {
-      phase: "Phase 4 - AI & Professional Features",
-      status: "in-progress",
-      items: [
-        "AI-powered match predictions 🔄",
-        "Advanced player analytics 🔄",
-        "Video highlights integration",
-        "Professional league support",
-        "Advanced user roles and permissions",
-        "API for third-party integrations"
-      ]
-    },
-    {
-      phase: "Phase 5 - Enterprise & Cloud",
-      status: "planned",
-      items: [
-        "Multi-tenant architecture",
-        "Advanced reporting & business intelligence",
-        "Custom branding & white-labeling",
-        "Enterprise security features",
-        "Data import/export tools",
-        "Performance optimization at scale"
-      ]
-    }
-  ];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <Check className="w-4 h-4 text-green-600" />;
-      case 'in-progress': return <Clock className="w-4 h-4 text-blue-600" />;
-      case 'planned': return <MapPin className="w-4 h-4 text-orange-600" />;
-      default: return <Zap className="w-4 h-4 text-purple-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'planned': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-purple-100 text-purple-800';
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Settings Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Documentation Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+      <Card className="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 text-white">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <BookOpen className="w-8 h-8" />
             <div>
-              <label className="font-medium">Show Documentation</label>
-              <p className="text-sm text-gray-600">Display documentation section in the app</p>
+              <h1 className="text-2xl font-bold">Cricket Scorer Pro Documentation</h1>
+              <p className="text-blue-100">Complete guide to professional cricket scoring</p>
             </div>
-            <Switch
-              checked={settings.show_documentation}
-              onCheckedChange={(checked) => updateSetting('show_documentation', checked.toString())}
-            />
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-medium">Show Roadmap</label>
-              <p className="text-sm text-gray-600">Display roadmap section in the app</p>
-            </div>
-            <Switch
-              checked={settings.show_roadmap}
-              onCheckedChange={(checked) => updateSetting('show_roadmap', checked.toString())}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-medium">App Version</label>
-              <p className="text-sm text-gray-600">Current version: {settings.app_version}</p>
-            </div>
-            <Badge className="bg-blue-100 text-blue-800">Latest</Badge>
+          <div className="flex gap-2">
+            <Badge className="bg-white/20 border-white/30">v1.4.0</Badge>
+            <Badge className="bg-white/20 border-white/30">Professional</Badge>
+            <Badge className="bg-white/20 border-white/30">Full-Featured</Badge>
           </div>
         </CardContent>
       </Card>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="libraries">Libraries</TabsTrigger>
+          <TabsTrigger value="authentication">Auth</TabsTrigger>
+          <TabsTrigger value="scoring">Live Scoring</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="api">API</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Cricket Scorer Pro - Overview
+                <Trophy className="w-5 h-5" />
+                Welcome to Cricket Scorer Pro
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                A comprehensive cricket live scoring application built with modern web technologies. 
-                This app provides real-time scoring, player management, match analytics, and detailed reporting.
+                Cricket Scorer Pro is a comprehensive cricket scoring application designed for professional match management, 
+                live scoring, detailed analytics, and tournament administration.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-blue-900">Live Scoring</h3>
-                  <p className="text-sm text-blue-700">Real-time ball-by-ball scoring with comprehensive statistics</p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold text-green-900">Analytics</h3>
-                  <p className="text-sm text-green-700">Advanced match analytics with charts and performance metrics</p>
-                </div>
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-semibold text-purple-900">Export & Share</h3>
-                  <p className="text-sm text-purple-700">Multiple export formats and social sharing capabilities</p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-l-4 border-green-500">
-                <h3 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
-                  <Star className="w-4 h-4" />
-                  What's New in v1.3.0
-                </h3>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Multi-language support with 3+ languages</li>
-                  <li>• Social media integration for easy sharing</li>
-                  <li>• Advanced statistics and player analytics</li>
-                  <li>• Enhanced commentary system with voice input</li>
-                  <li>• Professional scoreboard with complete match details</li>
-                  <li>• Improved wicket tracking and dismissal features</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="libraries" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Technology Stack & Libraries</CardTitle>
-              <p className="text-gray-600">Complete list of libraries and technologies used in this application</p>
-            </CardHeader>
-            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {libraries.map((lib, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{lib.name}</h3>
-                      <Badge variant="outline">{lib.version}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">{lib.description}</p>
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                    Core Features
+                  </h3>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• Real-time live scoring with ball-by-ball tracking</li>
+                    <li>• User authentication and match permissions</li>
+                    <li>• Professional scorecards and analytics</li>
+                    <li>• Tournament management system</li>
+                    <li>• Multi-language support</li>
+                    <li>• Social media integration</li>
+                    <li>• Advanced statistics and insights</li>
+                    <li>• Commentary system</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Target className="w-4 h-4 text-green-500" />
+                    Target Users
+                  </h3>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• Cricket clubs and academies</li>
+                    <li>• Tournament organizers</li>
+                    <li>• Professional scorers</li>
+                    <li>• Match officials and umpires</li>
+                    <li>• Cricket enthusiasts</li>
+                    <li>• Sports journalists</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Start Guide</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                  <div>
+                    <h4 className="font-medium">Create Account & Login</h4>
+                    <p className="text-sm text-gray-600">Sign up for a new account or login with existing credentials</p>
                   </div>
-                ))}
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                  <div>
+                    <h4 className="font-medium">Create Teams & Players</h4>
+                    <p className="text-sm text-gray-600">Set up teams and add player profiles with detailed information</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                  <div>
+                    <h4 className="font-medium">Schedule Match</h4>
+                    <p className="text-sm text-gray-600">Create a new match with teams, venue, and format details</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                  <div>
+                    <h4 className="font-medium">Start Live Scoring</h4>
+                    <p className="text-sm text-gray-600">Begin ball-by-ball scoring with real-time updates</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="features" className="space-y-4">
+        <TabsContent value="authentication" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Current Features</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Authentication System
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">User Roles & Permissions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="bg-blue-50">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-blue-800">Match Owner</h4>
+                        <p className="text-sm text-blue-600 mt-1">
+                          Full control over match settings, can assign scorers and manage permissions
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-green-50">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-green-800">Scorer</h4>
+                        <p className="text-sm text-green-600 mt-1">
+                          Can perform live scoring, update match events and player statistics
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gray-50">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-gray-800">Viewer</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Read-only access to view live scores and match statistics
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="font-semibold mb-2">Security Features</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Row-Level Security (RLS) for data protection
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      JWT-based authentication with Supabase
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Automatic match ownership assignment
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Permission-based access control
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="scoring" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Live Scoring System
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold mb-3 text-blue-900">Match Management</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Create and manage cricket matches</li>
-                    <li>• Support for multiple formats (T20, ODI, Test)</li>
-                    <li>• Live match status tracking</li>
-                    <li>• Toss management with team selection</li>
-                    <li>• Innings management with automatic transitions</li>
+                  <h3 className="font-semibold mb-3">Core Scoring Features</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• Ball-by-ball scoring with run tracking</li>
+                    <li>• Automatic over completion detection</li>
+                    <li>• Innings break management (6 overs = innings break)</li>
+                    <li>• Wicket selector with dismissal types</li>
+                    <li>• Bowler rotation after each over</li>
+                    <li>• Real-time strike rotation</li>
+                    <li>• Partnership tracking</li>
+                    <li>• Fall of wickets recording</li>
                   </ul>
                 </div>
                 
                 <div>
-                  <h3 className="font-semibold mb-3 text-green-900">Live Scoring</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Real-time ball-by-ball scoring</li>
-                    <li>• Quick scoring buttons (0, 1, 2, 3, 4, 6)</li>
-                    <li>• Wicket tracking with detailed dismissal types</li>
-                    <li>• Extras handling (Wides, No Balls, Byes, Leg Byes)</li>
-                    <li>• Strike rotation management</li>
+                  <h3 className="font-semibold mb-3">Match Flow</h3>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-50 rounded">
+                      <h4 className="font-medium text-blue-800">1. Toss</h4>
+                      <p className="text-sm text-blue-600">Winner decides to bat or bowl first</p>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded">
+                      <h4 className="font-medium text-green-800">2. Player Selection</h4>
+                      <p className="text-sm text-green-600">Choose opening batsmen and bowler</p>
+                    </div>
+                    <div className="p-3 bg-purple-50 rounded">
+                      <h4 className="font-medium text-purple-800">3. Live Scoring</h4>
+                      <p className="text-sm text-purple-600">Ball-by-ball scoring with automatic tracking</p>
+                    </div>
+                    <div className="p-3 bg-orange-50 rounded">
+                      <h4 className="font-medium text-orange-800">4. Match Completion</h4>
+                      <p className="text-sm text-orange-600">Automatic result calculation and awards</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Scoring Rules & Automation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Automatic Features</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• <strong>Over Completion:</strong> After 6 balls, automatically moves to next over</li>
+                    <li>• <strong>Innings Break:</strong> After specified overs (default: 6), triggers innings break</li>
+                    <li>• <strong>Strike Rotation:</strong> Odd runs automatically change strike</li>
+                    <li>• <strong>Bowler Selection:</strong> Prompts for new bowler after each over</li>
+                    <li>• <strong>Match End:</strong> Automatic when target achieved or overs completed</li>
                   </ul>
                 </div>
-
+                
                 <div>
-                  <h3 className="font-semibold mb-3 text-purple-900">Advanced Analytics</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Interactive performance dashboards</li>
-                    <li>• Player comparison tools</li>
-                    <li>• Trend analysis with charts</li>
-                    <li>• AI-powered insights and predictions</li>
-                    <li>• Data export in multiple formats</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3 text-orange-900">Multi-Language & Social (NEW)</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Support for English, Hindi, and Spanish</li>
-                    <li>• Real-time language switching</li>
-                    <li>• Social media sharing integration</li>
-                    <li>• Shareable scorecards and match images</li>
-                    <li>• Cultural number formatting</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3 text-red-900">Commentary System (NEW)</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Live commentary feed</li>
-                    <li>• Voice input for commentary</li>
-                    <li>• AI-assisted commentary generation</li>
-                    <li>• Commentary templates and shortcuts</li>
-                    <li>• Audio playback support</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3 text-indigo-900">Export & Reporting</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Match analytics with charts and graphs</li>
-                    <li>• Partnership tracking and visualization</li>
-                    <li>• Fall of wickets analysis</li>
-                    <li>• Multiple export formats (PDF, PNG, JSON, CSV, TXT)</li>
-                    <li>• Print-friendly scorecards</li>
+                  <h3 className="font-semibold mb-3">Dismissal Types</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• Bowled</li>
+                    <li>• Caught (with fielder selection)</li>
+                    <li>• LBW</li>
+                    <li>• Run Out (with fielder selection)</li>
+                    <li>• Stumped (with keeper selection)</li>
+                    <li>• Hit Wicket</li>
+                    <li>• Retired Hurt</li>
+                    <li>• Obstructing the Field</li>
                   </ul>
                 </div>
               </div>
@@ -354,40 +278,282 @@ const Documentation = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="roadmap" className="space-y-4">
-          {settings.show_roadmap && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Development Roadmap
-                </CardTitle>
-                <p className="text-gray-600">Our planned features and enhancements</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {roadmapItems.map((phase, index) => (
-                    <div key={index} className="border-l-4 border-gray-200 pl-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        {getStatusIcon(phase.status)}
-                        <h3 className="font-semibold text-lg">{phase.phase}</h3>
-                        <Badge className={getStatusColor(phase.status)}>
-                          {phase.status.replace('-', ' ')}
-                        </Badge>
-                      </div>
-                      <ul className="space-y-1">
-                        {phase.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="text-sm text-gray-700 ml-4">
-                            • {item}
-                          </li>
-                        ))}
+        <TabsContent value="features" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Feature Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+                  <CardContent className="p-4">
+                    <Trophy className="w-8 h-8 text-blue-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Tournament Management</h3>
+                    <p className="text-sm text-gray-600">
+                      Complete tournament organization with team registration, scheduling, and bracket management.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-50 to-green-100">
+                  <CardContent className="p-4">
+                    <Users className="w-8 h-8 text-green-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Player Management</h3>
+                    <p className="text-sm text-gray-600">
+                      Comprehensive player profiles with statistics, photos, and performance tracking.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+                  <CardContent className="p-4">
+                    <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Advanced Analytics</h3>
+                    <p className="text-sm text-gray-600">
+                      Deep insights with charts, graphs, and statistical analysis of matches and players.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-red-50 to-red-100">
+                  <CardContent className="p-4">
+                    <Globe className="w-8 h-8 text-red-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Multi-Language</h3>
+                    <p className="text-sm text-gray-600">
+                      Support for multiple languages with easy switching between English, Hindi, and others.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100">
+                  <CardContent className="p-4">
+                    <Share2 className="w-8 h-8 text-yellow-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Social Integration</h3>
+                    <p className="text-sm text-gray-600">
+                      Share match updates and scorecards directly to social media platforms.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100">
+                  <CardContent className="p-4">
+                    <MessageSquare className="w-8 h-8 text-indigo-600 mb-2" />
+                    <h3 className="font-semibold mb-2">Live Commentary</h3>
+                    <p className="text-sm text-gray-600">
+                      Ball-by-ball commentary with automatic generation and manual override options.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="w-5 h-5" />
+                Analytics & Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Match Analytics</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• Run rate progression charts</li>
+                    <li>• Wicket fall patterns</li>
+                    <li>• Partnership analysis</li>
+                    <li>• Bowling analysis by overs</li>
+                    <li>• Shot selection heatmaps</li>
+                    <li>• Momentum charts</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-3">Player Statistics</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• Batting averages and strike rates</li>
+                    <li>• Bowling figures and economy rates</li>
+                    <li>• Fielding statistics</li>
+                    <li>• Performance trends</li>
+                    <li>• Head-to-head comparisons</li>
+                    <li>• Career milestones</li>
+                  </ul>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-semibold mb-3">Advanced Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-blue-50">
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-blue-800">Predictive Analytics</h4>
+                      <p className="text-xs text-blue-600 mt-1">Win probability and score predictions</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-green-50">
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-green-800">Performance Insights</h4>
+                      <p className="text-xs text-green-600 mt-1">Player form and team trends</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-purple-50">
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-purple-800">Comparative Analysis</h4>
+                      <p className="text-xs text-purple-600 mt-1">Match and player comparisons</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="export" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Export & Reporting
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Export Formats</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• <strong>PDF Scorecards:</strong> Professional match reports</li>
+                    <li>• <strong>Excel Statistics:</strong> Detailed player and match data</li>
+                    <li>• <strong>JSON Data:</strong> Raw data for further analysis</li>
+                    <li>• <strong>Image Cards:</strong> Social media ready graphics</li>
+                    <li>• <strong>CSV Reports:</strong> Compatible with external tools</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-3">Report Contents</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>• Complete scorecard with all statistics</li>
+                    <li>• Ball-by-ball commentary</li>
+                    <li>• Fall of wickets details</li>
+                    <li>• Partnership information</li>
+                    <li>• Best performers and awards</li>
+                    <li>• Match summary and result</li>
+                  </ul>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-semibold mb-3">Professional Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-blue-50">
+                    <CardContent className="p-4">
+                      <Award className="w-6 h-6 text-blue-600 mb-2" />
+                      <h4 className="font-medium text-blue-800">Branded Reports</h4>
+                      <p className="text-sm text-blue-600">
+                        Customize reports with team logos, tournament branding, and sponsor information.
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-green-50">
+                    <CardContent className="p-4">
+                      <Share2 className="w-6 h-6 text-green-600 mb-2" />
+                      <h4 className="font-medium text-green-800">Instant Sharing</h4>
+                      <p className="text-sm text-green-600">
+                        One-click sharing to social media, email, or cloud storage platforms.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Configuration</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Match Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Format Options</h4>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• T20 (20 overs)</li>
+                        <li>• One Day (50 overs)</li>
+                        <li>• Test Match</li>
+                        <li>• Custom overs</li>
                       </ul>
                     </div>
-                  ))}
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Scoring Rules</h4>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• DLS method support</li>
+                        <li>• Super Over rules</li>
+                        <li>• Powerplay tracking</li>
+                        <li>• Free hit rules</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+
+                <Separator />
+
+                <div>
+                  <h3 className="font-semibold mb-3">System Integration</h3>
+                  <div className="space-y-3">
+                    <Card className="bg-gray-50">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium mb-2">Database</h4>
+                        <p className="text-sm text-gray-600">
+                          Built on Supabase with PostgreSQL for reliable data storage and real-time updates.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="bg-gray-50">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium mb-2">Authentication</h4>
+                        <p className="text-sm text-gray-600">
+                          Secure JWT-based authentication with role-based access control and session management.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="api" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Reference</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">Coming Soon</h3>
+                <p className="text-sm text-gray-600">
+                  REST API documentation and GraphQL endpoints for third-party integrations will be available in the next release.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

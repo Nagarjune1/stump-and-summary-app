@@ -45,12 +45,24 @@ const CricketScoreboard = ({
 
   const getCurrentBattingStats = () => {
     const currentTeamPlayers = battingTeam === 1 ? team1Players : team2Players;
-    return currentTeamPlayers.filter(player => player.batted || currentBatsmen.some(b => b.id === player.id));
+    return currentTeamPlayers.filter(player => 
+      currentBatsmen.some(b => b.id === player.id) || player.batted
+    ).map(player => {
+      const currentBatsman = currentBatsmen.find(b => b.id === player.id);
+      return currentBatsman || player;
+    });
   };
 
   const getCurrentBowlingStats = () => {
     const currentBowlingTeamPlayers = battingTeam === 1 ? team2Players : team1Players;
-    return currentBowlingTeamPlayers.filter(player => player.bowled && (player.overs > 0 || player.runs > 0));
+    return currentBowlingTeamPlayers.filter(player => 
+      player.id === currentBowler?.id || player.bowled
+    ).map(player => {
+      if (player.id === currentBowler?.id) {
+        return currentBowler;
+      }
+      return player;
+    });
   };
 
   return (
@@ -154,7 +166,7 @@ const CricketScoreboard = ({
                   <span className="text-sm text-gray-600">bowling</span>
                 </div>
                 <div className="flex gap-4 text-sm">
-                  <span>{currentBowler.overs || 0} Ov</span>
+                  <span>{(currentBowler.overs || 0).toFixed(1)} Ov</span>
                   <span>{currentBowler.runs || 0} R</span>
                   <span>{currentBowler.wickets || 0} W</span>
                   <span>ECO: {(currentBowler.overs || 0) > 0 ? ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'}</span>
@@ -211,6 +223,9 @@ const CricketScoreboard = ({
                       {player.isOut && (
                         <span className="text-xs text-red-600">{player.dismissalType || 'out'}</span>
                       )}
+                      {currentBatsmen.some(b => b.id === player.id && !b.isOut) && (
+                        <span className="text-xs text-green-600">batting</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-center font-semibold">{player.runs || 0}</TableCell>
@@ -247,8 +262,15 @@ const CricketScoreboard = ({
             <TableBody>
               {getCurrentBowlingStats().map((player, index) => (
                 <TableRow key={index}>
-                  <TableCell className="font-medium">{player.name}</TableCell>
-                  <TableCell className="text-center">{player.overs || 0}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span>{player.name}</span>
+                      {player.id === currentBowler?.id && (
+                        <span className="text-xs text-red-600">bowling</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">{(player.overs || 0).toFixed(1)}</TableCell>
                   <TableCell className="text-center">{player.maidens || 0}</TableCell>
                   <TableCell className="text-center">{player.runs || 0}</TableCell>
                   <TableCell className="text-center font-semibold">{player.wickets || 0}</TableCell>
