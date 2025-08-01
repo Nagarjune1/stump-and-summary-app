@@ -97,21 +97,26 @@ const LiveScoring = () => {
   };
 
   const checkMatchCompletion = () => {
-    if (!innings1Score || !innings2Score) return;
+    if (!innings1Score || !innings2Score || currentInnings !== 2) return;
 
     const target = innings1Score.runs + 1;
     const ballsRemaining = (totalOvers * 6) - (innings2Score.overs * 6 + innings2Score.balls);
     
+    console.log('Match completion check:', {
+      target,
+      ballsRemaining,
+      innings2Runs: innings2Score.runs,
+      innings2Wickets: innings2Score.wickets
+    });
+
     // Match completed if:
     // 1. Second innings reaches or exceeds target (win)
     // 2. Second innings all out before reaching target (loss)
     // 3. All overs completed in second innings
-    // 4. Tied score with no balls remaining
     
-    const secondInningsComplete = innings2Score.overs >= totalOvers;
+    const secondInningsComplete = innings2Score.overs >= totalOvers || ballsRemaining <= 0;
     const targetReached = innings2Score.runs >= target;
     const allOut = innings2Score.wickets >= 10;
-    const tiedWithNoBalls = innings2Score.runs === innings1Score.runs && ballsRemaining === 0;
 
     if (targetReached) {
       // Second team wins
@@ -125,12 +130,9 @@ const LiveScoring = () => {
         const result = `${team1Name} won by ${innings1Score.runs - innings2Score.runs} runs`;
         completeMatch(result);
       } else {
-        // Tied match
+        // Tied match - only if no balls remaining
         completeMatch("Match Tied");
       }
-    } else if (tiedWithNoBalls) {
-      // Only declare tie if it's the last ball
-      completeMatch("Match Tied");
     }
     // Otherwise, match continues
   };
@@ -436,19 +438,23 @@ const LiveScoring = () => {
           .eq('innings', currentInnings)
           .single();
 
+        const updatedRunsScored = (existingBatsmanStats?.runs_scored || 0) + runs;
+        const updatedBallsFaced = (existingBatsmanStats?.balls_faced || 0) + 1;
+        const updatedFours = (existingBatsmanStats?.fours || 0) + (runs === 4 ? 1 : 0);
+        const updatedSixes = (existingBatsmanStats?.sixes || 0) + (runs === 6 ? 1 : 0);
+        const calculatedStrikeRate = updatedBallsFaced > 0 ? (updatedRunsScored / updatedBallsFaced) * 100 : 0;
+
         const batsmanStats = {
           match_id: matchId,
           player_id: batsmanId,
           innings: currentInnings,
-          runs_scored: (existingBatsmanStats?.runs_scored || 0) + runs,
-          balls_faced: (existingBatsmanStats?.balls_faced || 0) + 1,
-          fours: (existingBatsmanStats?.fours || 0) + (runs === 4 ? 1 : 0),
-          sixes: (existingBatsmanStats?.sixes || 0) + (runs === 6 ? 1 : 0),
+          runs_scored: updatedRunsScored,
+          balls_faced: updatedBallsFaced,
+          fours: updatedFours,
+          sixes: updatedSixes,
+          strike_rate: calculatedStrikeRate,
           dismissal_type: isWicket ? wicketType : existingBatsmanStats?.dismissal_type
         };
-
-        batsmanStats.strike_rate = batsmanStats.balls_faced > 0 ? 
-          (batsmanStats.runs_scored / batsmanStats.balls_faced) * 100 : 0;
 
         if (existingBatsmanStats) {
           await supabase
@@ -472,17 +478,20 @@ const LiveScoring = () => {
           .eq('innings', currentInnings)
           .single();
 
+        const updatedOversBowled = (existingBowlerStats?.overs_bowled || 0) + (1/6);
+        const updatedRunsConceded = (existingBowlerStats?.runs_conceded || 0) + runs + extras;
+        const updatedWicketsTaken = (existingBowlerStats?.wickets_taken || 0) + (isWicket ? 1 : 0);
+        const calculatedEconomyRate = updatedOversBowled > 0 ? updatedRunsConceded / updatedOversBowled : 0;
+
         const bowlerStats = {
           match_id: matchId,
           player_id: bowlerId,
           innings: currentInnings,
-          overs_bowled: (existingBowlerStats?.overs_bowled || 0) + (1/6),
-          runs_conceded: (existingBowlerStats?.runs_conceded || 0) + runs + extras,
-          wickets_taken: (existingBowlerStats?.wickets_taken || 0) + (isWicket ? 1 : 0)
+          overs_bowled: updatedOversBowled,
+          runs_conceded: updatedRunsConceded,
+          wickets_taken: updatedWicketsTaken,
+          economy_rate: calculatedEconomyRate
         };
-
-        bowlerStats.economy_rate = bowlerStats.overs_bowled > 0 ? 
-          bowlerStats.runs_conceded / bowlerStats.overs_bowled : 0;
 
         if (existingBowlerStats) {
           await supabase
