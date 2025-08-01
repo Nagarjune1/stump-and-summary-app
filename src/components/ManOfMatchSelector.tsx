@@ -19,10 +19,36 @@ const ManOfMatchSelector = ({
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  // Filter out players with empty/invalid IDs or names
-  const validTeam1Players = team1Players.filter(p => p.id && p.name && p.id.toString().trim() !== "");
-  const validTeam2Players = team2Players.filter(p => p.id && p.name && p.id.toString().trim() !== "");
+  // More robust validation for players
+  const isValidPlayer = (player) => {
+    if (!player) {
+      console.log('Invalid player: null/undefined');
+      return false;
+    }
+    
+    const hasValidId = player.id !== null && 
+                      player.id !== undefined && 
+                      String(player.id).trim() !== '';
+    
+    const hasValidName = player.name && 
+                        String(player.name).trim() !== '';
+    
+    if (!hasValidId) {
+      console.log('Invalid player ID:', player);
+    }
+    
+    if (!hasValidName) {
+      console.log('Invalid player name:', player);
+    }
+    
+    return hasValidId && hasValidName;
+  };
+
+  const validTeam1Players = team1Players.filter(isValidPlayer);
+  const validTeam2Players = team2Players.filter(isValidPlayer);
   const allPlayers = [...validTeam1Players, ...validTeam2Players];
+
+  console.log('Valid players for MoM selection:', allPlayers);
 
   const handleSaveMom = async () => {
     if (!selectedMom) {
@@ -45,8 +71,8 @@ const ManOfMatchSelector = ({
 
       if (error) throw error;
 
-      const momPlayer = allPlayers.find(p => p.id.toString() === selectedMom);
-      const mosPlayer = selectedMos ? allPlayers.find(p => p.id.toString() === selectedMos) : null;
+      const momPlayer = allPlayers.find(p => String(p.id) === selectedMom);
+      const mosPlayer = selectedMos ? allPlayers.find(p => String(p.id) === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
@@ -108,11 +134,20 @@ const ManOfMatchSelector = ({
                   <SelectValue placeholder="Select Man of the Match" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allPlayers.map((player) => (
-                    <SelectItem key={player.id} value={player.id.toString()}>
-                      {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name || 'Team 1' : matchData.team2?.name || 'Team 2'})
-                    </SelectItem>
-                  ))}
+                  {allPlayers.map((player) => {
+                    const playerId = String(player.id);
+                    const teamName = String(player.team_id) === String(matchData.team1_id) 
+                      ? matchData.team1?.name || 'Team 1' 
+                      : matchData.team2?.name || 'Team 2';
+                    
+                    console.log('Rendering MoM player with ID:', playerId);
+                    
+                    return (
+                      <SelectItem key={playerId} value={playerId}>
+                        {player.name} ({teamName})
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </CardContent>
@@ -129,11 +164,20 @@ const ManOfMatchSelector = ({
                     <SelectValue placeholder="Select Man of the Series (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allPlayers.map((player) => (
-                      <SelectItem key={player.id} value={player.id.toString()}>
-                        {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name || 'Team 1' : matchData.team2?.name || 'Team 2'})
-                      </SelectItem>
-                    ))}
+                    {allPlayers.map((player) => {
+                      const playerId = String(player.id);
+                      const teamName = String(player.team_id) === String(matchData.team1_id) 
+                        ? matchData.team1?.name || 'Team 1' 
+                        : matchData.team2?.name || 'Team 2';
+                      
+                      console.log('Rendering MoS player with ID:', playerId);
+                      
+                      return (
+                        <SelectItem key={playerId} value={playerId}>
+                          {player.name} ({teamName})
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </CardContent>

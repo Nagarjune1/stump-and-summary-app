@@ -65,9 +65,11 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Ensure team names are not empty
-  const team1Name = match.team1?.name || 'Team 1';
-  const team2Name = match.team2?.name || 'Team 2';
+  // Ensure team names are not empty strings and have valid fallbacks
+  const team1Name = (match.team1?.name && String(match.team1.name).trim()) || 'Team 1';
+  const team2Name = (match.team2?.name && String(match.team2.name).trim()) || 'Team 2';
+
+  console.log('Team names for toss:', { team1Name, team2Name });
 
   return (
     <Card>

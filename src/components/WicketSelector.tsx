@@ -17,7 +17,7 @@ const WicketSelector = ({
 }) => {
   const [dismissalType, setDismissalType] = useState("");
   const [fielder, setFielder] = useState("");
-  const [bowler, setBowler] = useState(currentBowler?.id || "");
+  const [bowler, setBowler] = useState(currentBowler?.id ? String(currentBowler.id) : "");
 
   const dismissalTypes = [
     "bowled",
@@ -43,21 +43,21 @@ const WicketSelector = ({
     let dismissalText = dismissalType;
     
     if (dismissalType === "caught" && fielder && bowler) {
-      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
-      const bowlerName = fieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
+      const fielderName = fieldingPlayers.find(p => String(p.id) === fielder)?.name || "unknown";
+      const bowlerName = fieldingPlayers.find(p => String(p.id) === bowler)?.name || currentBowler?.name || "unknown";
       dismissalText = `c ${fielderName} b ${bowlerName}`;
     } else if (dismissalType === "bowled" && bowler) {
-      const bowlerName = fieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
+      const bowlerName = fieldingPlayers.find(p => String(p.id) === bowler)?.name || currentBowler?.name || "unknown";
       dismissalText = `b ${bowlerName}`;
     } else if (dismissalType === "lbw" && bowler) {
-      const bowlerName = fieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
+      const bowlerName = fieldingPlayers.find(p => String(p.id) === bowler)?.name || currentBowler?.name || "unknown";
       dismissalText = `lbw b ${bowlerName}`;
     } else if (dismissalType === "stumped" && fielder && bowler) {
-      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
-      const bowlerName = fieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
+      const fielderName = fieldingPlayers.find(p => String(p.id) === fielder)?.name || "unknown";
+      const bowlerName = fieldingPlayers.find(p => String(p.id) === bowler)?.name || currentBowler?.name || "unknown";
       dismissalText = `st ${fielderName} b ${bowlerName}`;
     } else if (dismissalType === "run out" && fielder) {
-      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
+      const fielderName = fieldingPlayers.find(p => String(p.id) === fielder)?.name || "unknown";
       dismissalText = `run out (${fielderName})`;
     }
 
@@ -68,15 +68,26 @@ const WicketSelector = ({
   const handleClose = () => {
     setDismissalType("");
     setFielder("");
-    setBowler(currentBowler?.id || "");
+    setBowler(currentBowler?.id ? String(currentBowler.id) : "");
     onClose();
   };
 
   const needsFielder = ["caught", "stumped", "run out"].includes(dismissalType);
   const needsBowler = ["caught", "bowled", "lbw", "stumped"].includes(dismissalType);
 
-  // Filter out players with empty/invalid IDs or names
-  const validFieldingPlayers = fieldingPlayers.filter(p => p.id && p.name && p.id.toString().trim() !== "");
+  // More robust validation for fielding players
+  const validFieldingPlayers = fieldingPlayers.filter(p => {
+    const hasValidId = p && p.id !== null && p.id !== undefined && String(p.id).trim() !== "";
+    const hasValidName = p && p.name && String(p.name).trim() !== "";
+    
+    if (!hasValidId || !hasValidName) {
+      console.log('Filtering out invalid fielding player:', p);
+    }
+    
+    return hasValidId && hasValidName;
+  });
+
+  console.log('Valid fielding players:', validFieldingPlayers);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -120,11 +131,15 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select fielder" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id.toString()}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
+                      {validFieldingPlayers.map((player) => {
+                        const playerId = String(player.id);
+                        console.log('Rendering fielder with ID:', playerId);
+                        return (
+                          <SelectItem key={playerId} value={playerId}>
+                            {player.name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -138,11 +153,15 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select bowler" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id.toString()}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
+                      {validFieldingPlayers.map((player) => {
+                        const playerId = String(player.id);
+                        console.log('Rendering bowler with ID:', playerId);
+                        return (
+                          <SelectItem key={playerId} value={playerId}>
+                            {player.name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
