@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { createSafeSelectValue } from "@/utils/selectUtils";
+import { createSafeTeamValue } from "@/utils/selectUtils";
 
 const TossSelector = ({ 
   match,
@@ -66,15 +67,11 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Use safe value creation for team names with guaranteed non-empty fallbacks
-  const team1Name = createSafeSelectValue(match.team1?.name, 'Team 1');
-  const team2Name = createSafeSelectValue(match.team2?.name, 'Team 2');
+  // Use safe team value creation with guaranteed non-empty values
+  const team1Value = createSafeTeamValue(match.team1?.name, 1);
+  const team2Value = createSafeTeamValue(match.team2?.name, 2);
 
-  console.log('TossSelector: Safe team names:', { team1Name, team2Name });
-
-  // Ensure team names are never empty strings for SelectItem
-  const safeTeam1Value = team1Name || 'team1_fallback';
-  const safeTeam2Value = team2Name || 'team2_fallback';
+  console.log('TossSelector: Safe team values:', { team1Value, team2Value });
 
   return (
     <Card>
@@ -89,8 +86,12 @@ const TossSelector = ({
               <SelectValue placeholder="Select toss winner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={safeTeam1Value}>{team1Name}</SelectItem>
-              <SelectItem value={safeTeam2Value}>{team2Name}</SelectItem>
+              <SafeSelectItem value={team1Value}>
+                {match.team1?.name || 'Team 1'}
+              </SafeSelectItem>
+              <SafeSelectItem value={team2Value}>
+                {match.team2?.name || 'Team 2'}
+              </SafeSelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -102,8 +103,8 @@ const TossSelector = ({
               <SelectValue placeholder="Select decision" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bat">Chose to bat first</SelectItem>
-              <SelectItem value="bowl">Chose to bowl first</SelectItem>
+              <SafeSelectItem value="bat">Chose to bat first</SafeSelectItem>
+              <SafeSelectItem value="bowl">Chose to bowl first</SafeSelectItem>
             </SelectContent>
           </Select>
         </div>

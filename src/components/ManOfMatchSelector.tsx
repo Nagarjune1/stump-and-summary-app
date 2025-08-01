@@ -2,12 +2,13 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { createSafeSelectOptions, createSafeSelectValue } from "@/utils/selectUtils";
+import { createSafeSelectOptions, createSafeSelectValue, createSafePlayerValue } from "@/utils/selectUtils";
 
 const ManOfMatchSelector = ({ 
   open, 
@@ -141,7 +142,7 @@ const ManOfMatchSelector = ({
                   <SelectValue placeholder="Select Man of the Match" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allValidPlayers.map((player) => {
+                  {allValidPlayers.map((player, index) => {
                     const teamName = createSafeSelectValue(
                       player.team_id === String(matchData.team1_id) 
                         ? matchData.team1?.name 
@@ -149,16 +150,18 @@ const ManOfMatchSelector = ({
                       'Team'
                     );
                     
+                    const safePlayerId = createSafePlayerValue(player, index);
+                    
                     console.log('Rendering MoM option:', { 
-                      playerId: player.id, 
+                      playerId: safePlayerId, 
                       playerName: player.name, 
                       teamName 
                     });
                     
                     return (
-                      <SelectItem key={player.id} value={player.id}>
+                      <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                         {player.name} ({teamName})
-                      </SelectItem>
+                      </SafeSelectItem>
                     );
                   })}
                 </SelectContent>
@@ -178,8 +181,8 @@ const ManOfMatchSelector = ({
                     <SelectValue placeholder="Select Man of the Series (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {allValidPlayers.map((player) => {
+                    <SafeSelectItem value="none_option">None</SafeSelectItem>
+                    {allValidPlayers.map((player, index) => {
                       const teamName = createSafeSelectValue(
                         player.team_id === String(matchData.team1_id) 
                           ? matchData.team1?.name 
@@ -187,16 +190,18 @@ const ManOfMatchSelector = ({
                         'Team'
                       );
                       
+                      const safePlayerId = createSafePlayerValue(player, index);
+                      
                       console.log('Rendering MoS option:', { 
-                        playerId: player.id, 
+                        playerId: safePlayerId, 
                         playerName: player.name, 
                         teamName 
                       });
                       
                       return (
-                        <SelectItem key={player.id} value={player.id}>
+                        <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                           {player.name} ({teamName})
-                        </SelectItem>
+                        </SafeSelectItem>
                       );
                     })}
                   </SelectContent>

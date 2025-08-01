@@ -1,12 +1,12 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { createSafeSelectOptions } from "@/utils/selectUtils";
+import { createSafeSelectOptions, createSafePlayerValue } from "@/utils/selectUtils";
 
 const WicketSelector = ({ 
   open, 
@@ -103,9 +103,9 @@ const WicketSelector = ({
                   </SelectTrigger>
                   <SelectContent>
                     {dismissalTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
+                      <SafeSelectItem key={type} value={type}>
                         {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </SelectItem>
+                      </SafeSelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -122,13 +122,12 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select fielder" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => {
-                        // Ensure player.id is never empty string
-                        const playerId = player.id || `fallback_${player.name}_${Math.random()}`;
+                      {validFieldingPlayers.map((player, index) => {
+                        const safePlayerId = createSafePlayerValue(player, index);
                         return (
-                          <SelectItem key={playerId} value={playerId}>
+                          <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                             {player.name}
-                          </SelectItem>
+                          </SafeSelectItem>
                         );
                       })}
                     </SelectContent>
@@ -144,13 +143,12 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select bowler" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => {
-                        // Ensure player.id is never empty string
-                        const playerId = player.id || `fallback_${player.name}_${Math.random()}`;
+                      {validFieldingPlayers.map((player, index) => {
+                        const safePlayerId = createSafePlayerValue(player, index);
                         return (
-                          <SelectItem key={playerId} value={playerId}>
+                          <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                             {player.name}
-                          </SelectItem>
+                          </SafeSelectItem>
                         );
                       })}
                     </SelectContent>

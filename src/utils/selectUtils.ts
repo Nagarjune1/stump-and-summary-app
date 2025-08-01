@@ -8,12 +8,16 @@ export interface SafeSelectOption {
 }
 
 export const createSafeSelectValue = (value: any, fallback: string = 'unknown'): string => {
+  // Handle null/undefined
   if (value === null || value === undefined) {
     console.warn('createSafeSelectValue: null/undefined value, using fallback:', fallback);
     return fallback;
   }
   
+  // Convert to string and trim
   const stringValue = String(value).trim();
+  
+  // Check for empty or invalid strings
   if (stringValue === '' || stringValue === 'null' || stringValue === 'undefined') {
     console.warn('createSafeSelectValue: empty/invalid string value:', value, 'using fallback:', fallback);
     return fallback;
@@ -28,28 +32,22 @@ export const validateSelectOption = (option: any, index: number): SafeSelectOpti
     return null;
   }
   
-  const safeId = createSafeSelectValue(option.id, `option_${index}`);
-  const safeName = createSafeSelectValue(option.name, `Option ${index + 1}`);
+  // Generate unique fallback IDs
+  const fallbackId = `option_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const fallbackName = `Option ${index + 1}`;
   
-  // Ensure the ID is never an empty string - this is critical for SelectItem
-  if (safeId === '' || safeId === 'null' || safeId === 'undefined') {
-    console.warn(`validateSelectOption: invalid ID for option ${index}, using generated ID`);
-    const generatedId = `generated_option_${index}_${Date.now()}`;
-    return {
-      ...option,
-      id: generatedId,
-      name: safeName
-    };
-  }
+  const safeId = createSafeSelectValue(option.id, fallbackId);
+  const safeName = createSafeSelectValue(option.name, fallbackName);
   
-  // Additional safety check - if somehow still empty, generate unique ID
-  const finalId = safeId || `emergency_fallback_${index}_${Date.now()}`;
-  
-  console.log(`validateSelectOption: validated option ${index}:`, { finalId, safeName });
+  console.log(`validateSelectOption: validated option ${index}:`, { 
+    originalId: option.id,
+    safeId, 
+    safeName 
+  });
   
   return {
     ...option,
-    id: finalId,
+    id: safeId,
     name: safeName
   };
 };
@@ -64,7 +62,7 @@ export const createSafeSelectOptions = (options: any[], prefix: string = 'item')
     .map((option, index) => validateSelectOption(option, index))
     .filter((option): option is SafeSelectOption => {
       if (!option) return false;
-      // Critical check: ensure no empty string IDs get through to SelectItem
+      // Ensure no empty string IDs get through
       if (!option.id || option.id === '' || option.id === 'null' || option.id === 'undefined') {
         console.warn('createSafeSelectOptions: filtering out option with invalid ID:', option);
         return false;
@@ -77,9 +75,36 @@ export const createSafeSelectOptions = (options: any[], prefix: string = 'item')
   return safeOptions;
 };
 
-// New utility function specifically for ensuring SelectItem values are never empty
+// Enhanced utility function specifically for ensuring SelectItem values are never empty
 export const ensureValidSelectItemValue = (value: any, fallback?: string): string => {
-  const safeValue = createSafeSelectValue(value, fallback || `fallback_${Date.now()}`);
-  // Double check - if somehow still empty, use timestamp-based fallback
-  return safeValue || `emergency_${Date.now()}`;
+  // Generate unique fallback if none provided
+  const uniqueFallback = fallback || `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Handle null/undefined
+  if (value === null || value === undefined) {
+    console.warn('ensureValidSelectItemValue: null/undefined value, using fallback:', uniqueFallback);
+    return uniqueFallback;
+  }
+  
+  // Convert to string and trim
+  const stringValue = String(value).trim();
+  
+  // Check for empty or invalid strings
+  if (stringValue === '' || stringValue === 'null' || stringValue === 'undefined') {
+    console.warn('ensureValidSelectItemValue: empty/invalid string value:', value, 'using fallback:', uniqueFallback);
+    return uniqueFallback;
+  }
+  
+  return stringValue;
+};
+
+// Additional utility for team names specifically
+export const createSafeTeamValue = (teamName: any, teamIndex: number): string => {
+  return ensureValidSelectItemValue(teamName, `team_${teamIndex}_${Date.now()}`);
+};
+
+// Utility for player names specifically  
+export const createSafePlayerValue = (player: any, index: number): string => {
+  const playerId = player?.id;
+  return ensureValidSelectItemValue(playerId, `player_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`);
 };
