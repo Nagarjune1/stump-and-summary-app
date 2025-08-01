@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeSelectOptions, createSafeSelectValue } from "@/utils/selectUtils";
 
 const ManOfMatchSelector = ({ 
   open, 
@@ -19,55 +20,12 @@ const ManOfMatchSelector = ({
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  // Ultra-robust validation for players
-  const getValidPlayers = (players: any[], teamType: string) => {
-    if (!Array.isArray(players)) {
-      console.log(`${teamType} is not an array:`, players);
-      return [];
-    }
-
-    return players.filter(player => {
-      if (!player) {
-        console.log(`Null player found in ${teamType}`);
-        return false;
-      }
-
-      // Validate ID
-      const id = player.id;
-      if (id === null || id === undefined) {
-        console.log(`Player with null/undefined ID in ${teamType}:`, player);
-        return false;
-      }
-
-      const stringId = String(id).trim();
-      if (stringId === '' || stringId === 'null' || stringId === 'undefined') {
-        console.log(`Player with invalid string ID in ${teamType}:`, player, 'stringId:', stringId);
-        return false;
-      }
-
-      // Validate name
-      const name = player.name;
-      if (!name || typeof name !== 'string') {
-        console.log(`Player with invalid name type in ${teamType}:`, player);
-        return false;
-      }
-
-      const trimmedName = name.trim();
-      if (trimmedName === '') {
-        console.log(`Player with empty name in ${teamType}:`, player);
-        return false;
-      }
-
-      console.log(`Valid player in ${teamType}:`, { id: stringId, name: trimmedName });
-      return true;
-    });
-  };
-
-  const validTeam1Players = getValidPlayers(team1Players, 'team1Players');
-  const validTeam2Players = getValidPlayers(team2Players, 'team2Players');
+  // Use safe validation for players
+  const validTeam1Players = createSafeSelectOptions(team1Players, 'team1_player');
+  const validTeam2Players = createSafeSelectOptions(team2Players, 'team2_player');
   const allValidPlayers = [...validTeam1Players, ...validTeam2Players];
 
-  console.log('Valid players for MoM selection:', {
+  console.log('ManOfMatchSelector: Valid players for MoM selection:', {
     team1Count: validTeam1Players.length,
     team2Count: validTeam2Players.length,
     totalCount: allValidPlayers.length
@@ -94,8 +52,8 @@ const ManOfMatchSelector = ({
 
       if (error) throw error;
 
-      const momPlayer = allValidPlayers.find(p => String(p.id) === selectedMom);
-      const mosPlayer = selectedMos ? allValidPlayers.find(p => String(p.id) === selectedMos) : null;
+      const momPlayer = allValidPlayers.find(p => p.id === selectedMom);
+      const mosPlayer = selectedMos ? allValidPlayers.find(p => p.id === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
@@ -158,17 +116,22 @@ const ManOfMatchSelector = ({
                 </SelectTrigger>
                 <SelectContent>
                   {allValidPlayers.map((player) => {
-                    const playerId = String(player.id).trim();
-                    const playerName = String(player.name).trim();
-                    const teamName = String(player.team_id) === String(matchData.team1_id) 
-                      ? matchData.team1?.name || 'Team 1' 
-                      : matchData.team2?.name || 'Team 2';
+                    const teamName = createSafeSelectValue(
+                      player.team_id === String(matchData.team1_id) 
+                        ? matchData.team1?.name 
+                        : matchData.team2?.name,
+                      'Unknown Team'
+                    );
                     
-                    console.log('Rendering MoM player option:', { playerId, playerName, teamName });
+                    console.log('ManOfMatchSelector: Rendering MoM player option:', { 
+                      playerId: player.id, 
+                      playerName: player.name, 
+                      teamName 
+                    });
                     
                     return (
-                      <SelectItem key={playerId} value={playerId}>
-                        {playerName} ({teamName})
+                      <SelectItem key={player.id} value={player.id}>
+                        {player.name} ({teamName})
                       </SelectItem>
                     );
                   })}
@@ -189,17 +152,22 @@ const ManOfMatchSelector = ({
                   </SelectTrigger>
                   <SelectContent>
                     {allValidPlayers.map((player) => {
-                      const playerId = String(player.id).trim();
-                      const playerName = String(player.name).trim();
-                      const teamName = String(player.team_id) === String(matchData.team1_id) 
-                        ? matchData.team1?.name || 'Team 1' 
-                        : matchData.team2?.name || 'Team 2';
+                      const teamName = createSafeSelectValue(
+                        player.team_id === String(matchData.team1_id) 
+                          ? matchData.team1?.name 
+                          : matchData.team2?.name,
+                        'Unknown Team'
+                      );
                       
-                      console.log('Rendering MoS player option:', { playerId, playerName, teamName });
+                      console.log('ManOfMatchSelector: Rendering MoS player option:', { 
+                        playerId: player.id, 
+                        playerName: player.name, 
+                        teamName 
+                      });
                       
                       return (
-                        <SelectItem key={playerId} value={playerId}>
-                          {playerName} ({teamName})
+                        <SelectItem key={player.id} value={player.id}>
+                          {player.name} ({teamName})
                         </SelectItem>
                       );
                     })}

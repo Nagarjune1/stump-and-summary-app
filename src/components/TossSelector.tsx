@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { createSafeSelectValue } from "@/utils/selectUtils";
 
 const TossSelector = ({ 
   match,
@@ -65,28 +66,11 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Ensure team names are valid strings with guaranteed fallbacks
-  const getValidTeamName = (team: any, fallback: string) => {
-    if (!team) {
-      console.log(`Team is null/undefined, using fallback: ${fallback}`);
-      return fallback;
-    }
-    
-    const name = team.name;
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      console.log(`Invalid team name:`, name, `using fallback: ${fallback}`);
-      return fallback;
-    }
-    
-    const trimmedName = name.trim();
-    console.log(`Valid team name: ${trimmedName}`);
-    return trimmedName;
-  };
+  // Use safe value creation for team names
+  const team1Name = createSafeSelectValue(match.team1?.name, 'Team 1');
+  const team2Name = createSafeSelectValue(match.team2?.name, 'Team 2');
 
-  const team1Name = getValidTeamName(match.team1, 'Team 1');
-  const team2Name = getValidTeamName(match.team2, 'Team 2');
-
-  console.log('Final team names for toss:', { team1Name, team2Name });
+  console.log('TossSelector: Safe team names:', { team1Name, team2Name });
 
   return (
     <Card>
