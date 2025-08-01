@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelectItem } from "@/components/ui/SafeSelectItem";
 import { Plus, Search, Filter, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerDetailView from "./PlayerDetailView";
+import { ensureValidValue } from "@/utils/selectUtils";
 
 interface Team {
   id: string;
@@ -235,10 +237,10 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Batsman">Batsman</SelectItem>
-                    <SelectItem value="Bowler">Bowler</SelectItem>
-                    <SelectItem value="All-rounder">All-rounder</SelectItem>
-                    <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
+                    <SafeSelectItem value="Batsman">Batsman</SafeSelectItem>
+                    <SafeSelectItem value="Bowler">Bowler</SafeSelectItem>
+                    <SafeSelectItem value="All-rounder">All-rounder</SafeSelectItem>
+                    <SafeSelectItem value="Wicket-keeper">Wicket-keeper</SafeSelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -251,9 +253,9 @@ const PlayerProfiles = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
+                      <SafeSelectItem key={team.id} value={ensureValidValue(team.id)}>
                         {team.name}
-                      </SelectItem>
+                      </SafeSelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -266,8 +268,8 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select batting style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Right-handed">Right-handed</SelectItem>
-                    <SelectItem value="Left-handed">Left-handed</SelectItem>
+                    <SafeSelectItem value="Right-handed">Right-handed</SafeSelectItem>
+                    <SafeSelectItem value="Left-handed">Left-handed</SafeSelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -279,11 +281,11 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select bowling style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Fast">Fast</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Spin">Spin</SelectItem>
-                    <SelectItem value="Off-spin">Off-spin</SelectItem>
-                    <SelectItem value="Leg-spin">Leg-spin</SelectItem>
+                    <SafeSelectItem value="Fast">Fast</SafeSelectItem>
+                    <SafeSelectItem value="Medium">Medium</SafeSelectItem>
+                    <SafeSelectItem value="Spin">Spin</SafeSelectItem>
+                    <SafeSelectItem value="Off-spin">Off-spin</SafeSelectItem>
+                    <SafeSelectItem value="Leg-spin">Leg-spin</SafeSelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -315,11 +317,11 @@ const PlayerProfiles = () => {
                 <SelectValue placeholder="Filter by team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Teams</SelectItem>
+                <SafeSelectItem value="">All Teams</SafeSelectItem>
                 {teams.map(team => (
-                  <SelectItem key={team.id} value={team.id}>
+                  <SafeSelectItem key={team.id} value={ensureValidValue(team.id)}>
                     {team.name}
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -329,11 +331,11 @@ const PlayerProfiles = () => {
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Roles</SelectItem>
-                <SelectItem value="Batsman">Batsman</SelectItem>
-                <SelectItem value="Bowler">Bowler</SelectItem>
-                <SelectItem value="All-rounder">All-rounder</SelectItem>
-                <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
+                <SafeSelectItem value="">All Roles</SafeSelectItem>
+                <SafeSelectItem value="Batsman">Batsman</SafeSelectItem>
+                <SafeSelectItem value="Bowler">Bowler</SafeSelectItem>
+                <SafeSelectItem value="All-rounder">All-rounder</SafeSelectItem>
+                <SafeSelectItem value="Wicket-keeper">Wicket-keeper</SafeSelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -383,19 +385,19 @@ const PlayerProfiles = () => {
                   
                   <div className="flex items-center gap-6 text-sm">
                     <div className="text-center">
-                      <div className="font-bold text-blue-600">{player.matches}</div>
+                      <div className="font-bold text-blue-600">{player.matches || 0}</div>
                       <div className="text-gray-500">Matches</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-green-600">{player.runs}</div>
+                      <div className="font-bold text-green-600">{player.runs || 0}</div>
                       <div className="text-gray-500">Runs</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-red-600">{player.wickets}</div>
+                      <div className="font-bold text-red-600">{player.wickets || 0}</div>
                       <div className="text-gray-500">Wickets</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-purple-600">{player.average}</div>
+                      <div className="font-bold text-purple-600">{player.average || 0}</div>
                       <div className="text-gray-500">Average</div>
                     </div>
                     <Button variant="ghost" size="sm">

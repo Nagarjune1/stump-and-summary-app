@@ -136,20 +136,24 @@ const MatchAnalytics = ({
             <CardTitle>Current Batsmen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {currentBatsmen.map((batsman, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                <div>
-                  <p className="font-semibold">{batsman.name} {index === 0 ? '*' : ''}</p>
-                  <p className="text-sm text-gray-600">
-                    {batsman.runs} ({batsman.balls}b) • SR: {batsman.balls > 0 ? ((batsman.runs / batsman.balls) * 100).toFixed(1) : '0.0'}
-                  </p>
+            {currentBatsmen && currentBatsmen.length > 0 ? (
+              currentBatsmen.map((batsman, index) => (
+                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                  <div>
+                    <p className="font-semibold">{batsman.name} {index === 0 ? '*' : ''}</p>
+                    <p className="text-sm text-gray-600">
+                      {batsman.runs || 0} ({batsman.balls || 0}b) • SR: {batsman.balls > 0 ? ((batsman.runs / batsman.balls) * 100).toFixed(1) : '0.0'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline">{batsman.fours || 0}×4</Badge>
+                    <Badge variant="outline" className="ml-1">{batsman.sixes || 0}×6</Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant="outline">{batsman.fours}×4</Badge>
-                  <Badge variant="outline" className="ml-1">{batsman.sixes}×6</Badge>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500">No batsmen selected</p>
+            )}
           </CardContent>
         </Card>
 
@@ -162,7 +166,7 @@ const MatchAnalytics = ({
               <div className="p-3 bg-gray-50 rounded">
                 <p className="font-semibold">{currentBowler.name}</p>
                 <p className="text-sm text-gray-600">
-                  {currentBowler.overs}-{currentBowler.runs}-{currentBowler.wickets} • 
+                  {currentBowler.overs || 0}-{currentBowler.runs || 0}-{currentBowler.wickets || 0} • 
                   Econ: {currentBowler.overs > 0 ? (currentBowler.runs / currentBowler.overs).toFixed(2) : '0.00'}
                 </p>
               </div>

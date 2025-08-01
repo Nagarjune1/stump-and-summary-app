@@ -2,13 +2,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelectItem } from "@/components/ui/SafeSelectItem";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Target, Award, Users, Activity, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { ensureValidValue } from "@/utils/selectUtils";
 
 interface Match {
   id: string;
@@ -100,7 +102,11 @@ const AdvancedAnalytics = () => {
         .eq('status', 'completed')
         .order('match_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching matches:', error);
+        return;
+      }
+      
       setMatches(data || []);
     } catch (error) {
       console.error('Error fetching matches:', error);
@@ -114,7 +120,11 @@ const AdvancedAnalytics = () => {
         .select('id, name, role, team_id, teams(name)')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching players:', error);
+        return;
+      }
+      
       setPlayers(data || []);
     } catch (error) {
       console.error('Error fetching players:', error);
@@ -123,7 +133,6 @@ const AdvancedAnalytics = () => {
 
   const generateAnalytics = async () => {
     try {
-      // Performance metrics analysis
       let query = supabase
         .from('match_stats')
         .select(`
@@ -140,9 +149,11 @@ const AdvancedAnalytics = () => {
       }
 
       const { data: statsData, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error generating analytics:', error);
+        return;
+      }
 
-      // Process data for different analytics
       const performanceMetrics = processPerformanceMetrics(statsData);
       const trendAnalysis = processTrendAnalysis(statsData);
       const playerComparison = processPlayerComparison(statsData);
@@ -220,7 +231,6 @@ const AdvancedAnalytics = () => {
   };
 
   const processTeamPerformance = (data: MatchStat[]) => {
-    // This would require more complex team-based analysis
     return [];
   };
 
@@ -276,11 +286,11 @@ const AdvancedAnalytics = () => {
                 <SelectValue placeholder="All matches" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All matches</SelectItem>
+                <SafeSelectItem value="">All matches</SafeSelectItem>
                 {matches.map((match) => (
-                  <SelectItem key={match.id} value={match.id}>
+                  <SafeSelectItem key={match.id} value={ensureValidValue(match.id)}>
                     {match.team1?.name} vs {match.team2?.name} ({new Date(match.match_date).toLocaleDateString()})
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -292,11 +302,11 @@ const AdvancedAnalytics = () => {
                 <SelectValue placeholder="All players" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All players</SelectItem>
+                <SafeSelectItem value="">All players</SafeSelectItem>
                 {players.map((player) => (
-                  <SelectItem key={player.id} value={player.id}>
+                  <SafeSelectItem key={player.id} value={ensureValidValue(player.id)}>
                     {player.name} ({player.role})
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
               </SelectContent>
             </Select>
