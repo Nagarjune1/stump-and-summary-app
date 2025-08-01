@@ -27,7 +27,10 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     format: "",
     overs: "",
     tournament: "",
-    description: ""
+    description: "",
+    ball_type: "",
+    pitch_type: "",
+    cricket_format: ""
   });
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -92,7 +95,11 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           overs: matchData.overs ? parseInt(matchData.overs) : null,
           tournament: matchData.tournament || null,
           description: matchData.description || null,
-          status: 'upcoming'
+          ball_type: matchData.ball_type || null,
+          pitch_type: matchData.pitch_type || null,
+          cricket_format: matchData.cricket_format || null,
+          status: 'upcoming',
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }])
         .select(`
           *,
@@ -132,7 +139,10 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         format: "",
         overs: "",
         tournament: "",
-        description: ""
+        description: "",
+        ball_type: "",
+        pitch_type: "",
+        cricket_format: ""
       });
 
       fetchRecentMatches();
@@ -155,6 +165,32 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         toast({
           title: "Error",
           description: "Invalid match ID",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if current user is the match creator
+      const { data: user } = await supabase.auth.getUser();
+      const { data: match, error: matchError } = await supabase
+        .from('matches')
+        .select('created_by')
+        .eq('id', matchId)
+        .single();
+
+      if (matchError || !match) {
+        toast({
+          title: "Error",
+          description: "Match not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (match.created_by !== user.user?.id) {
+        toast({
+          title: "Permission Denied",
+          description: "Only the match creator can start the match",
           variant: "destructive"
         });
         return;
@@ -222,6 +258,10 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           venue,
           format,
           overs,
+          created_by,
+          ball_type,
+          pitch_type,
+          cricket_format,
           team1:teams!matches_team1_id_fkey(name),
           team2:teams!matches_team2_id_fkey(name)
         `)
@@ -345,17 +385,17 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           </CardContent>
         </Card>
 
-        {/* Match Format */}
+        {/* Match Format & Configuration */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
-              Match Format
+              Match Configuration
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="format">Format</Label>
+              <Label htmlFor="format">Match Format</Label>
               <Select onValueChange={(value) => setMatchData({...matchData, format: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select match format" />
@@ -386,13 +426,64 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
             )}
 
             <div>
+              <Label htmlFor="ball_type">Ball Type</Label>
+              <Select onValueChange={(value) => setMatchData({...matchData, ball_type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select ball type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="leather_red">Leather Ball - Red</SelectItem>
+                  <SelectItem value="leather_white">Leather Ball - White</SelectItem>
+                  <SelectItem value="leather_pink">Leather Ball - Pink</SelectItem>
+                  <SelectItem value="tennis_regular">Tennis Ball - Regular</SelectItem>
+                  <SelectItem value="tennis_hard">Tennis Ball - Hard</SelectItem>
+                  <SelectItem value="synthetic">Synthetic Ball</SelectItem>
+                  <SelectItem value="tape">Tape Ball</SelectItem>
+                  <SelectItem value="rubber">Rubber Ball</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="pitch_type">Pitch Type</Label>
+              <Select onValueChange={(value) => setMatchData({...matchData, pitch_type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pitch type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="green">Green Pitch</SelectItem>
+                  <SelectItem value="flat">Flat Pitch</SelectItem>
+                  <SelectItem value="dry">Dry Pitch</SelectItem>
+                  <SelectItem value="wet">Wet Pitch</SelectItem>
+                  <SelectItem value="cemented">Cemented (Box Cricket)</SelectItem>
+                  <SelectItem value="matting">Matting Pitch</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="cricket_format">Cricket Format</Label>
+              <Select onValueChange={(value) => setMatchData({...matchData, cricket_format: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cricket format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="outdoor">Outdoor (Standard)</SelectItem>
+                  <SelectItem value="indoor">Indoor Cricket</SelectItem>
+                  <SelectItem value="box">Box Cricket</SelectItem>
+                  <SelectItem value="gully">Gully / Street Cricket</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="description">Match Description</Label>
               <Textarea
                 id="description"
                 value={matchData.description}
                 onChange={(e) => setMatchData({...matchData, description: e.target.value})}
                 placeholder="Add any additional details about the match..."
-                rows={4}
+                rows={3}
               />
             </div>
 
@@ -418,13 +509,28 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                       {matchData.match_time && <span>at {matchData.match_time}</span>}
                     </div>
                   )}
-                  {matchData.format && (
-                    <div>
+                  <div className="flex gap-2 flex-wrap">
+                    {matchData.format && (
                       <Badge variant="outline">
                         {matchData.format} {matchData.format === "Custom" && matchData.overs ? `(${matchData.overs} overs)` : ""}
                       </Badge>
-                    </div>
-                  )}
+                    )}
+                    {matchData.ball_type && (
+                      <Badge variant="outline" className="text-xs">
+                        {matchData.ball_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    )}
+                    {matchData.pitch_type && (
+                      <Badge variant="outline" className="text-xs">
+                        {matchData.pitch_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Pitch
+                      </Badge>
+                    )}
+                    {matchData.cricket_format && (
+                      <Badge variant="outline" className="text-xs">
+                        {matchData.cricket_format.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Cricket
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -462,11 +568,23 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                       {match.venue} • {new Date(match.match_date).toLocaleDateString()}
                       {match.match_time && ` at ${match.match_time}`}
                     </p>
-                    {match.format && (
-                      <p className="text-xs text-gray-500">
-                        {match.format}{match.overs && ` • ${match.overs} overs`}
-                      </p>
-                    )}
+                    <div className="flex gap-1 mt-1">
+                      {match.format && (
+                        <p className="text-xs text-gray-500">
+                          {match.format}{match.overs && ` • ${match.overs} overs`}
+                        </p>
+                      )}
+                      {match.ball_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {match.ball_type.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {match.cricket_format && (
+                        <Badge variant="outline" className="text-xs">
+                          {match.cricket_format}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={match.status === "live" ? "default" : match.status === "completed" ? "secondary" : "outline"}>

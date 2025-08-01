@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Trophy, Users, BarChart, FileText, Settings, Play } from "lucide-react";
+import { Calendar, Trophy, Users, BarChart, FileText, Settings, Play, Home } from "lucide-react";
 import CreateMatch from "@/components/CreateMatch";
 import PlayerManagement from "@/components/PlayerManagement";
 import LiveScoring from "@/components/LiveScoring";
@@ -14,10 +14,11 @@ import EnhancedExportReport from "@/components/EnhancedExportReport";
 import TournamentManagement from "@/components/TournamentManagement";
 import VenueManagement from "@/components/VenueManagement";
 import Documentation from "@/components/Documentation";
+import Dashboard from "@/components/Dashboard";
 import { AuthProvider } from "@/components/AuthProvider";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("live");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [currentMatch, setCurrentMatch] = useState(null);
   const [matchData, setMatchData] = useState(null);
   const [scoreData, setScoreData] = useState({ runs: 0, wickets: 0, overs: 0 });
@@ -57,7 +58,11 @@ const Index = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-8">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-8">
+              <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center space-y-1">
+                <Home className="w-5 h-5" />
+                Dashboard
+              </TabsTrigger>
               <TabsTrigger value="live" className="flex flex-col items-center justify-center space-y-1">
                 <Play className="w-5 h-5" />
                 Live Scoring
@@ -95,6 +100,10 @@ const Index = () => {
                 Docs
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="dashboard" className="space-y-6">
+              <Dashboard />
+            </TabsContent>
 
             <TabsContent value="matches" className="space-y-6">
               <CreateMatch 
