@@ -161,7 +161,10 @@ const LiveScoring = ({ currentMatch = null }) => {
           });
         }
 
-        setRecentBalls(ballData.slice(-12));
+        const recentBallsData = ballData.slice(-12).map(ball => 
+          ball.is_wicket ? 'W' : ball.runs.toString()
+        );
+        setRecentBalls(recentBallsData);
       }
     } catch (error) {
       console.error('Error loading match data:', error);
@@ -441,9 +444,10 @@ const LiveScoring = ({ currentMatch = null }) => {
 
       if (error) throw error;
 
+      const ballValue = ballData.is_wicket ? 'W' : ballData.runs.toString();
       setRecentBalls(prev => [
         ...prev.slice(-11),
-        ballData.is_wicket ? 'W' : ballData.runs.toString()
+        ballValue
       ]);
 
     } catch (error) {
