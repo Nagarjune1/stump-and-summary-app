@@ -12,7 +12,6 @@ import { toast } from "@/hooks/use-toast";
 const AdvancedStatistics = () => {
   const [playerStats, setPlayerStats] = useState([]);
   const [teamStats, setTeamStats] = useState([]);
-  const [performanceTrends, setPerformanceTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,32 +27,28 @@ const AdvancedStatistics = () => {
         .from('players')
         .select(`
           *,
-          match_stats (
-            runs_scored,
-            wickets_taken,
-            catches,
-            matches (match_date)
-          )
+          teams!inner(id, name, city)
         `);
 
-      if (playersError) throw playersError;
+      if (playersError) {
+        console.error('Players error:', playersError);
+        throw playersError;
+      }
 
       // Process player statistics for advanced metrics
       const processedPlayerStats = players?.map(player => {
-        const totalMatches = player.match_stats?.length || 0;
-        const totalRuns = player.match_stats?.reduce((sum, stat) => sum + (stat.runs_scored || 0), 0) || 0;
-        const totalWickets = player.match_stats?.reduce((sum, stat) => sum + (stat.wickets_taken || 0), 0) || 0;
-        const totalCatches = player.match_stats?.reduce((sum, stat) => sum + (stat.catches || 0), 0) || 0;
+        const totalMatches = player.matches || 0;
+        const totalRuns = player.runs || 0;
+        const totalWickets = player.wickets || 0;
         
         return {
           ...player,
           totalMatches,
           totalRuns,
           totalWickets,
-          totalCatches,
-          battingAverage: totalMatches > 0 ? (totalRuns / totalMatches).toFixed(2) : 0,
+          battingAverage: player.average || 0,
           bowlingAverage: totalWickets > 0 ? (totalRuns / totalWickets).toFixed(2) : 0,
-          overallRating: calculatePlayerRating(totalRuns, totalWickets, totalCatches, totalMatches)
+          overallRating: calculatePlayerRating(totalRuns, totalWickets, 0, totalMatches)
         };
       }) || [];
 
@@ -63,31 +58,47 @@ const AdvancedStatistics = () => {
       const { data: teams, error: teamsError } = await supabase
         .from('teams')
         .select(`
-          *,
-          matches_team1:matches!matches_team1_id_fkey (
-            id, result, team1_score, team2_score
-          ),
-          matches_team2:matches!matches_team2_id_fkey (
-            id, result, team1_score, team2_score
-          )
+          id,
+          name,
+          city,
+          created_at
         `);
 
-      if (teamsError) throw teamsError;
+      if (teamsError) {
+        console.error('Teams error:', teamsError);
+        throw teamsError;
+      }
 
-      const processedTeamStats = teams?.map(team => {
-        const allMatches = [...(team.matches_team1 || []), ...(team.matches_team2 || [])];
-        const wins = allMatches.filter(match => 
-          match.result?.includes(team.name)
-        ).length;
+      // For each team, get match statistics
+      const processedTeamStats = await Promise.all(teams?.map(async (team) => {
+        const { data: teamMatches, error: matchError } = await supabase
+          .from('matches')
+          .select('*')
+          .or(`team1_id.eq.${team.id},team2_id.eq.${team.id}`);
+
+        if (matchError) {
+          console.error('Match error for team:', team.id, matchError);
+          return {
+            ...team,
+            totalMatches: 0,
+            wins: 0,
+            losses: 0,
+            winPercentage: 0
+          };
+        }
+
+        const wins = teamMatches?.filter(match => 
+          match.result && match.result.includes(team.name)
+        ).length || 0;
         
         return {
           ...team,
-          totalMatches: allMatches.length,
+          totalMatches: teamMatches?.length || 0,
           wins,
-          losses: allMatches.length - wins,
-          winPercentage: allMatches.length > 0 ? ((wins / allMatches.length) * 100).toFixed(1) : 0
+          losses: (teamMatches?.length || 0) - wins,
+          winPercentage: teamMatches?.length > 0 ? ((wins / teamMatches.length) * 100).toFixed(1) : 0
         };
-      }) || [];
+      }) || []);
 
       setTeamStats(processedTeamStats);
 
@@ -105,7 +116,7 @@ const AdvancedStatistics = () => {
 
   const calculatePlayerRating = (runs, wickets, catches, matches) => {
     if (matches === 0) return 0;
-    const battingScore = (runs / matches) * 0.4;
+    const battingScore = (runs / Math.max(matches, 1)) * 0.4;
     const bowlingScore = wickets * 2;
     const fieldingScore = catches * 1.5;
     return Math.min(100, Math.round(battingScore + bowlingScore + fieldingScore));
@@ -135,11 +146,10 @@ const AdvancedStatistics = () => {
       </div>
 
       <Tabs defaultValue="players" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="players">Player Analytics</TabsTrigger>
           <TabsTrigger value="teams">Team Performance</TabsTrigger>
-          <TabsTrigger value="trends">Performance Trends</TabsTrigger>
-          <TabsTrigger value="insights">AI Insights</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="players" className="space-y-4">
@@ -212,8 +222,8 @@ const AdvancedStatistics = () => {
                       <th className="text-center p-2">Matches</th>
                       <th className="text-center p-2">Runs</th>
                       <th className="text-center p-2">Wickets</th>
-                      <th className="text-center p-2">Catches</th>
-                      <th className="text-center p-2">Bat Avg</th>
+                      <th className="text-center p-2">Avg</th>
+                      <th className="text-center p-2">Strike Rate</th>
                       <th className="text-center p-2">Rating</th>
                     </tr>
                   </thead>
@@ -229,8 +239,8 @@ const AdvancedStatistics = () => {
                         <td className="text-center p-2">{player.totalMatches}</td>
                         <td className="text-center p-2">{player.totalRuns}</td>
                         <td className="text-center p-2">{player.totalWickets}</td>
-                        <td className="text-center p-2">{player.totalCatches}</td>
                         <td className="text-center p-2">{player.battingAverage}</td>
+                        <td className="text-center p-2">{player.strike_rate}</td>
                         <td className="text-center p-2">
                           <Badge variant={player.overallRating >= 70 ? 'default' : 'secondary'}>
                             {player.overallRating}
@@ -308,58 +318,37 @@ const AdvancedStatistics = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Trends (Coming Soon)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Performance trend analysis will be available in the next update.</p>
-                <p className="text-sm mt-2">This will include match-by-match performance tracking and predictive analytics.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="insights" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5" />
-                AI-Powered Insights (Beta)
+                Performance Insights
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                  <h4 className="font-semibold text-blue-900 mb-2">Team Balance Analysis</h4>
+                  <h4 className="font-semibold text-blue-900 mb-2">Player Performance</h4>
                   <p className="text-blue-800 text-sm">
-                    Based on current statistics, teams with balanced batting and bowling lineups 
-                    show 23% higher win rates than specialist-heavy teams.
+                    {playerStats.length > 0 
+                      ? `Top performing player: ${playerStats.sort((a, b) => b.overallRating - a.overallRating)[0]?.name} with ${playerStats.sort((a, b) => b.overallRating - a.overallRating)[0]?.overallRating} rating`
+                      : 'No player data available'}
                   </p>
                 </div>
                 
                 <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                  <h4 className="font-semibold text-green-900 mb-2">Player Performance Prediction</h4>
+                  <h4 className="font-semibold text-green-900 mb-2">Team Statistics</h4>
                   <p className="text-green-800 text-sm">
-                    All-rounders with ratings above 70 contribute to 67% more match wins. 
-                    Consider investing in versatile players for better team performance.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                  <h4 className="font-semibold text-orange-900 mb-2">Match Strategy Recommendation</h4>
-                  <p className="text-orange-800 text-sm">
-                    Teams winning the toss and choosing to bat first have a 58% success rate 
-                    in matches played on your recorded venues.
+                    {teamStats.length > 0 
+                      ? `Best performing team: ${teamStats.sort((a, b) => parseFloat(b.winPercentage) - parseFloat(a.winPercentage))[0]?.name} with ${teamStats.sort((a, b) => parseFloat(b.winPercentage) - parseFloat(a.winPercentage))[0]?.winPercentage}% win rate`
+                      : 'No team data available'}
                   </p>
                 </div>
 
                 <div className="text-center text-sm text-gray-500 mt-6">
-                  <Badge variant="outline">Beta Feature</Badge>
-                  <p className="mt-2">AI insights will become more accurate as more match data is collected.</p>
+                  <Badge variant="outline">Live Statistics</Badge>
+                  <p className="mt-2">Statistics update automatically with new match data.</p>
                 </div>
               </div>
             </CardContent>

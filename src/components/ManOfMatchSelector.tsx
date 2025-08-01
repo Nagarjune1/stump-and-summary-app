@@ -20,15 +20,22 @@ const ManOfMatchSelector = ({
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  // Use safe validation for players
-  const validTeam1Players = createSafeSelectOptions(team1Players, 'team1_player');
-  const validTeam2Players = createSafeSelectOptions(team2Players, 'team2_player');
+  // Create safe player options with proper validation
+  const validTeam1Players = createSafeSelectOptions(
+    team1Players.filter(p => p && p.id && p.name), 
+    'team1_player'
+  );
+  const validTeam2Players = createSafeSelectOptions(
+    team2Players.filter(p => p && p.id && p.name), 
+    'team2_player'
+  );
   const allValidPlayers = [...validTeam1Players, ...validTeam2Players];
 
-  console.log('ManOfMatchSelector: Valid players for MoM selection:', {
+  console.log('ManOfMatchSelector: Processing players for awards:', {
     team1Count: validTeam1Players.length,
     team2Count: validTeam2Players.length,
-    totalCount: allValidPlayers.length
+    totalCount: allValidPlayers.length,
+    matchId: matchData?.id
   });
 
   const handleSaveMom = async () => {
@@ -42,15 +49,24 @@ const ManOfMatchSelector = ({
     }
 
     try {
+      const updateData = { 
+        man_of_match: selectedMom
+      };
+
+      // Only add man_of_series if it's a series match and MoS is selected
+      if (matchData?.series_id && selectedMos) {
+        updateData.man_of_series = selectedMos;
+      }
+
       const { error } = await supabase
         .from('matches')
-        .update({ 
-          man_of_match: selectedMom,
-          ...(matchData?.series_id && selectedMos ? { man_of_series: selectedMos } : {})
-        })
+        .update(updateData)
         .eq('id', matchData.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving awards:', error);
+        throw error;
+      }
 
       const momPlayer = allValidPlayers.find(p => p.id === selectedMom);
       const mosPlayer = selectedMos ? allValidPlayers.find(p => p.id === selectedMos) : null;
@@ -60,7 +76,10 @@ const ManOfMatchSelector = ({
         description: `Man of the Match: ${momPlayer?.name || 'Unknown'}${mosPlayer ? `, Man of the Series: ${mosPlayer.name}` : ''}`,
       });
 
-      onMomSelected(momPlayer, mosPlayer);
+      if (onMomSelected) {
+        onMomSelected(momPlayer, mosPlayer);
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error saving awards:', error);
@@ -84,6 +103,9 @@ const ManOfMatchSelector = ({
           </DialogHeader>
           <div className="text-center py-4">
             <p className="text-gray-500">No valid players available for selection</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Please ensure players are properly configured for both teams
+            </p>
           </div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={onClose}>
@@ -107,7 +129,7 @@ const ManOfMatchSelector = ({
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Man of the Match</CardTitle>
+              <CardTitle className="text-lg">Man of the Match *</CardTitle>
             </CardHeader>
             <CardContent>
               <Select value={selectedMom} onValueChange={setSelectedMom}>
@@ -120,10 +142,10 @@ const ManOfMatchSelector = ({
                       player.team_id === String(matchData.team1_id) 
                         ? matchData.team1?.name 
                         : matchData.team2?.name,
-                      'Unknown Team'
+                      'Team'
                     );
                     
-                    console.log('ManOfMatchSelector: Rendering MoM player option:', { 
+                    console.log('Rendering MoM option:', { 
                       playerId: player.id, 
                       playerName: player.name, 
                       teamName 
@@ -144,6 +166,7 @@ const ManOfMatchSelector = ({
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Man of the Series</CardTitle>
+                <p className="text-sm text-gray-600">Optional - for series matches</p>
               </CardHeader>
               <CardContent>
                 <Select value={selectedMos} onValueChange={setSelectedMos}>
@@ -151,15 +174,16 @@ const ManOfMatchSelector = ({
                     <SelectValue placeholder="Select Man of the Series (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">None</SelectItem>
                     {allValidPlayers.map((player) => {
                       const teamName = createSafeSelectValue(
                         player.team_id === String(matchData.team1_id) 
                           ? matchData.team1?.name 
                           : matchData.team2?.name,
-                        'Unknown Team'
+                        'Team'
                       );
                       
-                      console.log('ManOfMatchSelector: Rendering MoS player option:', { 
+                      console.log('Rendering MoS option:', { 
                         playerId: player.id, 
                         playerName: player.name, 
                         teamName 
@@ -181,7 +205,11 @@ const ManOfMatchSelector = ({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleSaveMom} className="bg-yellow-600 hover:bg-yellow-700">
+            <Button 
+              onClick={handleSaveMom} 
+              className="bg-yellow-600 hover:bg-yellow-700"
+              disabled={!selectedMom}
+            >
               <Trophy className="w-4 h-4 mr-2" />
               Save Awards
             </Button>

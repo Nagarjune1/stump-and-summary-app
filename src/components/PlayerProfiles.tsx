@@ -8,9 +8,10 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trophy, Target, Activity } from "lucide-react";
+import { Plus, Search, Filter, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import PlayerDetailView from "./PlayerDetailView";
 
 interface Team {
   id: string;
@@ -33,13 +34,20 @@ interface Player {
   economy?: number;
   best_score: string;
   best_bowling: string;
+  photo_url?: string;
   teams?: Team;
 }
 
 const PlayerProfiles = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     role: "",
@@ -52,6 +60,30 @@ const PlayerProfiles = () => {
     fetchTeams();
     fetchPlayers();
   }, []);
+
+  useEffect(() => {
+    filterPlayers();
+  }, [players, searchTerm, selectedTeam, selectedRole]);
+
+  const filterPlayers = () => {
+    let filtered = [...players];
+
+    if (searchTerm) {
+      filtered = filtered.filter(player =>
+        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedTeam) {
+      filtered = filtered.filter(player => player.team_id === selectedTeam);
+    }
+
+    if (selectedRole) {
+      filtered = filtered.filter(player => player.role === selectedRole);
+    }
+
+    setFilteredPlayers(filtered);
+  };
 
   const fetchTeams = async () => {
     try {
@@ -92,6 +124,7 @@ const PlayerProfiles = () => {
       }
       
       setPlayers(data || []);
+      setFilteredPlayers(data || []);
     } catch (error) {
       console.error('Error fetching players:', error);
     } finally {
@@ -132,7 +165,7 @@ const PlayerProfiles = () => {
       }
 
       setNewPlayer({ name: "", role: "", team_id: "", batting_style: "", bowling_style: "" });
-      fetchPlayers(); // Refresh the players list
+      fetchPlayers();
       
       toast({
         title: "Success!",
@@ -147,6 +180,19 @@ const PlayerProfiles = () => {
       });
     }
   };
+
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
+  };
+
+  if (selectedPlayer) {
+    return (
+      <PlayerDetailView 
+        player={selectedPlayer} 
+        onBack={() => setSelectedPlayer(null)} 
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -250,86 +296,113 @@ const PlayerProfiles = () => {
         </Dialog>
       </div>
 
-      {players.length === 0 ? (
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search players..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Teams</SelectItem>
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Roles</SelectItem>
+                <SelectItem value="Batsman">Batsman</SelectItem>
+                <SelectItem value="Bowler">Bowler</SelectItem>
+                <SelectItem value="All-rounder">All-rounder</SelectItem>
+                <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Players List */}
+      {filteredPlayers.length === 0 ? (
         <Card className="text-center py-8">
           <CardContent>
             <p className="text-gray-600 mb-4">No players found</p>
-            <p className="text-sm text-gray-500">Add your first player to get started</p>
+            <p className="text-sm text-gray-500">
+              {searchTerm || selectedTeam || selectedRole 
+                ? "Try adjusting your filters" 
+                : "Add your first player to get started"}
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {players.map((player) => (
-            <Card key={player.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
-                      {player.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg">{player.name}</CardTitle>
-                    <div className="flex gap-2">
-                      <Badge variant="outline">{player.role}</Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {player.teams?.name || 'No Team'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="text-center p-2 bg-blue-50 rounded">
-                    <div className="font-bold text-blue-600">{player.matches}</div>
-                    <div className="text-gray-600">Matches</div>
-                  </div>
-                  <div className="text-center p-2 bg-green-50 rounded">
-                    <div className="font-bold text-green-600">{player.runs}</div>
-                    <div className="text-gray-600">Runs</div>
-                  </div>
-                </div>
-
-                {player.role !== "Bowler" && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Average:</span>
-                      <span className="font-medium">{player.average}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Strike Rate:</span>
-                      <span className="font-medium">{player.strike_rate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Best Score:</span>
-                      <span className="font-medium">{player.best_score}</span>
-                    </div>
-                  </div>
-                )}
-
-                {(player.role === "Bowler" || player.role === "All-rounder") && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Wickets:</span>
-                      <span className="font-medium">{player.wickets}</span>
-                    </div>
-                    {player.economy && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Economy:</span>
-                        <span className="font-medium">{player.economy}</span>
+        <div className="space-y-2">
+          {filteredPlayers.map((player) => (
+            <Card key={player.id} className="hover:shadow-md transition-shadow cursor-pointer" 
+                  onClick={() => handlePlayerSelect(player)}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={player.photo_url} />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
+                        {player.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{player.name}</h3>
+                        <Badge variant="outline">{player.role}</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {player.teams?.name || 'No Team'}
+                        </Badge>
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Best Bowling:</span>
-                      <span className="font-medium">{player.best_bowling}</span>
+                      <div className="text-sm text-gray-600">
+                        {player.teams?.city} • {player.batting_style} • {player.bowling_style}
+                      </div>
                     </div>
                   </div>
-                )}
-
-                <Button variant="outline" className="w-full">
-                  View Details
-                </Button>
+                  
+                  <div className="flex items-center gap-6 text-sm">
+                    <div className="text-center">
+                      <div className="font-bold text-blue-600">{player.matches}</div>
+                      <div className="text-gray-500">Matches</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-green-600">{player.runs}</div>
+                      <div className="text-gray-500">Runs</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-red-600">{player.wickets}</div>
+                      <div className="text-gray-500">Wickets</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-purple-600">{player.average}</div>
+                      <div className="text-gray-500">Average</div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
