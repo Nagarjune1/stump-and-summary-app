@@ -75,13 +75,16 @@ const WicketSelector = ({
   const needsFielder = ["caught", "stumped", "run out"].includes(dismissalType);
   const needsBowler = ["caught", "bowled", "lbw", "stumped"].includes(dismissalType);
 
+  // Filter out players with empty/invalid IDs or names
+  const validFieldingPlayers = fieldingPlayers.filter(p => p.id && p.name && p.id.toString().trim() !== "");
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Wicket Details - {currentBatsman?.name}
+            Wicket Details - {currentBatsman?.name || 'Unknown Batsman'}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
@@ -106,7 +109,7 @@ const WicketSelector = ({
                 </Select>
               </div>
 
-              {needsFielder && (
+              {needsFielder && validFieldingPlayers.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     {dismissalType === "caught" ? "Caught by" : 
@@ -117,8 +120,8 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select fielder" />
                     </SelectTrigger>
                     <SelectContent>
-                      {fieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
+                      {validFieldingPlayers.map((player) => (
+                        <SelectItem key={player.id} value={player.id.toString()}>
                           {player.name}
                         </SelectItem>
                       ))}
@@ -127,7 +130,7 @@ const WicketSelector = ({
                 </div>
               )}
 
-              {needsBowler && dismissalType !== "run out" && (
+              {needsBowler && dismissalType !== "run out" && validFieldingPlayers.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium mb-2">Bowler</label>
                   <Select value={bowler} onValueChange={setBowler}>
@@ -135,8 +138,8 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select bowler" />
                     </SelectTrigger>
                     <SelectContent>
-                      {fieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
+                      {validFieldingPlayers.map((player) => (
+                        <SelectItem key={player.id} value={player.id.toString()}>
                           {player.name}
                         </SelectItem>
                       ))}

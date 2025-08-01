@@ -12,14 +12,17 @@ const ManOfMatchSelector = ({
   open, 
   onClose, 
   matchData, 
-  team1Players, 
-  team2Players,
+  team1Players = [], 
+  team2Players = [],
   onMomSelected 
 }) => {
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  const allPlayers = [...team1Players, ...team2Players];
+  // Filter out players with empty/invalid IDs or names
+  const validTeam1Players = team1Players.filter(p => p.id && p.name && p.id.toString().trim() !== "");
+  const validTeam2Players = team2Players.filter(p => p.id && p.name && p.id.toString().trim() !== "");
+  const allPlayers = [...validTeam1Players, ...validTeam2Players];
 
   const handleSaveMom = async () => {
     if (!selectedMom) {
@@ -36,18 +39,18 @@ const ManOfMatchSelector = ({
         .from('matches')
         .update({ 
           man_of_match: selectedMom,
-          ...(matchData.series_id && selectedMos ? { man_of_series: selectedMos } : {})
+          ...(matchData?.series_id && selectedMos ? { man_of_series: selectedMos } : {})
         })
         .eq('id', matchData.id);
 
       if (error) throw error;
 
-      const momPlayer = allPlayers.find(p => p.id === selectedMom);
-      const mosPlayer = selectedMos ? allPlayers.find(p => p.id === selectedMos) : null;
+      const momPlayer = allPlayers.find(p => p.id.toString() === selectedMom);
+      const mosPlayer = selectedMos ? allPlayers.find(p => p.id.toString() === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
-        description: `Man of the Match: ${momPlayer?.name}${mosPlayer ? `, Man of the Series: ${mosPlayer.name}` : ''}`,
+        description: `Man of the Match: ${momPlayer?.name || 'Unknown'}${mosPlayer ? `, Man of the Series: ${mosPlayer.name}` : ''}`,
       });
 
       onMomSelected(momPlayer, mosPlayer);
@@ -61,6 +64,29 @@ const ManOfMatchSelector = ({
       });
     }
   };
+
+  if (!matchData || allPlayers.length === 0) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-600" />
+              Select Awards
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-gray-500">No valid players available for selection</p>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -83,8 +109,8 @@ const ManOfMatchSelector = ({
                 </SelectTrigger>
                 <SelectContent>
                   {allPlayers.map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
-                      {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name : matchData.team2?.name})
+                    <SelectItem key={player.id} value={player.id.toString()}>
+                      {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name || 'Team 1' : matchData.team2?.name || 'Team 2'})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -104,8 +130,8 @@ const ManOfMatchSelector = ({
                   </SelectTrigger>
                   <SelectContent>
                     {allPlayers.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name : matchData.team2?.name})
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        {player.name} ({player.team_id === matchData.team1_id ? matchData.team1?.name || 'Team 1' : matchData.team2?.name || 'Team 2'})
                       </SelectItem>
                     ))}
                   </SelectContent>

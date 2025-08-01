@@ -65,6 +65,10 @@ const TossSelector = ({
 
   if (!match) return null;
 
+  // Ensure team names are not empty
+  const team1Name = match.team1?.name || 'Team 1';
+  const team2Name = match.team2?.name || 'Team 2';
+
   return (
     <Card>
       <CardHeader>
@@ -78,8 +82,8 @@ const TossSelector = ({
               <SelectValue placeholder="Select toss winner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={match.team1?.name || 'Team 1'}>{match.team1?.name || 'Team 1'}</SelectItem>
-              <SelectItem value={match.team2?.name || 'Team 2'}>{match.team2?.name || 'Team 2'}</SelectItem>
+              <SelectItem value={team1Name}>{team1Name}</SelectItem>
+              <SelectItem value={team2Name}>{team2Name}</SelectItem>
             </SelectContent>
           </Select>
         </div>
