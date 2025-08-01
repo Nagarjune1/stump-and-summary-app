@@ -116,10 +116,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <AdvancedStatistics 
-                matchData={matchData}
-                scoreData={scoreData}
-              />
+              <AdvancedStatistics />
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-6">
