@@ -15,6 +15,7 @@ import TournamentManagement from "@/components/TournamentManagement";
 import VenueManagement from "@/components/VenueManagement";
 import Documentation from "@/components/Documentation";
 import Dashboard from "@/components/Dashboard";
+import PlayerProfiles from "@/components/PlayerProfiles";
 import { AuthProvider } from "@/components/AuthProvider";
 
 const Index = () => {
@@ -117,6 +118,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="players" className="space-y-6">
+              <PlayerProfiles />
               <PlayerManagement 
                 currentMatch={currentMatch}
                 onPlayerAdded={handlePlayerAdded}
@@ -128,7 +130,22 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-6">
-              <MatchSummary />
+              {matchData && scoreData ? (
+                <MatchSummary 
+                  matchData={matchData}
+                  scoreData={scoreData}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Match Data</h3>
+                      <p className="text-gray-500">Create and start a match to see the summary</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">

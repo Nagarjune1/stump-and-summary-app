@@ -52,12 +52,22 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
       
       if (error) {
         console.error('Error fetching teams:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch teams",
+          variant: "destructive"
+        });
         return;
       }
       
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -83,6 +93,17 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
     }
 
     try {
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a match",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('matches')
         .insert([{
@@ -95,11 +116,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           overs: matchData.overs ? parseInt(matchData.overs) : null,
           tournament: matchData.tournament || null,
           description: matchData.description || null,
-          ball_type: matchData.ball_type || null,
-          pitch_type: matchData.pitch_type || null,
-          cricket_format: matchData.cricket_format || null,
           status: 'upcoming',
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.user.id
         }])
         .select(`
           *,
@@ -111,7 +129,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         console.error('Error creating match:', error);
         toast({
           title: "Error",
-          description: "Failed to create match",
+          description: `Failed to create match: ${error.message}`,
           variant: "destructive"
         });
         return;
@@ -259,9 +277,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           format,
           overs,
           created_by,
-          ball_type,
-          pitch_type,
-          cricket_format,
           team1:teams!matches_team1_id_fkey(name),
           team2:teams!matches_team2_id_fkey(name)
         `)
@@ -310,7 +325,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="team1">Team 1 *</Label>
-                <Select onValueChange={(value) => setMatchData({...matchData, team1_id: value})}>
+                <Select value={matchData.team1_id} onValueChange={(value) => setMatchData({...matchData, team1_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Team 1" />
                   </SelectTrigger>
@@ -326,7 +341,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
               <div>
                 <Label htmlFor="team2">Team 2 *</Label>
-                <Select onValueChange={(value) => setMatchData({...matchData, team2_id: value})}>
+                <Select value={matchData.team2_id} onValueChange={(value) => setMatchData({...matchData, team2_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Team 2" />
                   </SelectTrigger>
@@ -396,7 +411,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="format">Match Format</Label>
-              <Select onValueChange={(value) => setMatchData({...matchData, format: value})}>
+              <Select value={matchData.format} onValueChange={(value) => setMatchData({...matchData, format: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select match format" />
                 </SelectTrigger>
@@ -427,7 +442,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
             <div>
               <Label htmlFor="ball_type">Ball Type</Label>
-              <Select onValueChange={(value) => setMatchData({...matchData, ball_type: value})}>
+              <Select value={matchData.ball_type} onValueChange={(value) => setMatchData({...matchData, ball_type: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select ball type" />
                 </SelectTrigger>
@@ -446,7 +461,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
             <div>
               <Label htmlFor="pitch_type">Pitch Type</Label>
-              <Select onValueChange={(value) => setMatchData({...matchData, pitch_type: value})}>
+              <Select value={matchData.pitch_type} onValueChange={(value) => setMatchData({...matchData, pitch_type: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select pitch type" />
                 </SelectTrigger>
@@ -463,7 +478,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
             <div>
               <Label htmlFor="cricket_format">Cricket Format</Label>
-              <Select onValueChange={(value) => setMatchData({...matchData, cricket_format: value})}>
+              <Select value={matchData.cricket_format} onValueChange={(value) => setMatchData({...matchData, cricket_format: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select cricket format" />
                 </SelectTrigger>
@@ -573,16 +588,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                         <p className="text-xs text-gray-500">
                           {match.format}{match.overs && ` • ${match.overs} overs`}
                         </p>
-                      )}
-                      {match.ball_type && (
-                        <Badge variant="outline" className="text-xs">
-                          {match.ball_type.replace('_', ' ')}
-                        </Badge>
-                      )}
-                      {match.cricket_format && (
-                        <Badge variant="outline" className="text-xs">
-                          {match.cricket_format}
-                        </Badge>
                       )}
                     </div>
                   </div>
