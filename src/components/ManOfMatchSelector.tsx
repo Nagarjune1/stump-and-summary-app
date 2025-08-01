@@ -49,7 +49,11 @@ const ManOfMatchSelector = ({
     }
 
     try {
-      const updateData = { 
+      // Create properly typed update data object
+      const updateData: { 
+        man_of_match: string;
+        man_of_series?: string;
+      } = { 
         man_of_match: selectedMom
       };
 
