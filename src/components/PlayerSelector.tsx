@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { createSafeSelectOptions } from "@/utils/selectUtils";
+import { createSafeSelectOptions, ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const PlayerSelector = ({ 
   match, 
@@ -17,9 +17,15 @@ const PlayerSelector = ({
   const [selectedBatsmen, setSelectedBatsmen] = useState([]);
   const [selectedBowler, setSelectedBowler] = useState(null);
 
-  // Use safe validation for players
-  const validTeam1Players = createSafeSelectOptions(team1Players, 'team1_player');
-  const validTeam2Players = createSafeSelectOptions(team2Players, 'team2_player');
+  // Use safe validation for players with proper filtering
+  const validTeam1Players = createSafeSelectOptions(
+    team1Players.filter(p => p && p.id && p.name), 
+    'team1_player'
+  );
+  const validTeam2Players = createSafeSelectOptions(
+    team2Players.filter(p => p && p.id && p.name), 
+    'team2_player'
+  );
 
   console.log('PlayerSelector: Valid players:', {
     team1Count: validTeam1Players.length,
@@ -107,30 +113,35 @@ const PlayerSelector = ({
             {battingPlayers.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
-              battingPlayers.map((player) => (
-                <div
-                  key={player.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedBatsmen.find(b => b.id === player.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => handleBatsmanSelect(player)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{player.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {player.batting_style || 'Right-handed'} • {player.role || 'Batsman'}
-                      </p>
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="font-medium">Avg: {player.average || '0.00'}</div>
-                      <div className="text-gray-500">SR: {player.strike_rate || '0.00'}</div>
+              battingPlayers.map((player) => {
+                // Ensure player ID is valid for any potential SelectItem usage
+                const safePlayerId = ensureValidSelectItemValue(player.id, `batsman_${player.name}_${Date.now()}`);
+                
+                return (
+                  <div
+                    key={safePlayerId}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedBatsmen.find(b => b.id === player.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleBatsmanSelect(player)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{player.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {player.batting_style || 'Right-handed'} • {player.role || 'Batsman'}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="font-medium">Avg: {player.average || '0.00'}</div>
+                        <div className="text-gray-500">SR: {player.strike_rate || '0.00'}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>
@@ -152,30 +163,35 @@ const PlayerSelector = ({
             {bowlingPlayers.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
-              bowlingPlayers.map((player) => (
-                <div
-                  key={player.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedBowler?.id === player.id
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => handleBowlerSelect(player)}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-medium">{player.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {player.bowling_style || 'Right-arm Medium'} • {player.role || 'Bowler'}
-                      </p>
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="font-medium">Wkts: {player.wickets || 0}</div>
-                      <div className="text-gray-500">Eco: {player.economy || '0.00'}</div>
+              bowlingPlayers.map((player) => {
+                // Ensure player ID is valid for any potential SelectItem usage
+                const safePlayerId = ensureValidSelectItemValue(player.id, `bowler_${player.name}_${Date.now()}`);
+                
+                return (
+                  <div
+                    key={safePlayerId}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedBowler?.id === player.id
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleBowlerSelect(player)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{player.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {player.bowling_style || 'Right-arm Medium'} • {player.role || 'Bowler'}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="font-medium">Wkts: {player.wickets || 0}</div>
+                        <div className="text-gray-500">Eco: {player.economy || '0.00'}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>
