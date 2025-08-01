@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,25 @@ import { AuthProvider } from "@/components/AuthProvider";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("live");
+  const [currentMatch, setCurrentMatch] = useState(null);
+  const [matchData, setMatchData] = useState(null);
+  const [scoreData, setScoreData] = useState({ runs: 0, wickets: 0, overs: 0 });
+
+  const handleMatchCreated = (match: any) => {
+    setCurrentMatch(match);
+    setMatchData(match);
+    console.log('Match created:', match);
+  };
+
+  const handleMatchStarted = (match: any) => {
+    setCurrentMatch(match);
+    setMatchData(match);
+    console.log('Match started:', match);
+  };
+
+  const handlePlayerAdded = (player: any) => {
+    console.log('Player added:', player);
+  };
 
   return (
     <AuthProvider>
@@ -77,7 +97,10 @@ const Index = () => {
             </TabsList>
 
             <TabsContent value="matches" className="space-y-6">
-              <CreateMatch />
+              <CreateMatch 
+                onMatchCreated={handleMatchCreated}
+                onMatchStarted={handleMatchStarted}
+              />
             </TabsContent>
 
             <TabsContent value="live" className="space-y-6">
@@ -85,7 +108,10 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="players" className="space-y-6">
-              <PlayerManagement />
+              <PlayerManagement 
+                currentMatch={currentMatch}
+                onPlayerAdded={handlePlayerAdded}
+              />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
@@ -93,7 +119,20 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-6">
-              <MatchSummary />
+              <MatchSummary 
+                matchData={matchData}
+                scoreData={scoreData}
+                currentBatsmen={[]}
+                currentBowler={null}
+                innings1Score={null}
+                innings2Score={null}
+                currentInnings={1}
+                winner={null}
+                recentBalls={[]}
+                topPerformers={[]}
+                fallOfWickets={[]}
+                bowlingFigures={[]}
+              />
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">
