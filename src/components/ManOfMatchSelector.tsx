@@ -178,7 +178,7 @@ const ManOfMatchSelector = ({
                     <SelectValue placeholder="Select Man of the Series (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {allValidPlayers.map((player) => {
                       const teamName = createSafeSelectValue(
                         player.team_id === String(matchData.team1_id) 
