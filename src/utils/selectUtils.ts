@@ -31,7 +31,7 @@ export const validateSelectOption = (option: any, index: number): SafeSelectOpti
   const safeId = createSafeSelectValue(option.id, `option_${index}`);
   const safeName = createSafeSelectValue(option.name, `Option ${index + 1}`);
   
-  // Ensure the ID is never an empty string
+  // Ensure the ID is never an empty string - this is critical for SelectItem
   if (safeId === '' || safeId === 'null' || safeId === 'undefined') {
     console.warn(`validateSelectOption: invalid ID for option ${index}, using generated ID`);
     const generatedId = `generated_option_${index}_${Date.now()}`;
@@ -42,11 +42,14 @@ export const validateSelectOption = (option: any, index: number): SafeSelectOpti
     };
   }
   
-  console.log(`validateSelectOption: validated option ${index}:`, { safeId, safeName });
+  // Additional safety check - if somehow still empty, generate unique ID
+  const finalId = safeId || `emergency_fallback_${index}_${Date.now()}`;
+  
+  console.log(`validateSelectOption: validated option ${index}:`, { finalId, safeName });
   
   return {
     ...option,
-    id: safeId,
+    id: finalId,
     name: safeName
   };
 };
@@ -61,8 +64,8 @@ export const createSafeSelectOptions = (options: any[], prefix: string = 'item')
     .map((option, index) => validateSelectOption(option, index))
     .filter((option): option is SafeSelectOption => {
       if (!option) return false;
-      // Double-check that no empty string IDs get through
-      if (option.id === '' || option.id === 'null' || option.id === 'undefined') {
+      // Critical check: ensure no empty string IDs get through to SelectItem
+      if (!option.id || option.id === '' || option.id === 'null' || option.id === 'undefined') {
         console.warn('createSafeSelectOptions: filtering out option with invalid ID:', option);
         return false;
       }
@@ -72,4 +75,11 @@ export const createSafeSelectOptions = (options: any[], prefix: string = 'item')
   console.log(`createSafeSelectOptions: created ${safeOptions.length} safe options from ${options.length} input options`);
   
   return safeOptions;
+};
+
+// New utility function specifically for ensuring SelectItem values are never empty
+export const ensureValidSelectItemValue = (value: any, fallback?: string): string => {
+  const safeValue = createSafeSelectValue(value, fallback || `fallback_${Date.now()}`);
+  // Double check - if somehow still empty, use timestamp-based fallback
+  return safeValue || `emergency_${Date.now()}`;
 };

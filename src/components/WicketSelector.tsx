@@ -122,11 +122,15 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select fielder" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
+                      {validFieldingPlayers.map((player) => {
+                        // Ensure player.id is never empty string
+                        const playerId = player.id || `fallback_${player.name}_${Math.random()}`;
+                        return (
+                          <SelectItem key={playerId} value={playerId}>
+                            {player.name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -140,11 +144,15 @@ const WicketSelector = ({
                       <SelectValue placeholder="Select bowler" />
                     </SelectTrigger>
                     <SelectContent>
-                      {validFieldingPlayers.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
+                      {validFieldingPlayers.map((player) => {
+                        // Ensure player.id is never empty string
+                        const playerId = player.id || `fallback_${player.name}_${Math.random()}`;
+                        return (
+                          <SelectItem key={playerId} value={playerId}>
+                            {player.name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

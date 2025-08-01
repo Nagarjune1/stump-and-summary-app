@@ -66,11 +66,15 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Use safe value creation for team names
+  // Use safe value creation for team names with guaranteed non-empty fallbacks
   const team1Name = createSafeSelectValue(match.team1?.name, 'Team 1');
   const team2Name = createSafeSelectValue(match.team2?.name, 'Team 2');
 
   console.log('TossSelector: Safe team names:', { team1Name, team2Name });
+
+  // Ensure team names are never empty strings for SelectItem
+  const safeTeam1Value = team1Name || 'team1_fallback';
+  const safeTeam2Value = team2Name || 'team2_fallback';
 
   return (
     <Card>
@@ -85,8 +89,8 @@ const TossSelector = ({
               <SelectValue placeholder="Select toss winner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={team1Name}>{team1Name}</SelectItem>
-              <SelectItem value={team2Name}>{team2Name}</SelectItem>
+              <SelectItem value={safeTeam1Value}>{team1Name}</SelectItem>
+              <SelectItem value={safeTeam2Value}>{team2Name}</SelectItem>
             </SelectContent>
           </Select>
         </div>
