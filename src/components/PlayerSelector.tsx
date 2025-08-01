@@ -16,10 +16,23 @@ const PlayerSelector = ({
   const [selectedBatsmen, setSelectedBatsmen] = useState([]);
   const [selectedBowler, setSelectedBowler] = useState(null);
 
-  const battingPlayers = battingTeam === 1 ? team1Players : team2Players;
-  const bowlingPlayers = battingTeam === 1 ? team2Players : team1Players;
-  const battingTeamName = battingTeam === 1 ? match.team1?.name : match.team2?.name;
-  const bowlingTeamName = battingTeam === 1 ? match.team2?.name : match.team1?.name;
+  // Filter and validate players to ensure they have valid IDs and names
+  const validTeam1Players = team1Players.filter(p => 
+    p && p.id && p.name && 
+    p.id.toString().trim() !== "" && 
+    p.name.toString().trim() !== ""
+  );
+  
+  const validTeam2Players = team2Players.filter(p => 
+    p && p.id && p.name && 
+    p.id.toString().trim() !== "" && 
+    p.name.toString().trim() !== ""
+  );
+
+  const battingPlayers = battingTeam === 1 ? validTeam1Players : validTeam2Players;
+  const bowlingPlayers = battingTeam === 1 ? validTeam2Players : validTeam1Players;
+  const battingTeamName = battingTeam === 1 ? match?.team1?.name || 'Team 1' : match?.team2?.name || 'Team 2';
+  const bowlingTeamName = battingTeam === 1 ? match?.team2?.name || 'Team 2' : match?.team1?.name || 'Team 1';
 
   const handleBatsmanSelect = (player) => {
     if (selectedBatsmen.find(b => b.id === player.id)) {
@@ -61,6 +74,15 @@ const PlayerSelector = ({
     onPlayersSelected(selectedBatsmen, selectedBowler);
   };
 
+  // Early return if match data is invalid
+  if (!match) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No match data available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -86,7 +108,7 @@ const PlayerSelector = ({
           </CardHeader>
           <CardContent className="space-y-3">
             {battingPlayers.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No players available</p>
+              <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
               battingPlayers.map((player) => (
                 <div
@@ -102,7 +124,7 @@ const PlayerSelector = ({
                     <div>
                       <h4 className="font-medium">{player.name}</h4>
                       <p className="text-sm text-gray-600">
-                        {player.batting_style || 'Right-handed'} • {player.role}
+                        {player.batting_style || 'Right-handed'} • {player.role || 'Batsman'}
                       </p>
                     </div>
                     <div className="text-right text-sm">
@@ -131,7 +153,7 @@ const PlayerSelector = ({
           </CardHeader>
           <CardContent className="space-y-3">
             {bowlingPlayers.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No players available</p>
+              <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
               bowlingPlayers.map((player) => (
                 <div
@@ -147,7 +169,7 @@ const PlayerSelector = ({
                     <div>
                       <h4 className="font-medium">{player.name}</h4>
                       <p className="text-sm text-gray-600">
-                        {player.bowling_style || 'Right-arm Medium'} • {player.role}
+                        {player.bowling_style || 'Right-arm Medium'} • {player.role || 'Bowler'}
                       </p>
                     </div>
                     <div className="text-right text-sm">
