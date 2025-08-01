@@ -22,13 +22,14 @@ const AdvancedStatistics = () => {
     try {
       setLoading(true);
       
-      // Fetch comprehensive player statistics
+      // Fetch comprehensive player statistics with fresh data
       const { data: players, error: playersError } = await supabase
         .from('players')
         .select(`
           *,
           teams!inner(id, name, city)
-        `);
+        `)
+        .order('runs', { ascending: false });
 
       if (playersError) {
         console.error('Players error:', playersError);
@@ -40,6 +41,8 @@ const AdvancedStatistics = () => {
         const totalMatches = player.matches || 0;
         const totalRuns = player.runs || 0;
         const totalWickets = player.wickets || 0;
+        const strikeRate = player.strike_rate || 0;
+        const economy = player.economy || 0;
         
         return {
           ...player,
@@ -47,14 +50,14 @@ const AdvancedStatistics = () => {
           totalRuns,
           totalWickets,
           battingAverage: player.average || 0,
-          bowlingAverage: totalWickets > 0 ? (totalRuns / totalWickets).toFixed(2) : 0,
-          overallRating: calculatePlayerRating(totalRuns, totalWickets, 0, totalMatches)
+          bowlingAverage: totalWickets > 0 ? (economy * 6 * totalMatches / totalWickets).toFixed(2) : 0,
+          overallRating: calculatePlayerRating(totalRuns, totalWickets, 0, totalMatches, strikeRate, economy)
         };
       }) || [];
 
       setPlayerStats(processedPlayerStats);
 
-      // Fetch team performance data
+      // Fetch team performance data with match results
       const { data: teams, error: teamsError } = await supabase
         .from('teams')
         .select(`
@@ -74,7 +77,8 @@ const AdvancedStatistics = () => {
         const { data: teamMatches, error: matchError } = await supabase
           .from('matches')
           .select('*')
-          .or(`team1_id.eq.${team.id},team2_id.eq.${team.id}`);
+          .or(`team1_id.eq.${team.id},team2_id.eq.${team.id}`)
+          .eq('status', 'completed');
 
         if (matchError) {
           console.error('Match error for team:', team.id, matchError);
@@ -83,20 +87,36 @@ const AdvancedStatistics = () => {
             totalMatches: 0,
             wins: 0,
             losses: 0,
+            ties: 0,
             winPercentage: 0
           };
         }
 
-        const wins = teamMatches?.filter(match => 
-          match.result && match.result.includes(team.name)
-        ).length || 0;
+        let wins = 0;
+        let losses = 0;
+        let ties = 0;
+
+        teamMatches?.forEach(match => {
+          if (match.result) {
+            if (match.result.toLowerCase().includes('tied')) {
+              ties++;
+            } else if (match.result.toLowerCase().includes(team.name.toLowerCase())) {
+              wins++;
+            } else {
+              losses++;
+            }
+          }
+        });
+        
+        const totalGames = wins + losses + ties;
         
         return {
           ...team,
-          totalMatches: teamMatches?.length || 0,
+          totalMatches: totalGames,
           wins,
-          losses: (teamMatches?.length || 0) - wins,
-          winPercentage: teamMatches?.length > 0 ? ((wins / teamMatches.length) * 100).toFixed(1) : 0
+          losses,
+          ties,
+          winPercentage: totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : 0
         };
       }) || []);
 
@@ -114,11 +134,18 @@ const AdvancedStatistics = () => {
     }
   };
 
-  const calculatePlayerRating = (runs, wickets, catches, matches) => {
+  const calculatePlayerRating = (runs, wickets, catches, matches, strikeRate, economy) => {
     if (matches === 0) return 0;
-    const battingScore = (runs / Math.max(matches, 1)) * 0.4;
-    const bowlingScore = wickets * 2;
-    const fieldingScore = catches * 1.5;
+    
+    // Batting component (40% weight)
+    const battingScore = Math.min(40, (runs / Math.max(matches, 1)) * 0.8 + (strikeRate / 200) * 10);
+    
+    // Bowling component (40% weight) 
+    const bowlingScore = Math.min(40, wickets * 3 + (economy > 0 ? Math.max(0, 10 - economy) : 0));
+    
+    // Fielding component (20% weight)
+    const fieldingScore = Math.min(20, catches * 2);
+    
     return Math.min(100, Math.round(battingScore + bowlingScore + fieldingScore));
   };
 
@@ -239,8 +266,8 @@ const AdvancedStatistics = () => {
                         <td className="text-center p-2">{player.totalMatches}</td>
                         <td className="text-center p-2">{player.totalRuns}</td>
                         <td className="text-center p-2">{player.totalWickets}</td>
-                        <td className="text-center p-2">{player.battingAverage}</td>
-                        <td className="text-center p-2">{player.strike_rate}</td>
+                        <td className="text-center p-2">{typeof player.battingAverage === 'number' ? player.battingAverage.toFixed(2) : player.battingAverage}</td>
+                        <td className="text-center p-2">{typeof player.strike_rate === 'number' ? player.strike_rate.toFixed(2) : player.strike_rate || '0.00'}</td>
                         <td className="text-center p-2">
                           <Badge variant={player.overallRating >= 70 ? 'default' : 'secondary'}>
                             {player.overallRating}
@@ -296,7 +323,7 @@ const AdvancedStatistics = () => {
                         <div className="font-semibold">{team.name}</div>
                         <Badge>{team.winPercentage}% win rate</Badge>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-4 gap-4 text-sm">
                         <div>
                           <div className="text-gray-600">Matches</div>
                           <div className="font-semibold">{team.totalMatches}</div>
@@ -308,6 +335,10 @@ const AdvancedStatistics = () => {
                         <div>
                           <div className="text-gray-600">Losses</div>
                           <div className="font-semibold text-red-600">{team.losses}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Ties</div>
+                          <div className="font-semibold text-yellow-600">{team.ties || 0}</div>
                         </div>
                       </div>
                     </div>
@@ -343,6 +374,14 @@ const AdvancedStatistics = () => {
                     {teamStats.length > 0 
                       ? `Best performing team: ${teamStats.sort((a, b) => parseFloat(b.winPercentage) - parseFloat(a.winPercentage))[0]?.name} with ${teamStats.sort((a, b) => parseFloat(b.winPercentage) - parseFloat(a.winPercentage))[0]?.winPercentage}% win rate`
                       : 'No team data available'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                  <h4 className="font-semibold text-purple-900 mb-2">Recent Activity</h4>
+                  <p className="text-purple-800 text-sm">
+                    Statistics are automatically updated after each completed match. 
+                    Player ratings are calculated based on batting performance (40%), bowling performance (40%), and fielding contribution (20%).
                   </p>
                 </div>
 
