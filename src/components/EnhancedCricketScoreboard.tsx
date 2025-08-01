@@ -26,6 +26,8 @@ const EnhancedCricketScoreboard = ({
   requiredRunRate,
   currentRunRate,
   recentBalls = [],
+  team1Players = [],
+  team2Players = [],
   bowlers = [],
   wickets = [],
   oversData = []
@@ -80,6 +82,8 @@ const EnhancedCricketScoreboard = ({
               requiredRunRate={requiredRunRate}
               currentRunRate={currentRunRate}
               recentBalls={recentBalls}
+              team1Players={team1Players}
+              team2Players={team2Players}
             />
           </TabsContent>
 
@@ -140,6 +144,8 @@ const EnhancedCricketScoreboard = ({
               requiredRunRate={requiredRunRate}
               currentRunRate={currentRunRate}
               recentBalls={recentBalls}
+              team1Players={team1Players}
+              team2Players={team2Players}
             />
 
             {/* Collapsible Sections */}

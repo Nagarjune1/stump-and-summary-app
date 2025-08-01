@@ -17,6 +17,9 @@ const ExportReport = ({
   manOfMatch = null,
   manOfSeries = null,
   recentBalls = [],
+  fallOfWickets = [],
+  team1Players = [],
+  team2Players = [],
   allPlayers = []
 }) => {
   const [exporting, setExporting] = useState(false);
@@ -79,6 +82,7 @@ const ExportReport = ({
             ((currentBowler.runs || 0) / (currentBowler.overs || 0)).toFixed(1) : '0.0'
         } : null
       },
+      fallOfWickets: fallOfWickets || [],
       recentBalls: recentBalls.slice(-12),
       awards: {
         manOfMatch: manOfMatch?.name || null,
