@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,12 +7,12 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SafeSelectItem } from "@/components/ui/SafeSelectItem";
+import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { Plus, Search, Filter, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerDetailView from "./PlayerDetailView";
-import { ensureValidValue } from "@/utils/selectUtils";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Team {
   id: string;
@@ -253,7 +252,7 @@ const PlayerProfiles = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
-                      <SafeSelectItem key={team.id} value={ensureValidValue(team.id)}>
+                      <SafeSelectItem key={team.id} value={ensureValidSelectItemValue(team.id)}>
                         {team.name}
                       </SafeSelectItem>
                     ))}
@@ -319,7 +318,7 @@ const PlayerProfiles = () => {
               <SelectContent>
                 <SafeSelectItem value="">All Teams</SafeSelectItem>
                 {teams.map(team => (
-                  <SafeSelectItem key={team.id} value={ensureValidValue(team.id)}>
+                  <SafeSelectItem key={team.id} value={ensureValidSelectItemValue(team.id)}>
                     {team.name}
                   </SafeSelectItem>
                 ))}

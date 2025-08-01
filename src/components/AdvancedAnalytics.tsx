@@ -1,16 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SafeSelectItem } from "@/components/ui/SafeSelectItem";
+import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Target, Award, Users, Activity, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ensureValidValue } from "@/utils/selectUtils";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Match {
   id: string;
@@ -288,7 +287,7 @@ const AdvancedAnalytics = () => {
               <SelectContent>
                 <SafeSelectItem value="">All matches</SafeSelectItem>
                 {matches.map((match) => (
-                  <SafeSelectItem key={match.id} value={ensureValidValue(match.id)}>
+                  <SafeSelectItem key={match.id} value={ensureValidSelectItemValue(match.id)}>
                     {match.team1?.name} vs {match.team2?.name} ({new Date(match.match_date).toLocaleDateString()})
                   </SafeSelectItem>
                 ))}
@@ -304,7 +303,7 @@ const AdvancedAnalytics = () => {
               <SelectContent>
                 <SafeSelectItem value="">All players</SafeSelectItem>
                 {players.map((player) => (
-                  <SafeSelectItem key={player.id} value={ensureValidValue(player.id)}>
+                  <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
                     {player.name} ({player.role})
                   </SafeSelectItem>
                 ))}
