@@ -57,8 +57,8 @@ const ManOfMatchSelector = ({
         man_of_match: selectedMom
       };
 
-      // Only add man_of_series if it's a series match and MoS is selected
-      if (matchData?.series_id && selectedMos) {
+      // Only add man_of_series if it's a series match and MoS is selected and not "none"
+      if (matchData?.series_id && selectedMos && selectedMos !== "none") {
         updateData.man_of_series = selectedMos;
       }
 
@@ -73,7 +73,7 @@ const ManOfMatchSelector = ({
       }
 
       const momPlayer = allValidPlayers.find(p => p.id === selectedMom);
-      const mosPlayer = selectedMos ? allValidPlayers.find(p => p.id === selectedMos) : null;
+      const mosPlayer = (selectedMos && selectedMos !== "none") ? allValidPlayers.find(p => p.id === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
