@@ -19,36 +19,59 @@ const ManOfMatchSelector = ({
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  // More robust validation for players
-  const isValidPlayer = (player) => {
-    if (!player) {
-      console.log('Invalid player: null/undefined');
-      return false;
+  // Ultra-robust validation for players
+  const getValidPlayers = (players: any[], teamType: string) => {
+    if (!Array.isArray(players)) {
+      console.log(`${teamType} is not an array:`, players);
+      return [];
     }
-    
-    const hasValidId = player.id !== null && 
-                      player.id !== undefined && 
-                      String(player.id).trim() !== '';
-    
-    const hasValidName = player.name && 
-                        String(player.name).trim() !== '';
-    
-    if (!hasValidId) {
-      console.log('Invalid player ID:', player);
-    }
-    
-    if (!hasValidName) {
-      console.log('Invalid player name:', player);
-    }
-    
-    return hasValidId && hasValidName;
+
+    return players.filter(player => {
+      if (!player) {
+        console.log(`Null player found in ${teamType}`);
+        return false;
+      }
+
+      // Validate ID
+      const id = player.id;
+      if (id === null || id === undefined) {
+        console.log(`Player with null/undefined ID in ${teamType}:`, player);
+        return false;
+      }
+
+      const stringId = String(id).trim();
+      if (stringId === '' || stringId === 'null' || stringId === 'undefined') {
+        console.log(`Player with invalid string ID in ${teamType}:`, player, 'stringId:', stringId);
+        return false;
+      }
+
+      // Validate name
+      const name = player.name;
+      if (!name || typeof name !== 'string') {
+        console.log(`Player with invalid name type in ${teamType}:`, player);
+        return false;
+      }
+
+      const trimmedName = name.trim();
+      if (trimmedName === '') {
+        console.log(`Player with empty name in ${teamType}:`, player);
+        return false;
+      }
+
+      console.log(`Valid player in ${teamType}:`, { id: stringId, name: trimmedName });
+      return true;
+    });
   };
 
-  const validTeam1Players = team1Players.filter(isValidPlayer);
-  const validTeam2Players = team2Players.filter(isValidPlayer);
-  const allPlayers = [...validTeam1Players, ...validTeam2Players];
+  const validTeam1Players = getValidPlayers(team1Players, 'team1Players');
+  const validTeam2Players = getValidPlayers(team2Players, 'team2Players');
+  const allValidPlayers = [...validTeam1Players, ...validTeam2Players];
 
-  console.log('Valid players for MoM selection:', allPlayers);
+  console.log('Valid players for MoM selection:', {
+    team1Count: validTeam1Players.length,
+    team2Count: validTeam2Players.length,
+    totalCount: allValidPlayers.length
+  });
 
   const handleSaveMom = async () => {
     if (!selectedMom) {
@@ -71,8 +94,8 @@ const ManOfMatchSelector = ({
 
       if (error) throw error;
 
-      const momPlayer = allPlayers.find(p => String(p.id) === selectedMom);
-      const mosPlayer = selectedMos ? allPlayers.find(p => String(p.id) === selectedMos) : null;
+      const momPlayer = allValidPlayers.find(p => String(p.id) === selectedMom);
+      const mosPlayer = selectedMos ? allValidPlayers.find(p => String(p.id) === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
@@ -91,7 +114,7 @@ const ManOfMatchSelector = ({
     }
   };
 
-  if (!matchData || allPlayers.length === 0) {
+  if (!matchData || allValidPlayers.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-md">
@@ -134,17 +157,18 @@ const ManOfMatchSelector = ({
                   <SelectValue placeholder="Select Man of the Match" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allPlayers.map((player) => {
-                    const playerId = String(player.id);
+                  {allValidPlayers.map((player) => {
+                    const playerId = String(player.id).trim();
+                    const playerName = String(player.name).trim();
                     const teamName = String(player.team_id) === String(matchData.team1_id) 
                       ? matchData.team1?.name || 'Team 1' 
                       : matchData.team2?.name || 'Team 2';
                     
-                    console.log('Rendering MoM player with ID:', playerId);
+                    console.log('Rendering MoM player option:', { playerId, playerName, teamName });
                     
                     return (
                       <SelectItem key={playerId} value={playerId}>
-                        {player.name} ({teamName})
+                        {playerName} ({teamName})
                       </SelectItem>
                     );
                   })}
@@ -164,17 +188,18 @@ const ManOfMatchSelector = ({
                     <SelectValue placeholder="Select Man of the Series (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allPlayers.map((player) => {
-                      const playerId = String(player.id);
+                    {allValidPlayers.map((player) => {
+                      const playerId = String(player.id).trim();
+                      const playerName = String(player.name).trim();
                       const teamName = String(player.team_id) === String(matchData.team1_id) 
                         ? matchData.team1?.name || 'Team 1' 
                         : matchData.team2?.name || 'Team 2';
                       
-                      console.log('Rendering MoS player with ID:', playerId);
+                      console.log('Rendering MoS player option:', { playerId, playerName, teamName });
                       
                       return (
                         <SelectItem key={playerId} value={playerId}>
-                          {player.name} ({teamName})
+                          {playerName} ({teamName})
                         </SelectItem>
                       );
                     })}

@@ -75,19 +75,52 @@ const WicketSelector = ({
   const needsFielder = ["caught", "stumped", "run out"].includes(dismissalType);
   const needsBowler = ["caught", "bowled", "lbw", "stumped"].includes(dismissalType);
 
-  // More robust validation for fielding players
-  const validFieldingPlayers = fieldingPlayers.filter(p => {
-    const hasValidId = p && p.id !== null && p.id !== undefined && String(p.id).trim() !== "";
-    const hasValidName = p && p.name && String(p.name).trim() !== "";
-    
-    if (!hasValidId || !hasValidName) {
-      console.log('Filtering out invalid fielding player:', p);
+  // Ultra-robust validation for fielding players
+  const getValidFieldingPlayers = () => {
+    if (!Array.isArray(fieldingPlayers)) {
+      console.log('fieldingPlayers is not an array:', fieldingPlayers);
+      return [];
     }
-    
-    return hasValidId && hasValidName;
-  });
 
-  console.log('Valid fielding players:', validFieldingPlayers);
+    return fieldingPlayers.filter(player => {
+      if (!player) {
+        console.log('Null player found in fieldingPlayers');
+        return false;
+      }
+
+      // Validate ID
+      const id = player.id;
+      if (id === null || id === undefined) {
+        console.log('Player with null/undefined ID:', player);
+        return false;
+      }
+
+      const stringId = String(id).trim();
+      if (stringId === '' || stringId === 'null' || stringId === 'undefined') {
+        console.log('Player with invalid string ID:', player, 'stringId:', stringId);
+        return false;
+      }
+
+      // Validate name
+      const name = player.name;
+      if (!name || typeof name !== 'string') {
+        console.log('Player with invalid name type:', player);
+        return false;
+      }
+
+      const trimmedName = name.trim();
+      if (trimmedName === '') {
+        console.log('Player with empty name:', player);
+        return false;
+      }
+
+      console.log('Valid fielding player:', { id: stringId, name: trimmedName });
+      return true;
+    });
+  };
+
+  const validFieldingPlayers = getValidFieldingPlayers();
+  console.log('Total valid fielding players:', validFieldingPlayers.length);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -132,11 +165,13 @@ const WicketSelector = ({
                     </SelectTrigger>
                     <SelectContent>
                       {validFieldingPlayers.map((player) => {
-                        const playerId = String(player.id);
-                        console.log('Rendering fielder with ID:', playerId);
+                        const playerId = String(player.id).trim();
+                        const playerName = String(player.name).trim();
+                        console.log('Rendering fielder option:', { playerId, playerName });
+                        
                         return (
                           <SelectItem key={playerId} value={playerId}>
-                            {player.name}
+                            {playerName}
                           </SelectItem>
                         );
                       })}
@@ -154,11 +189,13 @@ const WicketSelector = ({
                     </SelectTrigger>
                     <SelectContent>
                       {validFieldingPlayers.map((player) => {
-                        const playerId = String(player.id);
-                        console.log('Rendering bowler with ID:', playerId);
+                        const playerId = String(player.id).trim();
+                        const playerName = String(player.name).trim();
+                        console.log('Rendering bowler option:', { playerId, playerName });
+                        
                         return (
                           <SelectItem key={playerId} value={playerId}>
-                            {player.name}
+                            {playerName}
                           </SelectItem>
                         );
                       })}

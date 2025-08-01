@@ -65,11 +65,28 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Ensure team names are not empty strings and have valid fallbacks
-  const team1Name = (match.team1?.name && String(match.team1.name).trim()) || 'Team 1';
-  const team2Name = (match.team2?.name && String(match.team2.name).trim()) || 'Team 2';
+  // Ensure team names are valid strings with guaranteed fallbacks
+  const getValidTeamName = (team: any, fallback: string) => {
+    if (!team) {
+      console.log(`Team is null/undefined, using fallback: ${fallback}`);
+      return fallback;
+    }
+    
+    const name = team.name;
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      console.log(`Invalid team name:`, name, `using fallback: ${fallback}`);
+      return fallback;
+    }
+    
+    const trimmedName = name.trim();
+    console.log(`Valid team name: ${trimmedName}`);
+    return trimmedName;
+  };
 
-  console.log('Team names for toss:', { team1Name, team2Name });
+  const team1Name = getValidTeamName(match.team1, 'Team 1');
+  const team2Name = getValidTeamName(match.team2, 'Team 2');
+
+  console.log('Final team names for toss:', { team1Name, team2Name });
 
   return (
     <Card>
