@@ -28,6 +28,7 @@ const EnhancedCricketScoreboard = ({
   recentBalls = [],
   team1Players = [],
   team2Players = [],
+  fallOfWickets = [],
   bowlers = [],
   wickets = [],
   oversData = []
@@ -118,7 +119,7 @@ const EnhancedCricketScoreboard = ({
               currentInnings={currentInnings}
             />
             <FallOfWickets 
-              wickets={wickets}
+              wickets={fallOfWickets}
               battingTeamName={battingTeamName}
             />
           </TabsContent>
@@ -223,7 +224,7 @@ const EnhancedCricketScoreboard = ({
             />
             
             <FallOfWickets 
-              wickets={wickets}
+              wickets={fallOfWickets}
               battingTeamName={battingTeamName}
             />
           </div>
