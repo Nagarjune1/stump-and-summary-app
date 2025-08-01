@@ -1,4 +1,5 @@
 
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,7 +116,10 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <AdvancedStatistics />
+              <AdvancedStatistics 
+                matchData={matchData}
+                scoreData={scoreData}
+              />
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-6">
@@ -145,3 +149,4 @@ const Index = () => {
 };
 
 export default Index;
+
