@@ -243,9 +243,34 @@ const LiveScoring = () => {
       } else {
         const newScore = updateScore(innings2Score);
         setInnings2Score(newScore);
+        
+        // Check if match is complete
+        if (newScore.runs > innings1Score.runs || newScore.wickets >= 10 || newScore.overs >= totalOvers) {
+          const resultText = newScore.runs > innings1Score.runs 
+            ? `${team2Name} wins by ${10 - newScore.wickets} wickets`
+            : innings1Score.runs > newScore.runs 
+            ? `${team1Name} wins by ${innings1Score.runs - newScore.runs} runs`
+            : "Match tied";
+          
+          await supabase
+            .from('matches')
+            .update({ 
+              status: 'completed',
+              result: resultText,
+              team1_score: `${innings1Score.runs}/${innings1Score.wickets} (${innings1Score.overs}.${innings1Score.balls})`,
+              team2_score: `${newScore.runs}/${newScore.wickets} (${newScore.overs}.${newScore.balls})`
+            })
+            .eq('id', matchId);
+            
+          setMatchStatus('completed');
+          toast({
+            title: "Match Complete",
+            description: resultText,
+          });
+        }
       }
 
-      // Update batsman and bowler stats
+      // Update batsman stats
       if (!isWicket && runs > 0) {
         const updatedBatsmen = [...currentBatsmen];
         updatedBatsmen[strikeBatsmanIndex].runs += runs;
@@ -274,8 +299,8 @@ const LiveScoring = () => {
       const ballData = {
         match_id: matchId,
         innings: currentInnings,
-        over_number: currentInnings === 1 ? (innings1Score?.overs || 0) + 1 : (innings2Score?.overs || 0) + 1,
-        ball_number: currentInnings === 1 ? (innings1Score?.balls || 0) + 1 : (innings2Score?.balls || 0) + 1,
+        over_number: currentInnings === 1 ? Math.floor(innings1Score.balls / 6) + 1 : Math.floor(innings2Score.balls / 6) + 1,
+        ball_number: currentInnings === 1 ? (innings1Score.balls % 6) + 1 : (innings2Score.balls % 6) + 1,
         batsman_id: currentBatsmen[strikeBatsmanIndex]?.id || null,
         bowler_id: currentBowler?.id || null,
         runs,
@@ -303,7 +328,7 @@ const LiveScoring = () => {
         variant: "destructive"
       });
     }
-  }, [canScore, matchId, currentInnings, innings1Score, innings2Score, totalOvers, team1Name, currentBatsmen, strikeBatsmanIndex, currentBowler]);
+  }, [canScore, matchId, currentInnings, innings1Score, innings2Score, totalOvers, team1Name, team2Name, currentBatsmen, strikeBatsmanIndex, currentBowler]);
 
   const updateBatsman = useCallback((index, field, value) => {
     const updatedBatsmen = [...currentBatsmen];
