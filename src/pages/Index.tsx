@@ -5,22 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Users, Trophy, BarChart3, Settings, Target, Plus } from "lucide-react";
 import Dashboard from "@/components/Dashboard";
 import LiveScoring from "@/components/LiveScoring";
-import PlayerManagement from "@/components/PlayerManagement";
 import MatchSummary from "@/components/MatchSummary";
 import TournamentManagement from "@/components/TournamentManagement";
 import AdvancedStatistics from "@/components/AdvancedStatistics";
 import Documentation from "@/components/Documentation";
-import PlayerProfiles from "@/components/PlayerProfiles";
+import EnhancedPlayerManagement from "@/components/EnhancedPlayerManagement";
 import CreateMatch from "@/components/CreateMatch";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentMatch, setCurrentMatch] = useState(null);
-
-  const handlePlayerAdded = (player: any) => {
-    console.log('Player added:', player);
-    // Handle player addition logic here
-  };
 
   const handleMatchCreated = (match: any) => {
     console.log('Match created:', match);
@@ -99,17 +93,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="players" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <PlayerManagement 
-                  currentMatch={currentMatch}
-                  onPlayerAdded={handlePlayerAdded}
-                />
-              </div>
-              <div>
-                <PlayerProfiles />
-              </div>
-            </div>
+            <EnhancedPlayerManagement />
           </TabsContent>
 
           <TabsContent value="summary" className="space-y-6">
