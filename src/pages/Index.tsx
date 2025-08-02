@@ -1,157 +1,104 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Trophy, Users, BarChart, FileText, Settings, Play, Home } from "lucide-react";
-import CreateMatch from "@/components/CreateMatch";
-import PlayerManagement from "@/components/PlayerManagement";
-import LiveScoring from "@/components/LiveScoring";
-import MatchSummary from "@/components/MatchSummary";
-import AdvancedStatistics from "@/components/AdvancedStatistics";
-import EnhancedExportReport from "@/components/EnhancedExportReport";
-import TournamentManagement from "@/components/TournamentManagement";
-import VenueManagement from "@/components/VenueManagement";
-import Documentation from "@/components/Documentation";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Users, Trophy, BarChart3, Settings, Target } from "lucide-react";
 import Dashboard from "@/components/Dashboard";
+import LiveScoring from "@/components/LiveScoring";
+import PlayerManagement from "@/components/PlayerManagement";
+import MatchSummary from "@/components/MatchSummary";
+import TournamentManagement from "@/components/TournamentManagement";
+import AdvancedStatistics from "@/components/AdvancedStatistics";
+import Documentation from "@/components/Documentation";
 import PlayerProfiles from "@/components/PlayerProfiles";
-import { AuthProvider } from "@/components/AuthProvider";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [currentMatch, setCurrentMatch] = useState(null);
-  const [matchData, setMatchData] = useState(null);
-  const [scoreData, setScoreData] = useState({ runs: 0, wickets: 0, overs: 0 });
-
-  const handleMatchCreated = (match: any) => {
-    setCurrentMatch(match);
-    setMatchData(match);
-    console.log('Match created:', match);
-  };
-
-  const handleMatchStarted = (match: any) => {
-    setCurrentMatch(match);
-    setMatchData(match);
-    console.log('Match started:', match);
-  };
-
-  const handlePlayerAdded = (player: any) => {
-    console.log('Player added:', player);
-  };
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-        <header className="bg-white shadow-md py-4">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-bold flex items-center">
-                <Trophy className="mr-2 w-6 h-6 text-yellow-500" />
-                Cricket Management System
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Badge variant="secondary">Version 1.0</Badge>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Cricket Scoring System
+          </h1>
+          <p className="text-gray-600">
+            Professional cricket scoring and match management platform
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-3 lg:grid-cols-7 mb-6">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="scoring" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Live Score</span>
+            </TabsTrigger>
+            <TabsTrigger value="players" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Players</span>
+            </TabsTrigger>
+            <TabsTrigger value="summary" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Summary</span>
+            </TabsTrigger>
+            <TabsTrigger value="tournaments" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              <span className="hidden sm:inline">Tournaments</span>
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Statistics</span>
+            </TabsTrigger>
+            <TabsTrigger value="help" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Help</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <Dashboard />
+          </TabsContent>
+
+          <TabsContent value="scoring" className="space-y-6">
+            <LiveScoring />
+          </TabsContent>
+
+          <TabsContent value="players" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <PlayerManagement />
+              </div>
+              <div>
+                <PlayerProfiles />
               </div>
             </div>
-          </div>
-        </header>
+          </TabsContent>
 
-        <div className="container mx-auto px-4 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-8">
-              <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center space-y-1">
-                <Home className="w-5 h-5" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="live" className="flex flex-col items-center justify-center space-y-1">
-                <Play className="w-5 h-5" />
-                Live Scoring
-              </TabsTrigger>
-              <TabsTrigger value="matches" className="flex flex-col items-center justify-center space-y-1">
-                <Calendar className="w-5 h-5" />
-                Matches
-              </TabsTrigger>
-              <TabsTrigger value="players" className="flex flex-col items-center justify-center space-y-1">
-                <Users className="w-5 h-5" />
-                Players
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex flex-col items-center justify-center space-y-1">
-                <BarChart className="w-5 h-5" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="summary" className="flex flex-col items-center justify-center space-y-1">
-                <FileText className="w-5 h-5" />
-                Summary
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="flex flex-col items-center justify-center space-y-1">
-                <FileText className="w-5 h-5" />
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value="tournaments" className="flex flex-col items-center justify-center space-y-1">
-                <Trophy className="w-5 h-5" />
-                Tournaments
-              </TabsTrigger>
-              <TabsTrigger value="venues" className="flex flex-col items-center justify-center space-y-1">
-                <Settings className="w-5 h-5" />
-                Venues
-              </TabsTrigger>
-              <TabsTrigger value="docs" className="flex flex-col items-center justify-center space-y-1">
-                <Settings className="w-5 h-5" />
-                Docs
-              </TabsTrigger>
-            </TabsList>
+          <TabsContent value="summary" className="space-y-6">
+            <MatchSummary 
+              matchData={{}}
+              scoreData={{}}
+            />
+          </TabsContent>
 
-            <TabsContent value="dashboard" className="space-y-6">
-              <Dashboard />
-            </TabsContent>
+          <TabsContent value="tournaments" className="space-y-6">
+            <TournamentManagement />
+          </TabsContent>
 
-            <TabsContent value="matches" className="space-y-6">
-              <CreateMatch 
-                onMatchCreated={handleMatchCreated}
-                onMatchStarted={handleMatchStarted}
-              />
-            </TabsContent>
+          <TabsContent value="statistics" className="space-y-6">
+            <AdvancedStatistics />
+          </TabsContent>
 
-            <TabsContent value="live" className="space-y-6">
-              <LiveScoring />
-            </TabsContent>
-
-            <TabsContent value="players" className="space-y-6">
-              <PlayerProfiles />
-              <PlayerManagement 
-                currentMatch={currentMatch}
-                onPlayerAdded={handlePlayerAdded}
-              />
-            </TabsContent>
-
-            <TabsContent value="analytics" className="space-y-6">
-              <AdvancedStatistics />
-            </TabsContent>
-
-            <TabsContent value="summary" className="space-y-6">
-              <MatchSummary />
-            </TabsContent>
-
-            <TabsContent value="reports" className="space-y-6">
-              <EnhancedExportReport />
-            </TabsContent>
-
-            <TabsContent value="tournaments" className="space-y-6">
-              <TournamentManagement />
-            </TabsContent>
-
-            <TabsContent value="venues" className="space-y-6">
-              <VenueManagement />
-            </TabsContent>
-
-            <TabsContent value="docs" className="space-y-6">
-              <Documentation />
-            </TabsContent>
-          </Tabs>
-        </div>
+          <TabsContent value="help" className="space-y-6">
+            <Documentation />
+          </TabsContent>
+        </Tabs>
       </div>
-    </AuthProvider>
+    </div>
   );
 };
 
