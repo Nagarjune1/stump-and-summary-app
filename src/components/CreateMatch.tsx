@@ -104,6 +104,13 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         return;
       }
 
+      // Set default overs based on format
+      let defaultOvers = 20;
+      if (matchData.format === 'ODI') defaultOvers = 50;
+      else if (matchData.format === 'T20') defaultOvers = 20;
+      else if (matchData.format === 'T10') defaultOvers = 10;
+      else if (matchData.format === 'Custom' && matchData.overs) defaultOvers = parseInt(matchData.overs);
+
       const { data, error } = await supabase
         .from('matches')
         .insert([{
@@ -112,8 +119,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
           venue: matchData.venue,
           match_date: matchData.match_date,
           match_time: matchData.match_time || null,
-          format: matchData.format,
-          overs: matchData.overs ? parseInt(matchData.overs) : null,
+          format: matchData.format || 'T20',
+          overs: defaultOvers,
           tournament: matchData.tournament || null,
           description: matchData.description || null,
           status: 'upcoming',

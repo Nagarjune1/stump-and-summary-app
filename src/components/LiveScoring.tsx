@@ -52,21 +52,23 @@ const LiveScoring = () => {
   const [recentBalls, setRecentBalls] = useState([]);
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Memoized values for performance
   const isMatchActive = useMemo(() => 
-    matchStatus === 'in_progress' || matchStatus === 'scheduled',
+    ['in_progress', 'live', 'upcoming', 'scheduled'].includes(matchStatus),
     [matchStatus]
   );
 
   const canScore = useMemo(() => 
-    matchId && isMatchActive && matchStatus !== 'completed',
-    [matchId, isMatchActive, matchStatus]
+    matchId && (matchStatus === 'in_progress' || matchStatus === 'live'),
+    [matchId, matchStatus]
   );
 
   // Fetch data functions
   const fetchMatches = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('matches')
         .select(`
@@ -74,7 +76,7 @@ const LiveScoring = () => {
           team1:teams!matches_team1_id_fkey(name),
           team2:teams!matches_team2_id_fkey(name)
         `)
-        .in('status', ['scheduled', 'in_progress'])
+        .in('status', ['scheduled', 'in_progress', 'live', 'upcoming'])
         .order('match_date', { ascending: true });
 
       if (error) throw error;
@@ -86,6 +88,8 @@ const LiveScoring = () => {
         description: "Failed to fetch matches",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -114,7 +118,10 @@ const LiveScoring = () => {
   }, [fetchMatches, fetchPlayers]);
 
   const loadMatchData = useCallback(async (selectedMatchId) => {
+    if (!selectedMatchId) return;
+    
     try {
+      setLoading(true);
       const { data: match, error } = await supabase
         .from('matches')
         .select(`
@@ -131,7 +138,7 @@ const LiveScoring = () => {
       setTeam1Name(match.team1?.name || '');
       setTeam2Name(match.team2?.name || '');
       setTotalOvers(match.overs || 20);
-      setMatchStatus(match.status || 'not_started');
+      setMatchStatus(match.status || 'upcoming');
 
       // Parse existing scores if available
       if (match.team1_score) {
@@ -167,22 +174,41 @@ const LiveScoring = () => {
         description: "Failed to load match data",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  const startMatch = useCallback(async () => {
+    if (!matchId) return;
+
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({ status: 'live' })
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      setMatchStatus('live');
+      toast({
+        title: "Match Started",
+        description: "You can now start scoring!",
+      });
+    } catch (error) {
+      console.error('Error starting match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start match",
+        variant: "destructive"
+      });
+    }
+  }, [matchId]);
 
   const recordBall = useCallback(async (runs, extras = 0, extraType = '', isWicket = false, wicketType = '') => {
     if (!canScore) return;
 
     try {
-      // Update match status to in_progress if not already
-      if (matchStatus === 'not_started' || matchStatus === 'scheduled') {
-        await supabase
-          .from('matches')
-          .update({ status: 'in_progress' })
-          .eq('id', matchId);
-        setMatchStatus('in_progress');
-      }
-
       // Update current innings score
       const updateScore = (currentScore) => {
         const newScore = { ...currentScore };
@@ -277,7 +303,7 @@ const LiveScoring = () => {
         variant: "destructive"
       });
     }
-  }, [canScore, matchStatus, matchId, currentInnings, innings1Score, innings2Score, totalOvers, team1Name, currentBatsmen, strikeBatsmanIndex, currentBowler]);
+  }, [canScore, matchId, currentInnings, innings1Score, innings2Score, totalOvers, team1Name, currentBatsmen, strikeBatsmanIndex, currentBowler]);
 
   const updateBatsman = useCallback((index, field, value) => {
     const updatedBatsmen = [...currentBatsmen];
@@ -325,14 +351,27 @@ const LiveScoring = () => {
     setStrikeBatsmanIndex(0);
   }, []);
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Live Scoring</h2>
         <div className="flex gap-2">
-          <Badge variant={matchStatus === 'in_progress' ? 'default' : 'secondary'}>
+          <Badge variant={matchStatus === 'live' || matchStatus === 'in_progress' ? 'default' : 'secondary'}>
             {matchStatus.replace('_', ' ').toUpperCase()}
           </Badge>
+          {matchId && (matchStatus === 'upcoming' || matchStatus === 'scheduled') && (
+            <Button onClick={startMatch} size="sm" className="bg-green-600 hover:bg-green-700">
+              Start Match
+            </Button>
+          )}
         </div>
       </div>
 
