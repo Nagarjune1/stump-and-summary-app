@@ -14,6 +14,12 @@ import PlayerProfiles from "@/components/PlayerProfiles";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [currentMatch, setCurrentMatch] = useState(null);
+
+  const handlePlayerAdded = (player: any) => {
+    console.log('Player added:', player);
+    // Handle player addition logic here
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,7 +76,10 @@ const Index = () => {
           <TabsContent value="players" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <PlayerManagement />
+                <PlayerManagement 
+                  currentMatch={currentMatch}
+                  onPlayerAdded={handlePlayerAdded}
+                />
               </div>
               <div>
                 <PlayerProfiles />
@@ -79,10 +88,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="summary" className="space-y-6">
-            <MatchSummary 
-              matchData={{}}
-              scoreData={{}}
-            />
+            <MatchSummary />
           </TabsContent>
 
           <TabsContent value="tournaments" className="space-y-6">
