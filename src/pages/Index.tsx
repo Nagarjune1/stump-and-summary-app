@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Users, Trophy, BarChart3, Settings, Target } from "lucide-react";
+import { FileText, Users, Trophy, BarChart3, Settings, Target, Plus } from "lucide-react";
 import Dashboard from "@/components/Dashboard";
 import LiveScoring from "@/components/LiveScoring";
 import PlayerManagement from "@/components/PlayerManagement";
@@ -11,6 +11,7 @@ import TournamentManagement from "@/components/TournamentManagement";
 import AdvancedStatistics from "@/components/AdvancedStatistics";
 import Documentation from "@/components/Documentation";
 import PlayerProfiles from "@/components/PlayerProfiles";
+import CreateMatch from "@/components/CreateMatch";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -19,6 +20,19 @@ const Index = () => {
   const handlePlayerAdded = (player: any) => {
     console.log('Player added:', player);
     // Handle player addition logic here
+  };
+
+  const handleMatchCreated = (match: any) => {
+    console.log('Match created:', match);
+    setCurrentMatch(match);
+    // Optionally switch to scoring tab after match creation
+    setActiveTab("scoring");
+  };
+
+  const handleMatchStarted = (match: any) => {
+    console.log('Match started:', match);
+    setCurrentMatch(match);
+    setActiveTab("scoring");
   };
 
   return (
@@ -34,10 +48,14 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-7 mb-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Create</span>
             </TabsTrigger>
             <TabsTrigger value="scoring" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
@@ -67,6 +85,13 @@ const Index = () => {
 
           <TabsContent value="dashboard" className="space-y-6">
             <Dashboard />
+          </TabsContent>
+
+          <TabsContent value="create" className="space-y-6">
+            <CreateMatch 
+              onMatchCreated={handleMatchCreated}
+              onMatchStarted={handleMatchStarted}
+            />
           </TabsContent>
 
           <TabsContent value="scoring" className="space-y-6">
