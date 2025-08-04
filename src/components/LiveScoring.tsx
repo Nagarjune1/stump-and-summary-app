@@ -16,6 +16,7 @@ import ScoreDisplay from "./scoring/ScoreDisplay";
 import PlayerSelection from "./scoring/PlayerSelection";
 import ScoringControls from "./scoring/ScoringControls";
 import ScoringRuleEngine from "./scoring/ScoringRuleEngine";
+import NewBatsmanSelector from "./scoring/NewBatsmanSelector";
 import TossSelector from "./TossSelector";
 import PlayerSelector from "./PlayerSelector";
 import WicketSelector from "./WicketSelector";
@@ -84,6 +85,13 @@ const LiveScoring = () => {
 
   const currentScore = currentInnings === 1 ? innings1Score : innings2Score;
   const isPowerplay = currentScore.overs < powerplayOvers;
+
+  const getDefaultPowerplayOvers = useCallback((totalOvers) => {
+    if (totalOvers <= 10) return Math.min(2, totalOvers);
+    if (totalOvers <= 20) return 6;
+    if (totalOvers <= 35) return 8;
+    return 10;
+  }, []);
 
   const fetchMatches = useCallback(async () => {
     try {
@@ -184,7 +192,10 @@ const LiveScoring = () => {
       setTeam1Name(matchData.team1?.name || '');
       setTeam2Name(matchData.team2?.name || '');
       setTotalOvers(matchData.overs || 20);
-      setPowerplayOvers(matchData.powerplay_overs || 6);
+      
+      const defaultPowerplayOvers = getDefaultPowerplayOvers(matchData.overs || 20);
+      setPowerplayOvers(defaultPowerplayOvers);
+      
       setMatchStatus(matchData.status || 'upcoming');
       setTossCompleted(!!matchData.toss_winner);
 
@@ -235,7 +246,7 @@ const LiveScoring = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchTeamPlayers]);
+  }, [fetchTeamPlayers, getDefaultPowerplayOvers]);
 
   const handleTossComplete = useCallback((tossWinner, tossDecision) => {
     setTossCompleted(true);
@@ -336,6 +347,7 @@ const LiveScoring = () => {
       const updatedBowler = { ...currentBowler };
       updatedBowler.runs += runs + extras;
       if (isWicket) updatedBowler.wickets += 1;
+      
       if (extraType !== 'wide' && extraType !== 'no-ball') {
         updatedBowler.overs = Math.round((updatedBowler.overs + (1/6)) * 10) / 10;
       }
@@ -740,37 +752,13 @@ const LiveScoring = () => {
             currentBatsman={currentBatsmen[strikeBatsmanIndex]}
           />
 
-          {newBatsmanDialogOpen && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Select New Batsman</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Label>Choose the next batsman</Label>
-                <Select onValueChange={handleNewBatsmanSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select new batsman" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(battingTeam === 1 ? team1Players : team2Players)
-                      .filter(player => !currentBatsmen.some(batsman => batsman.id === player.id))
-                      .map((player) => (
-                        <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
-                          {player.name}
-                        </SafeSelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <Button 
-                  onClick={() => setNewBatsmanDialogOpen(false)} 
-                  variant="outline"
-                  className="w-full"
-                >
-                  Cancel
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <NewBatsmanSelector
+            open={newBatsmanDialogOpen}
+            onClose={() => setNewBatsmanDialogOpen(false)}
+            onBatsmanSelect={handleNewBatsmanSelect}
+            availablePlayers={(battingTeam === 1 ? team1Players : team2Players)
+              .filter(player => !currentBatsmen.some(batsman => batsman.id === player.id))}
+          />
         </TabsContent>
 
         <TabsContent value="analytics">
@@ -794,7 +782,11 @@ const LiveScoring = () => {
                 <Input
                   type="number"
                   value={totalOvers}
-                  onChange={(e) => setTotalOvers(parseInt(e.target.value) || 20)}
+                  onChange={(e) => {
+                    const newOvers = parseInt(e.target.value) || 20;
+                    setTotalOvers(newOvers);
+                    setPowerplayOvers(getDefaultPowerplayOvers(newOvers));
+                  }}
                   min="1"
                   max="50"
                 />
