@@ -10,6 +10,18 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    watch: {
+      // Reduce the number of files being watched
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**'],
+      // Use polling instead of native file watching to reduce file descriptor usage
+      usePolling: false,
+      // Reduce file watcher depth
+      depth: 3,
+    },
+    hmr: {
+      // Limit HMR connections
+      overlay: true,
+    }
   },
   plugins: [
     react(),
@@ -30,5 +42,12 @@ export default defineConfig(({ mode }) => ({
         manualChunks: undefined,
       },
     },
+    // Optimize build performance
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependency scanning
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: ['@supabase/supabase-js']
   },
 }));
