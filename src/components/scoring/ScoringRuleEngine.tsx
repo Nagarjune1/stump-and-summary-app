@@ -69,9 +69,9 @@ const ScoringRuleEngine = ({
     }
   }, [wickets, totalPlayers, onInningsEnd]);
 
-  // Check for overs completed
+  // Check for overs completed - Fixed condition
   useEffect(() => {
-    if (currentOver >= totalOvers) {
+    if (currentOver > totalOvers || (currentOver === totalOvers && currentBall === 0)) {
       toast({
         title: "Overs Completed!",
         description: `${totalOvers} overs finished. Innings ended.`,
@@ -79,7 +79,7 @@ const ScoringRuleEngine = ({
       });
       onInningsEnd('overs_completed');
     }
-  }, [currentOver, totalOvers, onInningsEnd]);
+  }, [currentOver, currentBall, totalOvers, onInningsEnd]);
 
   // Check for wide/no-ball notifications
   useEffect(() => {

@@ -298,6 +298,7 @@ const LiveScoring = () => {
         
         if (isWicket) newScore.wickets += 1;
         
+        // Only increment ball count if not wide or no-ball
         if (extraType !== 'wide' && extraType !== 'no-ball') {
           newScore.balls += 1;
           if (newScore.balls === 6) {
@@ -326,6 +327,7 @@ const LiveScoring = () => {
         setInnings2Score(newScore);
       }
 
+      // Update batsman stats only if not a wicket and not wide/no-ball
       if (!isWicket && (extraType !== 'wide' && extraType !== 'no-ball')) {
         const updatedBatsmen = [...currentBatsmen];
         updatedBatsmen[strikeBatsmanIndex].runs += runs;
@@ -333,6 +335,7 @@ const LiveScoring = () => {
         if (runs === 4) updatedBatsmen[strikeBatsmanIndex].fours += 1;
         if (runs === 6) updatedBatsmen[strikeBatsmanIndex].sixes += 1;
         
+        // Change strike for odd runs (1, 3, 5)
         if (runs % 2 === 1 && runs < 4) {
           setStrikeBatsmanIndex(prev => prev === 0 ? 1 : 0);
         }
@@ -340,19 +343,23 @@ const LiveScoring = () => {
         setCurrentBatsmen(updatedBatsmen);
       }
 
+      // Show new batsman selector if wicket
       if (isWicket) {
         setNewBatsmanDialogOpen(true);
       }
 
+      // Update bowler stats
       const updatedBowler = { ...currentBowler };
       updatedBowler.runs += runs + extras;
       if (isWicket) updatedBowler.wickets += 1;
       
+      // Only count overs for legitimate deliveries
       if (extraType !== 'wide' && extraType !== 'no-ball') {
         updatedBowler.overs = Math.round((updatedBowler.overs + (1/6)) * 10) / 10;
       }
       setCurrentBowler(updatedBowler);
 
+      // Record ball in database
       const ballData = {
         match_id: matchId,
         innings: currentInnings,
@@ -374,6 +381,7 @@ const LiveScoring = () => {
 
       if (error) throw error;
 
+      // Add to recent balls
       const ballValue = isWicket ? 'W' : runs.toString();
       setRecentBalls(prev => [...prev.slice(-11), ballValue]);
 
@@ -647,10 +655,9 @@ const LiveScoring = () => {
       </div>
 
       <Tabs defaultValue="scoring" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="scoring">Live Scoring</TabsTrigger>
           <TabsTrigger value="analytics">Match Analytics</TabsTrigger>
-          <TabsTrigger value="setup">Match Setup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scoring" className="space-y-4">
@@ -740,6 +747,22 @@ const LiveScoring = () => {
                   </CardContent>
                 </Card>
               )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={resetMatch}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Match
+                  </Button>
+                </CardContent>
+              </Card>
             </>
           )}
 
@@ -769,63 +792,6 @@ const LiveScoring = () => {
             currentBatsmen={currentBatsmen}
             currentBowler={currentBowler}
           />
-        </TabsContent>
-
-        <TabsContent value="setup" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Match Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Total Overs</Label>
-                <Input
-                  type="number"
-                  value={totalOvers}
-                  onChange={(e) => {
-                    const newOvers = parseInt(e.target.value) || 20;
-                    setTotalOvers(newOvers);
-                    setPowerplayOvers(getDefaultPowerplayOvers(newOvers));
-                  }}
-                  min="1"
-                  max="50"
-                />
-              </div>
-
-              <div>
-                <Label>Powerplay Overs</Label>
-                <Input
-                  type="number"
-                  value={powerplayOvers}
-                  onChange={(e) => setPowerplayOvers(parseInt(e.target.value) || 6)}
-                  min="1"
-                  max={Math.min(totalOvers, 10)}
-                />
-              </div>
-              
-              <div>
-                <Label>Current Innings</Label>
-                <Select value={currentInnings.toString()} onValueChange={(value) => setCurrentInnings(parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SafeSelectItem value="1">1st Innings</SafeSelectItem>
-                    <SafeSelectItem value="2">2nd Innings</SafeSelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={resetMatch}
-                variant="outline"
-                className="w-full"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset Match
-              </Button>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
