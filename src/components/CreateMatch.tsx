@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -221,9 +220,10 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         return;
       }
 
+      // Update status to 'in_progress' instead of 'live'
       const { data, error } = await supabase
         .from('matches')
-        .update({ status: 'live' })
+        .update({ status: 'in_progress' })
         .eq('id', matchId)
         .select(`
           *,
@@ -235,7 +235,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
         console.error('Error starting match:', error);
         toast({
           title: "Error",
-          description: "Failed to start match",
+          description: `Failed to start match: ${error.message}`,
           variant: "destructive"
         });
         return;
@@ -244,7 +244,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
       if (!data || data.length === 0) {
         toast({
           title: "Error",
-          description: "Match not found",
+          description: "Match not found after update",
           variant: "destructive"
         });
         return;
@@ -252,7 +252,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
 
       toast({
         title: "Match Started!",
-        description: `${data[0].team1?.name || 'Team 1'} vs ${data[0].team2?.name || 'Team 2'} is now live`,
+        description: `${data[0].team1?.name || 'Team 1'} vs ${data[0].team2?.name || 'Team 2'} is now ready for toss`,
       });
 
       if (onMatchStarted && data[0]) {
@@ -599,8 +599,13 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={match.status === "live" ? "default" : match.status === "completed" ? "secondary" : "outline"}>
-                      {match.status}
+                    <Badge variant={
+                      match.status === "live" ? "default" : 
+                      match.status === "in_progress" ? "default" : 
+                      match.status === "completed" ? "secondary" : 
+                      "outline"
+                    }>
+                      {match.status === "in_progress" ? "in progress" : match.status}
                     </Badge>
                     {match.status === 'upcoming' && (
                       <Button 
