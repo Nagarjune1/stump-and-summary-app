@@ -45,9 +45,22 @@ export default defineConfig(({ mode }) => ({
     // Optimize build performance
     chunkSizeWarningLimit: 1000,
   },
-  // Optimize dependency scanning
+  // Optimize dependency scanning and fix Supabase module issues
   optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: ['@supabase/supabase-js']
+    include: [
+      'react', 
+      'react-dom',
+      '@supabase/supabase-js',
+      '@supabase/postgrest-js',
+      '@supabase/realtime-js',
+      '@supabase/gotrue-js'
+    ],
+    exclude: [],
+    esbuildOptions: {
+      target: 'es2020'
+    }
+  },
+  define: {
+    global: 'globalThis',
   },
 }));
