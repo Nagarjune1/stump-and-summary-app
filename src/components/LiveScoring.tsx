@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -410,11 +409,24 @@ const LiveScoring = () => {
       // Update player statistics after match
       for (const batsman of currentBatsmen) {
         if (batsman.id) {
+          // Get current player stats
+          const { data: currentPlayer, error: fetchError } = await supabase
+            .from('players')
+            .select('matches, runs')
+            .eq('id', batsman.id)
+            .single();
+
+          if (fetchError) {
+            console.error('Error fetching player stats:', fetchError);
+            continue;
+          }
+
+          // Update with new values
           const { error } = await supabase
             .from('players')
             .update({
-              matches: supabase.rpc('increment', { field: 'matches' }),
-              runs: supabase.rpc('increment', { field: 'runs', value: batsman.runs }),
+              matches: (currentPlayer.matches || 0) + 1,
+              runs: (currentPlayer.runs || 0) + batsman.runs,
             })
             .eq('id', batsman.id);
           
@@ -423,11 +435,24 @@ const LiveScoring = () => {
       }
 
       if (currentBowler.id) {
+        // Get current bowler stats
+        const { data: currentPlayer, error: fetchError } = await supabase
+          .from('players')
+          .select('matches, wickets')
+          .eq('id', currentBowler.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching bowler stats:', fetchError);
+          return;
+        }
+
+        // Update with new values
         const { error } = await supabase
           .from('players')
           .update({
-            matches: supabase.rpc('increment', { field: 'matches' }),
-            wickets: supabase.rpc('increment', { field: 'wickets', value: currentBowler.wickets }),
+            matches: (currentPlayer.matches || 0) + 1,
+            wickets: (currentPlayer.wickets || 0) + currentBowler.wickets,
           })
           .eq('id', currentBowler.id);
         
@@ -494,6 +519,32 @@ const LiveScoring = () => {
     setShowScoreboard(false);
   }, []);
 
+  const startMatch = useCallback(async () => {
+    if (!matchId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({ status: 'in_progress' })
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      setMatchStatus('in_progress');
+      toast({
+        title: "Match Started",
+        description: "Match is now ready for live scoring",
+      });
+    } catch (error) {
+      console.error('Error starting match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start match",
+        variant: "destructive"
+      });
+    }
+  }, [matchId]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -549,14 +600,27 @@ const LiveScoring = () => {
             onMatchSelect={loadMatchData}
           />
 
-          {matchId && !tossCompleted && (
+          {matchId && matchStatus === 'upcoming' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Start Match</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={startMatch} className="w-full">
+                  Start Match
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {matchId && !tossCompleted && matchStatus === 'in_progress' && (
             <TossSelector 
               match={match}
               onTossComplete={handleTossComplete}
             />
           )}
 
-          {matchId && tossCompleted && !playersSelected && (
+          {matchId && tossCompleted && !playersSelected && matchStatus === 'in_progress' && (
             <PlayerSelector
               match={match}
               onPlayersSelected={handlePlayersSelected}
