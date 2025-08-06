@@ -122,26 +122,27 @@ const LiveScoring = () => {
 
   const completeMatch = () => {
     setIsMatchCompleted(true);
-    setTeam2Score({ runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 });
+    const finalTeam2Score = { runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 };
+    setTeam2Score(finalTeam2Score);
     
     // Determine match result
     let result = '';
-    if (team2Score.runs > team1Score.runs) {
-      const wicketsLeft = 10 - team2Score.wickets;
+    if (totalScore > team1Score.runs) {
+      const wicketsLeft = 10 - totalWickets;
       result = `${selectedMatch.team2_name} won by ${wicketsLeft} wickets`;
-    } else if (team1Score.runs > team2Score.runs) {
-      const runsMargin = team1Score.runs - team2Score.runs;
+    } else if (team1Score.runs > totalScore) {
+      const runsMargin = team1Score.runs - totalScore;
       result = `${selectedMatch.team1_name} won by ${runsMargin} runs`;
     } else {
       result = 'Match tied';
     }
     
     setMatchResult(result);
-    updateMatchResult(result);
+    updateMatchResult(result, finalTeam2Score);
     toast.success(`Match completed! ${result}`);
   };
 
-  const updateMatchResult = async (result) => {
+  const updateMatchResult = async (result, finalTeam2Score) => {
     try {
       await supabase
         .from('matches')
@@ -150,8 +151,8 @@ const LiveScoring = () => {
           status: 'completed',
           team1_score: `${team1Score.runs}/${team1Score.wickets}`,
           team1_overs: team1Score.overs.toFixed(1),
-          team2_score: `${team2Score.runs}/${team2Score.wickets}`,
-          team2_overs: team2Score.overs.toFixed(1)
+          team2_score: `${finalTeam2Score.runs}/${finalTeam2Score.wickets}`,
+          team2_overs: finalTeam2Score.overs.toFixed(1)
         })
         .eq('id', selectedMatch.id);
     } catch (error) {
@@ -291,8 +292,8 @@ const LiveScoring = () => {
   if (!matchStarted) {
     return (
       <MatchSetup 
-        match={selectedMatch} 
-        onStartMatch={() => setMatchStarted(true)}
+        matchData={selectedMatch} 
+        onMatchSetupComplete={() => setMatchStarted(true)}
         onBack={() => setSelectedMatch(null)}
       />
     );
@@ -370,7 +371,7 @@ const LiveScoring = () => {
           />
 
           {/* Scoring Controls */}
-          <ScoringControls onScore={handleScore} />
+          <ScoringControls onRecordBall={handleScore} />
         </>
       )}
 
