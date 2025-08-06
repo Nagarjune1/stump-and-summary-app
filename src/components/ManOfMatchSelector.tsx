@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { createSafeSelectOptions, createSafeSelectValue, createSafePlayerValue } from "@/utils/selectUtils";
 
 const ManOfMatchSelector = ({ 
   open, 
@@ -21,22 +20,29 @@ const ManOfMatchSelector = ({
   const [selectedMom, setSelectedMom] = useState("");
   const [selectedMos, setSelectedMos] = useState("");
   
-  // Create safe player options with proper validation
-  const validTeam1Players = createSafeSelectOptions(
-    team1Players.filter(p => p && p.id && p.name), 
-    'team1_player'
+  // Filter and validate players more strictly
+  const validTeam1Players = team1Players.filter(p => 
+    p && 
+    p.id && 
+    String(p.id).trim() !== '' && 
+    p.name && 
+    String(p.name).trim() !== ''
   );
-  const validTeam2Players = createSafeSelectOptions(
-    team2Players.filter(p => p && p.id && p.name), 
-    'team2_player'
+  
+  const validTeam2Players = team2Players.filter(p => 
+    p && 
+    p.id && 
+    String(p.id).trim() !== '' && 
+    p.name && 
+    String(p.name).trim() !== ''
   );
+  
   const allValidPlayers = [...validTeam1Players, ...validTeam2Players];
 
-  console.log('ManOfMatchSelector: Processing players for awards:', {
+  console.log('ManOfMatchSelector: Valid players:', {
     team1Count: validTeam1Players.length,
     team2Count: validTeam2Players.length,
-    totalCount: allValidPlayers.length,
-    matchId: matchData?.id
+    totalCount: allValidPlayers.length
   });
 
   const handleSaveMom = async () => {
@@ -50,7 +56,6 @@ const ManOfMatchSelector = ({
     }
 
     try {
-      // Create properly typed update data object
       const updateData: { 
         man_of_match: string;
         man_of_series?: string;
@@ -58,7 +63,6 @@ const ManOfMatchSelector = ({
         man_of_match: selectedMom
       };
 
-      // Only add man_of_series if it's a series match and MoS is selected and not "none_option"
       if (matchData?.series_id && selectedMos && selectedMos !== "none_option") {
         updateData.man_of_series = selectedMos;
       }
@@ -73,8 +77,9 @@ const ManOfMatchSelector = ({
         throw error;
       }
 
-      const momPlayer = allValidPlayers.find(p => p.id === selectedMom);
-      const mosPlayer = (selectedMos && selectedMos !== "none_option") ? allValidPlayers.find(p => p.id === selectedMos) : null;
+      const momPlayer = allValidPlayers.find(p => String(p.id) === selectedMom);
+      const mosPlayer = (selectedMos && selectedMos !== "none_option") ? 
+        allValidPlayers.find(p => String(p.id) === selectedMos) : null;
 
       toast({
         title: "Awards Selected!",
@@ -143,24 +148,24 @@ const ManOfMatchSelector = ({
                 </SelectTrigger>
                 <SelectContent>
                   {allValidPlayers.map((player, index) => {
-                    const teamName = createSafeSelectValue(
-                      player.team_id === String(matchData.team1_id) 
-                        ? matchData.team1?.name 
-                        : matchData.team2?.name,
-                      'Team'
+                    const playerId = String(player.id);
+                    const playerName = String(player.name || 'Unknown Player');
+                    const teamName = String(
+                      String(player.team_id) === String(matchData.team1_id) 
+                        ? matchData.team1?.name || 'Team 1'
+                        : matchData.team2?.name || 'Team 2'
                     );
                     
-                    const safePlayerId = createSafePlayerValue(player, index);
-                    
-                    console.log('Rendering MoM option:', { 
-                      playerId: safePlayerId, 
-                      playerName: player.name, 
+                    console.log('ManOfMatchSelector: Rendering MoM option:', { 
+                      index,
+                      playerId, 
+                      playerName, 
                       teamName 
                     });
                     
                     return (
-                      <SafeSelectItem key={safePlayerId} value={safePlayerId}>
-                        {player.name} ({teamName})
+                      <SafeSelectItem key={`mom_${index}_${playerId}`} value={playerId}>
+                        {playerName} ({teamName})
                       </SafeSelectItem>
                     );
                   })}
@@ -183,24 +188,24 @@ const ManOfMatchSelector = ({
                   <SelectContent>
                     <SafeSelectItem value="none_option">None</SafeSelectItem>
                     {allValidPlayers.map((player, index) => {
-                      const teamName = createSafeSelectValue(
-                        player.team_id === String(matchData.team1_id) 
-                          ? matchData.team1?.name 
-                          : matchData.team2?.name,
-                        'Team'
+                      const playerId = String(player.id);
+                      const playerName = String(player.name || 'Unknown Player');
+                      const teamName = String(
+                        String(player.team_id) === String(matchData.team1_id) 
+                          ? matchData.team1?.name || 'Team 1'
+                          : matchData.team2?.name || 'Team 2'
                       );
                       
-                      const safePlayerId = createSafePlayerValue(player, index);
-                      
-                      console.log('Rendering MoS option:', { 
-                        playerId: safePlayerId, 
-                        playerName: player.name, 
+                      console.log('ManOfMatchSelector: Rendering MoS option:', { 
+                        index,
+                        playerId, 
+                        playerName, 
                         teamName 
                       });
                       
                       return (
-                        <SafeSelectItem key={safePlayerId} value={safePlayerId}>
-                          {player.name} ({teamName})
+                        <SafeSelectItem key={`mos_${index}_${playerId}`} value={playerId}>
+                          {playerName} ({teamName})
                         </SafeSelectItem>
                       );
                     })}

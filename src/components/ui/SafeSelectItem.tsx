@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { SelectItem } from '@/components/ui/select';
-import { ensureValidSelectItemValue } from '@/utils/selectUtils';
 
 interface SafeSelectItemProps {
   value: any;
@@ -18,58 +17,64 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
   disabled,
   ...props 
 }) => {
-  // Multiple layers of validation to absolutely prevent empty strings
-  let safeValue: string;
-  
-  try {
-    // First layer - use our utility function
-    safeValue = ensureValidSelectItemValue(value);
-    
-    // Second layer - additional validation with multiple checks
-    if (!safeValue || 
-        safeValue === '' || 
-        safeValue === 'null' || 
-        safeValue === 'undefined' ||
-        safeValue.trim() === '' ||
-        safeValue.length === 0 ||
-        typeof safeValue !== 'string') {
-      
-      console.error('SafeSelectItem: First validation failed, creating emergency fallback:', { 
-        original: value, 
-        processed: safeValue 
-      });
-      
-      // Emergency fallback with timestamp and random string
-      safeValue = `emergency_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+  // Create absolutely safe value with multiple fallback mechanisms
+  const createSafeValue = (inputValue: any): string => {
+    // Handle null/undefined immediately
+    if (inputValue === null || inputValue === undefined) {
+      return `safe_${Date.now()}_${Math.random().toString(36).substr(2, 10)}`;
     }
+
+    let stringValue: string;
     
-    // Third layer - final safety check with string coercion
-    safeValue = String(safeValue).trim();
-    
-    if (safeValue.length === 0) {
-      console.error('SafeSelectItem: Final validation failed, using ultimate fallback');
-      safeValue = `ultimate_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 20)}`;
+    // Convert to string safely
+    try {
+      stringValue = String(inputValue);
+    } catch (error) {
+      console.error('SafeSelectItem: Failed to convert value to string:', error);
+      return `error_${Date.now()}_${Math.random().toString(36).substr(2, 10)}`;
     }
-    
-  } catch (error) {
-    console.error('SafeSelectItem: Error during validation, using crash fallback:', error);
-    safeValue = `crash_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 25)}`;
-  }
-  
-  // Fourth layer - absolutely final check before rendering
+
+    // Trim whitespace
+    stringValue = stringValue.trim();
+
+    // Check for empty or invalid values with comprehensive validation
+    if (
+      stringValue === '' ||
+      stringValue.length === 0 ||
+      stringValue === 'null' ||
+      stringValue === 'undefined' ||
+      stringValue === 'NaN' ||
+      /^\s*$/.test(stringValue) ||
+      typeof stringValue !== 'string'
+    ) {
+      console.warn('SafeSelectItem: Empty/invalid value detected, creating fallback:', inputValue);
+      return `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+    }
+
+    // Final safety check
+    if (!stringValue || stringValue.trim().length === 0) {
+      console.error('SafeSelectItem: Final validation failed, using emergency fallback');
+      return `emergency_${Date.now()}_${Math.random().toString(36).substr(2, 20)}`;
+    }
+
+    return stringValue;
+  };
+
+  const safeValue = createSafeValue(value);
+
+  // Absolutely final check - if somehow we still have an empty string, don't render
   if (!safeValue || safeValue === '' || safeValue.trim() === '') {
-    console.error('SafeSelectItem: All validation layers failed, not rendering item');
+    console.error('SafeSelectItem: Critical error - cannot create safe value, not rendering');
     return null;
   }
-  
-  console.log('SafeSelectItem: Successfully validated value:', { 
+
+  console.log('SafeSelectItem: Using safe value:', { 
     original: value, 
-    final: safeValue,
+    safe: safeValue,
     type: typeof safeValue,
-    length: safeValue.length,
-    trimmed: safeValue.trim().length
+    length: safeValue.length
   });
-  
+
   return (
     <SelectItem 
       value={safeValue} 
