@@ -88,16 +88,13 @@ const LiveScoring = () => {
     const maxOvers = selectedMatch?.overs || 20;
     const maxWickets = 10;
     
-    // Check if innings completed
     const inningsComplete = totalWickets >= maxWickets || currentOver > maxOvers;
     
     if (inningsComplete) {
       if (currentInnings === 1) {
-        // First innings complete, start second innings
         setTeam1Score({ runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 });
         startSecondInnings();
       } else {
-        // Second innings complete, determine winner
         completeMatch();
       }
     }
@@ -117,6 +114,7 @@ const LiveScoring = () => {
     setStrikeBatsmanIndex(0);
     setBallHistory([]);
     
+    updateMatchStatus('in_progress');
     toast.success('First innings completed! Starting second innings...');
   };
 
@@ -125,7 +123,6 @@ const LiveScoring = () => {
     const finalTeam2Score = { runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 };
     setTeam2Score(finalTeam2Score);
     
-    // Determine match result
     let result = '';
     if (totalScore > team1Score.runs) {
       const wicketsLeft = 10 - totalWickets;
@@ -140,6 +137,17 @@ const LiveScoring = () => {
     setMatchResult(result);
     updateMatchResult(result, finalTeam2Score);
     toast.success(`Match completed! ${result}`);
+  };
+
+  const updateMatchStatus = async (status) => {
+    try {
+      await supabase
+        .from('matches')
+        .update({ status })
+        .eq('id', selectedMatch.id);
+    } catch (error) {
+      console.error('Error updating match status:', error);
+    }
   };
 
   const updateMatchResult = async (result, finalTeam2Score) => {
@@ -160,7 +168,7 @@ const LiveScoring = () => {
     }
   };
 
-  const handleScore = async (runs, extras = 0, isWicket = false, extraType = null, wicketType = null, fielder = null) => {
+  const handleScore = async (runs: number, extras = 0, extraType = '', isWicket = false, wicketType = '') => {
     if (isMatchCompleted) {
       toast.error('Match is already completed!');
       return;
@@ -177,24 +185,22 @@ const LiveScoring = () => {
         runs: runs,
         extras: extras,
         is_wicket: isWicket,
-        extra_type: extraType,
-        wicket_type: wicketType,
-        fielder_id: fielder
+        extra_type: extraType || null,
+        wicket_type: wicketType || null,
+        fielder_id: null
       };
 
       const { error } = await supabase.from('ball_by_ball').insert([ballData]);
       if (error) throw error;
 
-      // Update scores
       setTotalScore(prev => prev + runs + extras);
       
       if (isWicket) {
         setTotalWickets(prev => prev + 1);
-        setWicketInfo({ type: wicketType, fielder });
+        setWicketInfo({ type: wicketType });
         setShowNewBatsmanDialog(true);
       }
 
-      // Update batsman stats
       if (!isWicket || wicketType !== 'run out') {
         const newBatsmen = [...currentBatsmen];
         newBatsmen[strikeBatsmanIndex].runs += runs;
@@ -206,33 +212,27 @@ const LiveScoring = () => {
         setCurrentBatsmen(newBatsmen);
       }
 
-      // Update bowler stats
       const newBowler = { ...currentBowler };
       newBowler.runs += runs + extras;
       if (isWicket) newBowler.wickets += 1;
       setCurrentBowler(newBowler);
 
-      // Update ball history
       setBallHistory(prev => [...prev, { runs, extras, isWicket, wicketType }]);
 
-      // Handle ball progression
       if (!extraType || extraType === 'bye' || extraType === 'leg-bye') {
         if (currentBall === 6) {
           setCurrentOver(prev => prev + 1);
           setCurrentBall(1);
-          // Switch strike for new over
           setStrikeBatsmanIndex(prev => prev === 0 ? 1 : 0);
         } else {
           setCurrentBall(prev => prev + 1);
         }
       }
 
-      // Switch strike for odd runs
       if (runs % 2 === 1) {
         setStrikeBatsmanIndex(prev => prev === 0 ? 1 : 0);
       }
 
-      // Check for match completion
       setTimeout(checkMatchCompletion, 100);
 
     } catch (error) {

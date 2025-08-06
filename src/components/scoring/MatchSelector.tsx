@@ -33,12 +33,24 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
     try {
       const { data, error } = await supabase
         .from('matches')
-        .select('*')
+        .select(`
+          *,
+          team1:teams!team1_id(name),
+          team2:teams!team2_id(name)
+        `)
         .eq('status', 'upcoming')
         .order('match_date');
 
       if (error) throw error;
-      setMatches(data || []);
+      
+      // Transform the data to match our Match interface
+      const transformedMatches = (data || []).map(match => ({
+        ...match,
+        team1_name: match.team1?.name || 'Team 1',
+        team2_name: match.team2?.name || 'Team 2'
+      }));
+      
+      setMatches(transformedMatches);
     } catch (error) {
       console.error('Error fetching matches:', error);
     } finally {

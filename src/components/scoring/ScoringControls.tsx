@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +34,6 @@ const ScoringControls = ({
   };
 
   const handleWicketClick = (wicketType: string) => {
-    // This will trigger the wicket selector dialog
     onRecordBall(0, 0, '', true, wicketType);
   };
 
