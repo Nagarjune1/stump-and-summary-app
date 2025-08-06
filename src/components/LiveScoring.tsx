@@ -400,17 +400,34 @@ const LiveScoring = () => {
   }, []);
 
   const handleInningsEnd = useCallback(async (reason) => {
+    console.log('Innings ending:', { currentInnings, reason });
+    
     if (currentInnings === 1) {
+      // First innings completed
       setCurrentInnings(2);
       setBattingTeam(battingTeam === 1 ? 2 : 1);
       setPlayersSelected(false);
       setBowlerChangeRequired(false);
+      setIsFreehit(false);
+      
+      // Reset current batsmen and bowler for second innings
+      setCurrentBatsmen([
+        { id: "", name: "", runs: 0, balls: 0, fours: 0, sixes: 0 },
+        { id: "", name: "", runs: 0, balls: 0, fours: 0, sixes: 0 }
+      ]);
+      setCurrentBowler({ id: "", name: "", overs: 0, runs: 0, wickets: 0 });
+      setStrikeBatsmanIndex(0);
+      
+      // Update match status to allow player selection for second innings
+      setMatchStatus('in_progress');
+      
       toast({
         title: "First Innings Complete",
         description: `${currentScore.runs}/${currentScore.wickets} (${currentScore.overs}.${currentScore.balls}). Second innings to begin.`,
       });
     } else {
-      const finalScore = currentInnings === 1 ? innings1Score : innings2Score;
+      // Second innings completed - match finished
+      const finalScore = currentInnings === 2 ? innings2Score : innings1Score;
       const resultText = finalScore.runs > innings1Score.runs 
         ? `${battingTeam === 1 ? team1Name : team2Name} wins by ${10 - finalScore.wickets} wickets`
         : innings1Score.runs > finalScore.runs 
@@ -646,6 +663,11 @@ const LiveScoring = () => {
           <Badge variant={matchStatus === 'live' || matchStatus === 'in_progress' ? 'default' : 'secondary'}>
             {matchStatus.replace('_', ' ').toUpperCase()}
           </Badge>
+          {currentInnings === 2 && (
+            <Badge variant="outline">
+              INNINGS {currentInnings}
+            </Badge>
+          )}
           {bowlerChangeRequired && (
             <Badge variant="destructive" className="animate-pulse">
               CHANGE BOWLER
@@ -680,7 +702,7 @@ const LiveScoring = () => {
             </Card>
           )}
 
-          {matchId && !tossCompleted && matchStatus === 'in_progress' && (
+          {matchId && !tossCompleted && matchStatus === 'in_progress' && currentInnings === 1 && (
             <TossSelector 
               match={match}
               onTossComplete={handleTossComplete}
@@ -688,13 +710,33 @@ const LiveScoring = () => {
           )}
 
           {matchId && tossCompleted && !playersSelected && matchStatus === 'in_progress' && (
-            <PlayerSelector
-              match={match}
-              onPlayersSelected={handlePlayersSelected}
-              battingTeam={battingTeam}
-              team1Players={team1Players}
-              team2Players={team2Players}
-            />
+            <>
+              {currentInnings === 2 && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="pt-4">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                        Second Innings
+                      </h3>
+                      <p className="text-blue-700">
+                        Target: {innings1Score.runs + 1} runs
+                      </p>
+                      <p className="text-sm text-blue-600">
+                        {battingTeam === 1 ? team1Name : team2Name} needs {innings1Score.runs + 1 - (currentInnings === 2 ? innings2Score.runs : 0)} runs to win
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <PlayerSelector
+                match={match}
+                onPlayersSelected={handlePlayersSelected}
+                battingTeam={battingTeam}
+                team1Players={team1Players}
+                team2Players={team2Players}
+              />
+            </>
           )}
 
           {matchId && playersSelected && (

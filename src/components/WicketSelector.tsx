@@ -4,179 +4,128 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SafeSelectItem from "@/components/ui/SafeSelectItem";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { createSafeSelectOptions, createSafePlayerValue, ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { Label } from "@/components/ui/label";
+import { createSafeSelectOptions, ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const WicketSelector = ({ 
   open, 
   onClose, 
-  onWicketSelect,
-  fieldingPlayers = [],
+  onWicketSelect, 
+  fieldingPlayers = [], 
   currentBowler,
   currentBatsman
 }) => {
   const [dismissalType, setDismissalType] = useState("");
-  const [fielder, setFieldder] = useState("");
+  const [fielder, setFielder] = useState("");
   const [bowler, setBowler] = useState(currentBowler?.id ? String(currentBowler.id) : "");
 
   const dismissalTypes = [
-    "bowled",
-    "caught",
-    "lbw",
-    "run out",
-    "stumped",
-    "hit wicket",
-    "retired hurt",
-    "obstructing the field"
+    { value: "bowled", label: "Bowled" },
+    { value: "caught", label: "Caught" },
+    { value: "lbw", label: "LBW" },
+    { value: "run_out", label: "Run Out" },
+    { value: "stumped", label: "Stumped" },
+    { value: "hit_wicket", label: "Hit Wicket" }
   ];
 
-  const handleWicketConfirm = () => {
-    if (!dismissalType) {
-      toast({
-        title: "Error",
-        description: "Please select dismissal type",
-        variant: "destructive"
-      });
-      return;
-    }
+  // Use safe validation for fielding players
+  const validFieldingPlayers = createSafeSelectOptions(
+    fieldingPlayers.filter(p => p && p.id && p.name), 
+    'fielder'
+  );
+
+  const handleConfirm = () => {
+    if (!dismissalType) return;
 
     let dismissalText = dismissalType;
     
-    if (dismissalType === "caught" && fielder && bowler) {
-      const fielderName = validFieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
-      const bowlerName = validFieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
-      dismissalText = `c ${fielderName} b ${bowlerName}`;
-    } else if (dismissalType === "bowled" && bowler) {
-      const bowlerName = validFieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
-      dismissalText = `b ${bowlerName}`;
-    } else if (dismissalType === "lbw" && bowler) {
-      const bowlerName = validFieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
-      dismissalText = `lbw b ${bowlerName}`;
-    } else if (dismissalType === "stumped" && fielder && bowler) {
-      const fielderName = validFieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
-      const bowlerName = validFieldingPlayers.find(p => p.id === bowler)?.name || currentBowler?.name || "unknown";
-      dismissalText = `st ${fielderName} b ${bowlerName}`;
-    } else if (dismissalType === "run out" && fielder) {
-      const fielderName = validFieldingPlayers.find(p => p.id === fielder)?.name || "unknown";
-      dismissalText = `run out (${fielderName})`;
+    if (dismissalType === "caught" && fielder) {
+      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
+      dismissalText = `caught by ${fielderName}`;
+    } else if (dismissalType === "run_out" && fielder) {
+      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
+      dismissalText = `run out by ${fielderName}`;
+    } else if (dismissalType === "stumped" && fielder) {
+      const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
+      dismissalText = `stumped by ${fielderName}`;
     }
 
     onWicketSelect(dismissalText);
     handleClose();
   };
 
+  const needsFielder = ["caught", "run_out", "stumped"].includes(dismissalType);
+
   const handleClose = () => {
     setDismissalType("");
-    setFieldder("");
+    setFielder("");
     setBowler(currentBowler?.id ? String(currentBowler.id) : "");
     onClose();
   };
 
-  const needsFielder = ["caught", "stumped", "run out"].includes(dismissalType);
-  const needsBowler = ["caught", "bowled", "lbw", "stumped"].includes(dismissalType);
-
-  // Use safe validation for fielding players
-  const validFieldingPlayers = createSafeSelectOptions(fieldingPlayers, 'fielder');
-  console.log('WicketSelector: Valid fielding players:', validFieldingPlayers.length);
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Wicket Details - {currentBatsman?.name || 'Unknown Batsman'}
-          </DialogTitle>
+          <DialogTitle>Record Wicket</DialogTitle>
         </DialogHeader>
+        
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">How was the batsman dismissed?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Dismissal Type</label>
-                <Select value={dismissalType} onValueChange={setDismissalType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select dismissal type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dismissalTypes.map((type) => (
-                      <SafeSelectItem key={type} value={ensureValidSelectItemValue(type)}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
+          <div>
+            <Label htmlFor="dismissal-type">Dismissal Type</Label>
+            <Select value={dismissalType} onValueChange={setDismissalType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select dismissal type" />
+              </SelectTrigger>
+              <SelectContent>
+                {dismissalTypes.map((type) => (
+                  <SafeSelectItem 
+                    key={type.value} 
+                    value={type.value}
+                  >
+                    {type.label}
+                  </SafeSelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {needsFielder && (
+            <div>
+              <Label htmlFor="fielder">
+                {dismissalType === "caught" ? "Caught by" : 
+                 dismissalType === "stumped" ? "Stumped by" : "Run out by"}
+              </Label>
+              <Select value={fielder} onValueChange={setFielder}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select fielder" />
+                </SelectTrigger>
+                <SelectContent>
+                  {validFieldingPlayers.map((player) => {
+                    const safeId = ensureValidSelectItemValue(player.id, `fielder_${player.name}_${Date.now()}`);
+                    return (
+                      <SafeSelectItem 
+                        key={safeId} 
+                        value={player.id}
+                      >
+                        {player.name}
                       </SafeSelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-              {needsFielder && validFieldingPlayers.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    {dismissalType === "caught" ? "Caught by" : 
-                     dismissalType === "stumped" ? "Stumped by" : "Run out by"}
-                  </label>
-                  <Select value={fielder} onValueChange={setFieldder}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fielder" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {validFieldingPlayers.map((player, index) => {
-                        const safePlayerId = createSafePlayerValue(player, index);
-                        console.log('WicketSelector: Rendering fielder option:', { 
-                          originalId: player.id,
-                          safeId: safePlayerId,
-                          name: player.name
-                        });
-                        
-                        return (
-                          <SafeSelectItem key={safePlayerId} value={safePlayerId}>
-                            {player.name}
-                          </SafeSelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {needsBowler && dismissalType !== "run out" && validFieldingPlayers.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Bowler</label>
-                  <Select value={bowler} onValueChange={setBowler}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select bowler" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {validFieldingPlayers.map((player, index) => {
-                        const safePlayerId = createSafePlayerValue(player, index);
-                        console.log('WicketSelector: Rendering bowler option:', { 
-                          originalId: player.id,
-                          safeId: safePlayerId,
-                          name: player.name
-                        });
-                        
-                        return (
-                          <SafeSelectItem key={safePlayerId} value={safePlayerId}>
-                            {player.name}
-                          </SafeSelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleClose}>
+          <div className="flex gap-2 pt-4">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleWicketConfirm} className="bg-red-600 hover:bg-red-700">
-              <Target className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={handleConfirm} 
+              disabled={!dismissalType || (needsFielder && !fielder)}
+              className="flex-1"
+            >
               Confirm Wicket
             </Button>
           </div>
