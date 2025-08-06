@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,32 @@ import ScoreDisplay from './scoring/ScoreDisplay';
 import PlayerSelection from './scoring/PlayerSelection';
 import NewBatsmanSelector from './scoring/NewBatsmanSelector';
 
+interface Match {
+  id: string;
+  team1_name: string;
+  team2_name: string;
+  team1_id: string;
+  team2_id: string;
+  match_date: string;
+  match_time: string;
+  venue: string;
+  overs: number;
+}
+
+interface Player {
+  id: string;
+  name: string;
+  runs: number;
+  balls: number;
+  fours: number;
+  sixes: number;
+  overs?: number;
+  wickets?: number;
+  team_id: string;
+}
+
 const LiveScoring = () => {
-  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchStarted, setMatchStarted] = useState(false);
   const [currentInnings, setCurrentInnings] = useState(1);
   const [currentOver, setCurrentOver] = useState(1);
@@ -23,16 +48,18 @@ const LiveScoring = () => {
   const [totalWickets, setTotalWickets] = useState(0);
   const [runRate, setRunRate] = useState(0);
   const [requiredRunRate, setRequiredRunRate] = useState(0);
-  const [ballHistory, setBallHistory] = useState([]);
-  const [currentBatsmen, setCurrentBatsmen] = useState([
-    { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0 },
-    { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0 }
+  const [ballHistory, setBallHistory] = useState<any[]>([]);
+  const [currentBatsmen, setCurrentBatsmen] = useState<Player[]>([
+    { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' },
+    { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' }
   ]);
-  const [currentBowler, setCurrentBowler] = useState({ id: '', name: '', overs: 0, runs: 0, wickets: 0 });
+  const [currentBowler, setCurrentBowler] = useState<Player>({ 
+    id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, overs: 0, wickets: 0, team_id: '' 
+  });
   const [strikeBatsmanIndex, setStrikeBatsmanIndex] = useState(0);
   const [showNewBatsmanDialog, setShowNewBatsmanDialog] = useState(false);
-  const [wicketInfo, setWicketInfo] = useState(null);
-  const [players, setPlayers] = useState([]);
+  const [wicketInfo, setWicketInfo] = useState<any>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [team1Score, setTeam1Score] = useState({ runs: 0, wickets: 0, overs: 0 });
   const [team2Score, setTeam2Score] = useState({ runs: 0, wickets: 0, overs: 0 });
   const [isMatchCompleted, setIsMatchCompleted] = useState(false);
@@ -64,7 +91,12 @@ const LiveScoring = () => {
         .select('*')
         .eq('team_id', selectedMatch.team2_id);
 
-      setPlayers([...(team1Players || []), ...(team2Players || [])]);
+      const allPlayers = [
+        ...(team1Players || []).map(p => ({ ...p, runs: 0, balls: 0, fours: 0, sixes: 0 })),
+        ...(team2Players || []).map(p => ({ ...p, runs: 0, balls: 0, fours: 0, sixes: 0 }))
+      ];
+      
+      setPlayers(allPlayers);
     } catch (error) {
       console.error('Error fetching players:', error);
     }
@@ -85,7 +117,9 @@ const LiveScoring = () => {
   };
 
   const checkMatchCompletion = () => {
-    const maxOvers = selectedMatch?.overs || 20;
+    if (!selectedMatch) return;
+    
+    const maxOvers = selectedMatch.overs || 20;
     const maxWickets = 10;
     
     const inningsComplete = totalWickets >= maxWickets || currentOver > maxOvers;
@@ -97,6 +131,9 @@ const LiveScoring = () => {
       } else {
         completeMatch();
       }
+    } else if (currentInnings === 2 && totalScore > team1Score.runs) {
+      // Team 2 has already won by reaching the target
+      completeMatch();
     }
   };
 
@@ -107,10 +144,10 @@ const LiveScoring = () => {
     setTotalScore(0);
     setTotalWickets(0);
     setCurrentBatsmen([
-      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0 },
-      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0 }
+      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' },
+      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' }
     ]);
-    setCurrentBowler({ id: '', name: '', overs: 0, runs: 0, wickets: 0 });
+    setCurrentBowler({ id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, overs: 0, wickets: 0, team_id: '' });
     setStrikeBatsmanIndex(0);
     setBallHistory([]);
     
@@ -119,6 +156,8 @@ const LiveScoring = () => {
   };
 
   const completeMatch = () => {
+    if (!selectedMatch) return;
+    
     setIsMatchCompleted(true);
     const finalTeam2Score = { runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 };
     setTeam2Score(finalTeam2Score);
@@ -139,7 +178,9 @@ const LiveScoring = () => {
     toast.success(`Match completed! ${result}`);
   };
 
-  const updateMatchStatus = async (status) => {
+  const updateMatchStatus = async (status: string) => {
+    if (!selectedMatch) return;
+    
     try {
       await supabase
         .from('matches')
@@ -150,7 +191,9 @@ const LiveScoring = () => {
     }
   };
 
-  const updateMatchResult = async (result, finalTeam2Score) => {
+  const updateMatchResult = async (result: string, finalTeam2Score: any) => {
+    if (!selectedMatch) return;
+    
     try {
       await supabase
         .from('matches')
@@ -174,14 +217,16 @@ const LiveScoring = () => {
       return;
     }
 
+    if (!selectedMatch) return;
+
     try {
       const ballData = {
         match_id: selectedMatch.id,
         innings: currentInnings,
         over_number: currentOver,
         ball_number: currentBall,
-        batsman_id: currentBatsmen[strikeBatsmanIndex].id,
-        bowler_id: currentBowler.id,
+        batsman_id: currentBatsmen[strikeBatsmanIndex].id || null,
+        bowler_id: currentBowler.id || null,
         runs: runs,
         extras: extras,
         is_wicket: isWicket,
@@ -201,24 +246,32 @@ const LiveScoring = () => {
         setShowNewBatsmanDialog(true);
       }
 
+      // Update batsman stats
       if (!isWicket || wicketType !== 'run out') {
         const newBatsmen = [...currentBatsmen];
-        newBatsmen[strikeBatsmanIndex].runs += runs;
-        newBatsmen[strikeBatsmanIndex].balls += 1;
-        
-        if (runs === 4) newBatsmen[strikeBatsmanIndex].fours += 1;
-        if (runs === 6) newBatsmen[strikeBatsmanIndex].sixes += 1;
-        
+        if (newBatsmen[strikeBatsmanIndex]) {
+          newBatsmen[strikeBatsmanIndex] = {
+            ...newBatsmen[strikeBatsmanIndex],
+            runs: (newBatsmen[strikeBatsmanIndex].runs || 0) + runs,
+            balls: (newBatsmen[strikeBatsmanIndex].balls || 0) + 1,
+            fours: (newBatsmen[strikeBatsmanIndex].fours || 0) + (runs === 4 ? 1 : 0),
+            sixes: (newBatsmen[strikeBatsmanIndex].sixes || 0) + (runs === 6 ? 1 : 0)
+          };
+        }
         setCurrentBatsmen(newBatsmen);
       }
 
-      const newBowler = { ...currentBowler };
-      newBowler.runs += runs + extras;
-      if (isWicket) newBowler.wickets += 1;
+      // Update bowler stats
+      const newBowler = { 
+        ...currentBowler,
+        runs: (currentBowler.runs || 0) + runs + extras,
+        wickets: (currentBowler.wickets || 0) + (isWicket ? 1 : 0)
+      };
       setCurrentBowler(newBowler);
 
       setBallHistory(prev => [...prev, { runs, extras, isWicket, wicketType }]);
 
+      // Handle ball progression
       if (!extraType || extraType === 'bye' || extraType === 'leg-bye') {
         if (currentBall === 6) {
           setCurrentOver(prev => prev + 1);
@@ -229,6 +282,7 @@ const LiveScoring = () => {
         }
       }
 
+      // Handle strike rotation
       if (runs % 2 === 1) {
         setStrikeBatsmanIndex(prev => prev === 0 ? 1 : 0);
       }
@@ -241,33 +295,35 @@ const LiveScoring = () => {
     }
   };
 
-  const handleUpdateBatsman = (index, field, value) => {
+  const handleUpdateBatsman = (index: number, field: string, value: string) => {
     const player = players.find(p => p.id === value);
     if (player) {
       const newBatsmen = [...currentBatsmen];
       newBatsmen[index] = {
         ...newBatsmen[index],
         id: player.id,
-        name: player.name
+        name: player.name,
+        team_id: player.team_id
       };
       setCurrentBatsmen(newBatsmen);
     }
   };
 
-  const handleUpdateBowler = (field, value) => {
+  const handleUpdateBowler = (field: string, value: string) => {
     if (field === 'id') {
       const player = players.find(p => p.id === value);
       if (player) {
         setCurrentBowler({
           ...currentBowler,
           id: player.id,
-          name: player.name
+          name: player.name,
+          team_id: player.team_id
         });
       }
     }
   };
 
-  const handleNewBatsman = (playerId) => {
+  const handleNewBatsman = (playerId: string) => {
     const player = players.find(p => p.id === playerId);
     if (player) {
       const newBatsmen = [...currentBatsmen];
@@ -277,7 +333,8 @@ const LiveScoring = () => {
         runs: 0,
         balls: 0,
         fours: 0,
-        sixes: 0
+        sixes: 0,
+        team_id: player.team_id
       };
       setCurrentBatsmen(newBatsmen);
       setShowNewBatsmanDialog(false);
@@ -293,7 +350,7 @@ const LiveScoring = () => {
     return (
       <MatchSetup 
         matchData={selectedMatch} 
-        onMatchSetupComplete={() => setMatchStarted(true)}
+        onStartMatch={() => setMatchStarted(true)}
         onBack={() => setSelectedMatch(null)}
       />
     );
@@ -382,7 +439,7 @@ const LiveScoring = () => {
             <DialogTitle>Select New Batsman</DialogTitle>
           </DialogHeader>
           <NewBatsmanSelector
-            players={players}
+            availablePlayers={players}
             currentBatsmen={currentBatsmen}
             onSelect={handleNewBatsman}
             wicketInfo={wicketInfo}

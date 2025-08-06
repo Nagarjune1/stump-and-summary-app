@@ -268,10 +268,10 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select team" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teams.map((team, index) => {
-                      const safeTeamId = ensureValidSelectItemValue(team.id, `addplayer_team_${index}`);
+                    {teams.map((team) => {
+                      const safeTeamId = ensureValidSelectItemValue(team.id);
                       return (
-                        <SafeSelectItem key={`addplayer_team_${index}`} value={safeTeamId}>
+                        <SafeSelectItem key={team.id} value={safeTeamId}>
                           {team.name}
                         </SafeSelectItem>
                       );
@@ -282,7 +282,7 @@ const PlayerProfiles = () => {
 
               <div>
                 <Label htmlFor="batting">Batting Style</Label>
-                <Select onValueChange={(value) => setNewPlayer({...newPlayer, batting_style: value})}>
+                <Select value={newPlayer.batting_style} onValueChange={(value) => setNewPlayer({...newPlayer, batting_style: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select batting style" />
                   </SelectTrigger>
@@ -295,7 +295,7 @@ const PlayerProfiles = () => {
 
               <div>
                 <Label htmlFor="bowling">Bowling Style</Label>
-                <Select onValueChange={(value) => setNewPlayer({...newPlayer, bowling_style: value})}>
+                <Select value={newPlayer.bowling_style} onValueChange={(value) => setNewPlayer({...newPlayer, bowling_style: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select bowling style" />
                   </SelectTrigger>
@@ -337,10 +337,10 @@ const PlayerProfiles = () => {
               </SelectTrigger>
               <SelectContent>
                 <SafeSelectItem value="">All Teams</SafeSelectItem>
-                {teams.map((team, index) => {
-                  const safeTeamId = ensureValidSelectItemValue(team.id, `filter_team_${index}`);
+                {teams.map((team) => {
+                  const safeTeamId = ensureValidSelectItemValue(team.id);
                   return (
-                    <SafeSelectItem key={`filter_team_${index}`} value={safeTeamId}>
+                    <SafeSelectItem key={team.id} value={safeTeamId}>
                       {team.name}
                     </SafeSelectItem>
                   );

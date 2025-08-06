@@ -36,6 +36,9 @@ const PlayerSelection = ({
 }: PlayerSelectionProps) => {
   console.log('PlayerSelection: Rendering with players:', players.length);
 
+  // Filter players to ensure they have valid IDs
+  const validPlayers = players.filter(player => player && player.id && player.name);
+
   return (
     <Card>
       <CardHeader>
@@ -51,14 +54,18 @@ const PlayerSelection = ({
             <div key={index} className="space-y-2">
               <Label>Batsman {index + 1} {index === strikeBatsmanIndex ? '(Strike)' : ''}</Label>
               <Select 
-                value={batsman.id} 
-                onValueChange={(value) => onUpdateBatsman(index, 'id', value)}
+                value={batsman.id || ""} 
+                onValueChange={(value) => {
+                  if (value) {
+                    onUpdateBatsman(index, 'id', value);
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select batsman" />
                 </SelectTrigger>
                 <SelectContent>
-                  {players.map((player) => {
+                  {validPlayers.map((player) => {
                     const safePlayerId = ensureValidSelectItemValue(player.id);
                     console.log('PlayerSelection: Rendering batsman option:', { 
                       originalId: player.id,
@@ -87,14 +94,18 @@ const PlayerSelection = ({
         <div className="space-y-2">
           <Label>Current Bowler</Label>
           <Select 
-            value={currentBowler?.id || ''} 
-            onValueChange={(value) => onUpdateBowler('id', value)}
+            value={currentBowler?.id || ""} 
+            onValueChange={(value) => {
+              if (value) {
+                onUpdateBowler('id', value);
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select bowler" />
             </SelectTrigger>
             <SelectContent>
-              {players.map((player) => {
+              {validPlayers.map((player) => {
                 const safePlayerId = ensureValidSelectItemValue(player.id);
                 console.log('PlayerSelection: Rendering bowler option:', { 
                   originalId: player.id,
