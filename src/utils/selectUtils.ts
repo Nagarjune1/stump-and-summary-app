@@ -39,3 +39,18 @@ export const createSafePlayerValue = (player: any, index: number): string => {
   const fallback = `player_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 12)}`;
   return ensureValidSelectItemValue(playerId, fallback);
 };
+
+// Add back the missing createSafeSelectOptions function
+export const createSafeSelectOptions = (players: any[], prefix: string = 'player') => {
+  if (!Array.isArray(players)) {
+    console.warn('createSafeSelectOptions: players is not an array, returning empty array');
+    return [];
+  }
+
+  return players
+    .filter(player => player && (player.id || player.name)) // Filter out invalid players
+    .map((player, index) => ({
+      ...player,
+      id: ensureValidSelectItemValue(player.id, `${prefix}_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
+    }));
+};

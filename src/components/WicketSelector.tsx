@@ -18,7 +18,7 @@ const WicketSelector = ({
   currentBatsman
 }) => {
   const [dismissalType, setDismissalType] = useState("");
-  const [fielder, setFielder] = useState("");
+  const [fielder, setFieldder] = useState("");
   const [bowler, setBowler] = useState(currentBowler?.id ? String(currentBowler.id) : "");
 
   const dismissalTypes = [
@@ -69,7 +69,7 @@ const WicketSelector = ({
 
   const handleClose = () => {
     setDismissalType("");
-    setFielder("");
+    setFieldder("");
     setBowler(currentBowler?.id ? String(currentBowler.id) : "");
     onClose();
   };
@@ -118,7 +118,7 @@ const WicketSelector = ({
                     {dismissalType === "caught" ? "Caught by" : 
                      dismissalType === "stumped" ? "Stumped by" : "Run out by"}
                   </label>
-                  <Select value={fielder} onValueChange={setFielder}>
+                  <Select value={fielder} onValueChange={setFieldder}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select fielder" />
                     </SelectTrigger>
