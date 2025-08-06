@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,15 +95,15 @@ const PlayerProfiles = () => {
         .select('*')
         .order('name');
       
-      if (error) {
-        console.error('Error fetching teams:', error);
-        return;
-      }
-      
-      console.log('PlayerProfiles: Fetched teams:', data?.length);
+      if (error) throw error;
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams",
+        variant: "destructive"
+      });
     }
   };
 
@@ -121,29 +122,30 @@ const PlayerProfiles = () => {
         `)
         .order('name');
       
-      if (error) {
-        console.error('Error fetching players:', error);
-        return;
-      }
+      if (error) throw error;
       
-      console.log('PlayerProfiles: Fetched players:', data?.length);
       setPlayers(data || []);
       setFilteredPlayers(data || []);
     } catch (error) {
       console.error('Error fetching players:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch players",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const validatePlayerForm = () => {
+  const addPlayer = async () => {
     if (!newPlayer.name.trim()) {
       toast({
         title: "Error",
         description: "Please enter player name",
         variant: "destructive"
       });
-      return false;
+      return;
     }
 
     if (!newPlayer.role) {
@@ -152,7 +154,7 @@ const PlayerProfiles = () => {
         description: "Please select player role",
         variant: "destructive"
       });
-      return false;
+      return;
     }
 
     if (!newPlayer.team_id) {
@@ -161,14 +163,6 @@ const PlayerProfiles = () => {
         description: "Please select team",
         variant: "destructive"
       });
-      return false;
-    }
-
-    return true;
-  };
-
-  const addPlayer = async () => {
-    if (!validatePlayerForm()) {
       return;
     }
 
@@ -181,24 +175,11 @@ const PlayerProfiles = () => {
         bowling_style: newPlayer.bowling_style || null
       };
 
-      console.log('Adding player with data:', playerData);
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('players')
-        .insert([playerData])
-        .select();
+        .insert([playerData]);
 
-      if (error) {
-        console.error('Error adding player:', error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to add player",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Player added successfully:', data);
+      if (error) throw error;
 
       setNewPlayer({ name: "", role: "", team_id: "", batting_style: "", bowling_style: "" });
       setIsDialogOpen(false);
@@ -289,11 +270,6 @@ const PlayerProfiles = () => {
                   <SelectContent>
                     {teams.map((team, index) => {
                       const safeTeamId = ensureValidSelectItemValue(team.id, `addplayer_team_${index}`);
-                      console.log('PlayerProfiles: Rendering team option for add player:', { 
-                        originalId: team.id,
-                        safeId: safeTeamId,
-                        name: team.name
-                      });
                       return (
                         <SafeSelectItem key={`addplayer_team_${index}`} value={safeTeamId}>
                           {team.name}
@@ -443,7 +419,7 @@ const PlayerProfiles = () => {
                       <div className="text-gray-500">Wickets</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-purple-600">{player.average || 0}</div>
+                      <div className="font-bold text-purple-600">{(player.average || 0).toFixed(1)}</div>
                       <div className="text-gray-500">Average</div>
                     </div>
                     <Button variant="ghost" size="sm">
