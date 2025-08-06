@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { createSafeSelectOptions, createSafePlayerValue } from "@/utils/selectUtils";
+import { createSafeSelectOptions, createSafePlayerValue, ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const WicketSelector = ({ 
   open, 
@@ -103,7 +104,7 @@ const WicketSelector = ({
                   </SelectTrigger>
                   <SelectContent>
                     {dismissalTypes.map((type) => (
-                      <SafeSelectItem key={type} value={type}>
+                      <SafeSelectItem key={type} value={ensureValidSelectItemValue(type)}>
                         {type.charAt(0).toUpperCase() + type.slice(1)}
                       </SafeSelectItem>
                     ))}
@@ -124,6 +125,12 @@ const WicketSelector = ({
                     <SelectContent>
                       {validFieldingPlayers.map((player, index) => {
                         const safePlayerId = createSafePlayerValue(player, index);
+                        console.log('WicketSelector: Rendering fielder option:', { 
+                          originalId: player.id,
+                          safeId: safePlayerId,
+                          name: player.name
+                        });
+                        
                         return (
                           <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                             {player.name}
@@ -145,6 +152,12 @@ const WicketSelector = ({
                     <SelectContent>
                       {validFieldingPlayers.map((player, index) => {
                         const safePlayerId = createSafePlayerValue(player, index);
+                        console.log('WicketSelector: Rendering bowler option:', { 
+                          originalId: player.id,
+                          safeId: safePlayerId,
+                          name: player.name
+                        });
+                        
                         return (
                           <SafeSelectItem key={safePlayerId} value={safePlayerId}>
                             {player.name}

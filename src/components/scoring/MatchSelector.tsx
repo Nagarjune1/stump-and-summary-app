@@ -19,6 +19,8 @@ interface MatchSelectorProps {
 }
 
 const MatchSelector = ({ matches, selectedMatchId, onMatchSelect }: MatchSelectorProps) => {
+  console.log('MatchSelector: Rendering with matches:', matches.length, 'selected:', selectedMatchId);
+  
   return (
     <Card>
       <CardHeader>
@@ -33,11 +35,21 @@ const MatchSelector = ({ matches, selectedMatchId, onMatchSelect }: MatchSelecto
             <SelectValue placeholder="Select a match to score" />
           </SelectTrigger>
           <SelectContent>
-            {matches.map((match) => (
-              <SafeSelectItem key={match.id} value={ensureValidSelectItemValue(match.id)}>
-                {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'} - {new Date(match.match_date).toLocaleDateString()}
-              </SafeSelectItem>
-            ))}
+            {matches.map((match) => {
+              const safeMatchId = ensureValidSelectItemValue(match.id);
+              console.log('MatchSelector: Rendering match option:', { 
+                originalId: match.id,
+                safeId: safeMatchId,
+                team1: match.team1?.name,
+                team2: match.team2?.name
+              });
+              
+              return (
+                <SafeSelectItem key={match.id} value={safeMatchId}>
+                  {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'} - {new Date(match.match_date).toLocaleDateString()}
+                </SafeSelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </CardContent>

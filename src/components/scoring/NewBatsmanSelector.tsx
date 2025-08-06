@@ -45,6 +45,8 @@ const NewBatsmanSelector = ({
     onClose();
   };
 
+  console.log('NewBatsmanSelector: Available players:', availablePlayers.length);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -69,11 +71,20 @@ const NewBatsmanSelector = ({
                     <SelectValue placeholder="Select next batsman" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availablePlayers.map((player) => (
-                      <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
-                        {player.name}
-                      </SafeSelectItem>
-                    ))}
+                    {availablePlayers.map((player) => {
+                      const safePlayerId = ensureValidSelectItemValue(player.id);
+                      console.log('NewBatsmanSelector: Rendering player option:', { 
+                        originalId: player.id,
+                        safeId: safePlayerId,
+                        name: player.name
+                      });
+                      
+                      return (
+                        <SafeSelectItem key={player.id} value={safePlayerId}>
+                          {player.name}
+                        </SafeSelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

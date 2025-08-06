@@ -34,6 +34,8 @@ const PlayerSelection = ({
   onUpdateBatsman,
   onUpdateBowler
 }: PlayerSelectionProps) => {
+  console.log('PlayerSelection: Rendering with players:', players.length);
+
   return (
     <Card>
       <CardHeader>
@@ -56,11 +58,20 @@ const PlayerSelection = ({
                   <SelectValue placeholder="Select batsman" />
                 </SelectTrigger>
                 <SelectContent>
-                  {players.map((player) => (
-                    <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
-                      {player.name}
-                    </SafeSelectItem>
-                  ))}
+                  {players.map((player) => {
+                    const safePlayerId = ensureValidSelectItemValue(player.id);
+                    console.log('PlayerSelection: Rendering batsman option:', { 
+                      originalId: player.id,
+                      safeId: safePlayerId,
+                      name: player.name
+                    });
+                    
+                    return (
+                      <SafeSelectItem key={player.id} value={safePlayerId}>
+                        {player.name}
+                      </SafeSelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {batsman.name && (
@@ -83,11 +94,20 @@ const PlayerSelection = ({
               <SelectValue placeholder="Select bowler" />
             </SelectTrigger>
             <SelectContent>
-              {players.map((player) => (
-                <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
-                  {player.name}
-                </SafeSelectItem>
-              ))}
+              {players.map((player) => {
+                const safePlayerId = ensureValidSelectItemValue(player.id);
+                console.log('PlayerSelection: Rendering bowler option:', { 
+                  originalId: player.id,
+                  safeId: safePlayerId,
+                  name: player.name
+                });
+                
+                return (
+                  <SafeSelectItem key={player.id} value={safePlayerId}>
+                    {player.name}
+                  </SafeSelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
           {currentBowler?.name && (
