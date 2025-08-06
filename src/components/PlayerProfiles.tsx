@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SafeSelectItem from "@/components/ui/SafeSelectItem";
-import { Plus, Search, Filter, Eye } from "lucide-react";
+import { Plus, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerDetailView from "./PlayerDetailView";
@@ -48,6 +48,7 @@ const PlayerProfiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -98,6 +99,7 @@ const PlayerProfiles = () => {
         return;
       }
       
+      console.log('PlayerProfiles: Fetched teams:', data?.length);
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -124,6 +126,7 @@ const PlayerProfiles = () => {
         return;
       }
       
+      console.log('PlayerProfiles: Fetched players:', data?.length);
       setPlayers(data || []);
       setFilteredPlayers(data || []);
     } catch (error) {
@@ -133,39 +136,72 @@ const PlayerProfiles = () => {
     }
   };
 
-  const addPlayer = async () => {
-    if (!newPlayer.name || !newPlayer.role || !newPlayer.team_id) {
+  const validatePlayerForm = () => {
+    if (!newPlayer.name.trim()) {
       toast({
         title: "Error",
-        description: "Please fill all required fields",
+        description: "Please enter player name",
         variant: "destructive"
       });
+      return false;
+    }
+
+    if (!newPlayer.role) {
+      toast({
+        title: "Error",
+        description: "Please select player role",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!newPlayer.team_id) {
+      toast({
+        title: "Error",
+        description: "Please select team",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const addPlayer = async () => {
+    if (!validatePlayerForm()) {
       return;
     }
 
     try {
+      const playerData = {
+        name: newPlayer.name.trim(),
+        role: newPlayer.role,
+        team_id: newPlayer.team_id,
+        batting_style: newPlayer.batting_style || null,
+        bowling_style: newPlayer.bowling_style || null
+      };
+
+      console.log('Adding player with data:', playerData);
+
       const { data, error } = await supabase
         .from('players')
-        .insert([{
-          name: newPlayer.name,
-          role: newPlayer.role,
-          team_id: newPlayer.team_id,
-          batting_style: newPlayer.batting_style || null,
-          bowling_style: newPlayer.bowling_style || null
-        }])
+        .insert([playerData])
         .select();
 
       if (error) {
         console.error('Error adding player:', error);
         toast({
           title: "Error",
-          description: "Failed to add player",
+          description: error.message || "Failed to add player",
           variant: "destructive"
         });
         return;
       }
 
+      console.log('Player added successfully:', data);
+
       setNewPlayer({ name: "", role: "", team_id: "", batting_style: "", bowling_style: "" });
+      setIsDialogOpen(false);
       fetchPlayers();
       
       toast({
@@ -207,7 +243,7 @@ const PlayerProfiles = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Player Profiles</h2>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-green-600 hover:bg-green-700">
               <Plus className="w-4 h-4 mr-2" />
@@ -231,7 +267,7 @@ const PlayerProfiles = () => {
               
               <div>
                 <Label htmlFor="role">Role *</Label>
-                <Select onValueChange={(value) => setNewPlayer({...newPlayer, role: value})}>
+                <Select value={newPlayer.role} onValueChange={(value) => setNewPlayer({...newPlayer, role: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
@@ -246,16 +282,24 @@ const PlayerProfiles = () => {
 
               <div>
                 <Label htmlFor="team">Team *</Label>
-                <Select onValueChange={(value) => setNewPlayer({...newPlayer, team_id: value})}>
+                <Select value={newPlayer.team_id} onValueChange={(value) => setNewPlayer({...newPlayer, team_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select team" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teams.map((team) => (
-                      <SafeSelectItem key={team.id} value={ensureValidSelectItemValue(team.id)}>
-                        {team.name}
-                      </SafeSelectItem>
-                    ))}
+                    {teams.map((team, index) => {
+                      const safeTeamId = ensureValidSelectItemValue(team.id, `addplayer_team_${index}`);
+                      console.log('PlayerProfiles: Rendering team option for add player:', { 
+                        originalId: team.id,
+                        safeId: safeTeamId,
+                        name: team.name
+                      });
+                      return (
+                        <SafeSelectItem key={`addplayer_team_${index}`} value={safeTeamId}>
+                          {team.name}
+                        </SafeSelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -317,11 +361,14 @@ const PlayerProfiles = () => {
               </SelectTrigger>
               <SelectContent>
                 <SafeSelectItem value="">All Teams</SafeSelectItem>
-                {teams.map(team => (
-                  <SafeSelectItem key={team.id} value={ensureValidSelectItemValue(team.id)}>
-                    {team.name}
-                  </SafeSelectItem>
-                ))}
+                {teams.map((team, index) => {
+                  const safeTeamId = ensureValidSelectItemValue(team.id, `filter_team_${index}`);
+                  return (
+                    <SafeSelectItem key={`filter_team_${index}`} value={safeTeamId}>
+                      {team.name}
+                    </SafeSelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 

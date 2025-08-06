@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SafeSelectItem from "@/components/ui/SafeSelectItem";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface CreateMatchProps {
   onMatchCreated?: (match: any) => void;
@@ -45,7 +47,17 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching teams:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch teams",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log('Fetched teams:', data);
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -64,7 +76,17 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching venues:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch venues",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      console.log('Fetched venues:', data);
       setVenues(data || []);
     } catch (error) {
       console.error('Error fetching venues:', error);
@@ -76,16 +98,14 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const validateForm = () => {
     if (!formData.team1_id || !formData.team2_id) {
       toast({
         title: "Error",
         description: "Please select both teams",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     if (formData.team1_id === formData.team2_id) {
@@ -94,7 +114,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         description: "Please select different teams",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     if (!formData.venue || !formData.match_date) {
@@ -103,32 +123,51 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         description: "Please fill in all required fields",
         variant: "destructive"
       });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
 
     try {
       setLoading(true);
 
+      const matchData = {
+        team1_id: formData.team1_id,
+        team2_id: formData.team2_id,
+        venue: formData.venue,
+        match_date: formData.match_date,
+        match_time: formData.match_time || null,
+        overs: formData.overs,
+        format: formData.format,
+        tournament: formData.tournament || null,
+        description: formData.description || null,
+        status: 'upcoming',
+        wide_runs: formData.wide_runs,
+        noball_runs: formData.noball_runs
+      };
+
+      console.log('Creating match with data:', matchData);
+
       const { data, error } = await supabase
         .from('matches')
-        .insert([{
-          team1_id: formData.team1_id,
-          team2_id: formData.team2_id,
-          venue: formData.venue,
-          match_date: formData.match_date,
-          match_time: formData.match_time || null,
-          overs: formData.overs,
-          format: formData.format,
-          tournament: formData.tournament || null,
-          description: formData.description || null,
-          status: 'upcoming',
-          wide_runs: formData.wide_runs,
-          noball_runs: formData.noball_runs
-        }])
+        .insert([matchData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating match:', error);
+        throw error;
+      }
+
+      console.log('Match created successfully:', data);
 
       toast({
         title: "Success",
@@ -159,7 +198,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
       console.error('Error creating match:', error);
       toast({
         title: "Error",
-        description: "Failed to create match",
+        description: error.message || "Failed to create match",
         variant: "destructive"
       });
     } finally {
@@ -168,6 +207,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
   };
 
   const handleInputChange = (field, value) => {
+    console.log(`Updating ${field} to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -189,11 +229,15 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                   <SelectValue placeholder="Select Team 1" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.map((team) => (
-                    <SafeSelectItem key={team.id} value={team.id}>
-                      {team.name}
-                    </SafeSelectItem>
-                  ))}
+                  {teams.map((team, index) => {
+                    const safeTeamId = ensureValidSelectItemValue(team.id, `team1_${index}`);
+                    console.log('Rendering Team 1 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
+                    return (
+                      <SafeSelectItem key={`team1_${index}`} value={safeTeamId}>
+                        {team.name}
+                      </SafeSelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -205,11 +249,15 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                   <SelectValue placeholder="Select Team 2" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.map((team) => (
-                    <SafeSelectItem key={team.id} value={team.id}>
-                      {team.name}
-                    </SafeSelectItem>
-                  ))}
+                  {teams.map((team, index) => {
+                    const safeTeamId = ensureValidSelectItemValue(team.id, `team2_${index}`);
+                    console.log('Rendering Team 2 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
+                    return (
+                      <SafeSelectItem key={`team2_${index}`} value={safeTeamId}>
+                        {team.name}
+                      </SafeSelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -222,11 +270,15 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                 <SelectValue placeholder="Select Venue" />
               </SelectTrigger>
               <SelectContent>
-                {venues.map((venue) => (
-                  <SafeSelectItem key={venue.id} value={venue.name}>
-                    {venue.name} - {venue.location}
-                  </SafeSelectItem>
-                ))}
+                {venues.map((venue, index) => {
+                  const safeVenueName = ensureValidSelectItemValue(venue.name, `venue_${index}`);
+                  console.log('Rendering venue option:', { originalName: venue.name, safeName: safeVenueName });
+                  return (
+                    <SafeSelectItem key={`venue_${index}`} value={safeVenueName}>
+                      {venue.name} - {venue.location}
+                    </SafeSelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

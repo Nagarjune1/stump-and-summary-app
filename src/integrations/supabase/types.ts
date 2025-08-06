@@ -248,6 +248,7 @@ export type Database = {
           man_of_series: string | null
           match_date: string
           match_time: string | null
+          noball_runs: number | null
           overs: number | null
           result: string | null
           series_id: string | null
@@ -262,6 +263,7 @@ export type Database = {
           toss_winner: string | null
           tournament: string | null
           venue: string
+          wide_runs: number | null
         }
         Insert: {
           created_at?: string
@@ -273,6 +275,7 @@ export type Database = {
           man_of_series?: string | null
           match_date: string
           match_time?: string | null
+          noball_runs?: number | null
           overs?: number | null
           result?: string | null
           series_id?: string | null
@@ -287,6 +290,7 @@ export type Database = {
           toss_winner?: string | null
           tournament?: string | null
           venue: string
+          wide_runs?: number | null
         }
         Update: {
           created_at?: string
@@ -298,6 +302,7 @@ export type Database = {
           man_of_series?: string | null
           match_date?: string
           match_time?: string | null
+          noball_runs?: number | null
           overs?: number | null
           result?: string | null
           series_id?: string | null
@@ -312,6 +317,7 @@ export type Database = {
           toss_winner?: string | null
           tournament?: string | null
           venue?: string
+          wide_runs?: number | null
         }
         Relationships: [
           {
