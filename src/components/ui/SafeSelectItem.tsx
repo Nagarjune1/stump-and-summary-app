@@ -17,11 +17,48 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
   disabled,
   ...props 
 }) => {
+  // CRITICAL: Pre-validation check - catch any problematic values immediately
+  const performPreValidation = (inputValue: any): string | null => {
+    // Immediate null/undefined check
+    if (inputValue === null || inputValue === undefined) {
+      console.warn('SafeSelectItem: Pre-validation caught null/undefined value');
+      return null;
+    }
+    
+    // Convert to string and check immediately
+    let stringValue: string;
+    try {
+      stringValue = String(inputValue);
+    } catch (error) {
+      console.error('SafeSelectItem: Pre-validation string conversion failed:', error);
+      return null;
+    }
+    
+    // Immediate empty string check
+    if (stringValue === '' || stringValue.trim() === '') {
+      console.warn('SafeSelectItem: Pre-validation caught empty string:', { original: inputValue, converted: stringValue });
+      return null;
+    }
+    
+    return stringValue;
+  };
+
+  // CRITICAL: Perform pre-validation first
+  const preValidated = performPreValidation(value);
+  
+  // If pre-validation fails, don't render at all
+  if (preValidated === null) {
+    console.error('SafeSelectItem: Pre-validation failed, component will not render');
+    return null;
+  }
+
   // Create absolutely safe value with multiple fallback mechanisms
   const createSafeValue = (inputValue: any): string => {
     // Handle null/undefined immediately
     if (inputValue === null || inputValue === undefined) {
-      return `safe_${Date.now()}_${Math.random().toString(36).substr(2, 10)}`;
+      const fallback = `safe_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+      console.warn('SafeSelectItem: null/undefined detected, using fallback:', fallback);
+      return fallback;
     }
 
     let stringValue: string;
@@ -31,7 +68,8 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
       stringValue = String(inputValue);
     } catch (error) {
       console.error('SafeSelectItem: Failed to convert value to string:', error);
-      return `error_${Date.now()}_${Math.random().toString(36).substr(2, 10)}`;
+      const fallback = `error_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+      return fallback;
     }
 
     // Trim whitespace
@@ -48,13 +86,15 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
       typeof stringValue !== 'string'
     ) {
       console.warn('SafeSelectItem: Empty/invalid value detected, creating fallback:', inputValue);
-      return `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+      const fallback = `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 20)}`;
+      return fallback;
     }
 
     // Final safety check
     if (!stringValue || stringValue.trim().length === 0) {
       console.error('SafeSelectItem: Final validation failed, using emergency fallback');
-      return `emergency_${Date.now()}_${Math.random().toString(36).substr(2, 20)}`;
+      const fallback = `emergency_${Date.now()}_${Math.random().toString(36).substr(2, 25)}`;
+      return fallback;
     }
 
     return stringValue;
@@ -62,22 +102,35 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
 
   const safeValue = createSafeValue(value);
 
-  // Absolutely final check - if somehow we still have an empty string, don't render
-  if (!safeValue || safeValue === '' || safeValue.trim() === '') {
-    console.error('SafeSelectItem: Critical error - cannot create safe value, not rendering');
+  // CRITICAL: Final validation before render - absolutely ensure no empty strings
+  if (!safeValue || 
+      safeValue === '' || 
+      safeValue.trim() === '' ||
+      safeValue.length === 0 ||
+      typeof safeValue !== 'string') {
+    console.error('SafeSelectItem: CRITICAL ERROR - Final validation failed, cannot render with value:', safeValue);
     return null;
   }
 
-  console.log('SafeSelectItem: Using safe value:', { 
+  // CRITICAL: Double-check the value one more time before passing to SelectItem
+  const finalValue = safeValue.trim();
+  if (finalValue === '') {
+    console.error('SafeSelectItem: CRITICAL ERROR - Final value is empty after trim, aborting render');
+    return null;
+  }
+
+  console.log('SafeSelectItem: Rendering with validated value:', { 
     original: value, 
-    safe: safeValue,
-    type: typeof safeValue,
-    length: safeValue.length
+    safe: finalValue,
+    type: typeof finalValue,
+    length: finalValue.length,
+    isEmpty: finalValue === '',
+    isTrimmedEmpty: finalValue.trim() === ''
   });
 
   return (
     <SelectItem 
-      value={safeValue} 
+      value={finalValue} 
       className={className}
       disabled={disabled}
       {...props}
