@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,12 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SafeSelectItem from "@/components/ui/SafeSelectItem";
 
-const CreateMatch = () => {
+interface CreateMatchProps {
+  onMatchCreated?: (match: any) => void;
+  onMatchStarted?: (match: any) => void;
+}
+
+const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
   const [teams, setTeams] = useState([]);
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -117,8 +121,12 @@ const CreateMatch = () => {
           format: formData.format,
           tournament: formData.tournament || null,
           description: formData.description || null,
-          status: 'upcoming'
-        }]);
+          status: 'upcoming',
+          wide_runs: formData.wide_runs,
+          noball_runs: formData.noball_runs
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -126,6 +134,11 @@ const CreateMatch = () => {
         title: "Success",
         description: "Match created successfully!",
       });
+
+      // Call the callback if provided
+      if (onMatchCreated) {
+        onMatchCreated(data);
+      }
 
       // Reset form
       setFormData({
@@ -241,7 +254,7 @@ const CreateMatch = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div>
               <Label htmlFor="overs">Total Overs *</Label>
               <Input
@@ -253,6 +266,22 @@ const CreateMatch = () => {
                 max="50"
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="format">Format</Label>
+              <Select value={formData.format} onValueChange={(value) => handleInputChange('format', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SafeSelectItem value="T20">T20</SafeSelectItem>
+                  <SafeSelectItem value="ODI">ODI</SafeSelectItem>
+                  <SafeSelectItem value="Test">Test</SafeSelectItem>
+                  <SafeSelectItem value="T10">T10</SafeSelectItem>
+                  <SafeSelectItem value="Custom">Custom</SafeSelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -284,22 +313,6 @@ const CreateMatch = () => {
                 Extra runs for no balls (default: 1)
               </p>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="format">Match Format</Label>
-            <Select value={formData.format} onValueChange={(value) => handleInputChange('format', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SafeSelectItem value="T20">T20</SafeSelectItem>
-                <SafeSelectItem value="ODI">ODI</SafeSelectItem>
-                <SafeSelectItem value="Test">Test</SafeSelectItem>
-                <SafeSelectItem value="T10">T10</SafeSelectItem>
-                <SafeSelectItem value="Custom">Custom</SafeSelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div>
