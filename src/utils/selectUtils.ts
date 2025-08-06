@@ -89,9 +89,15 @@ export const ensureValidSelectItemValue = (value: any, fallback?: string): strin
   // Convert to string and trim
   const stringValue = String(value).trim();
   
-  // Check for empty or invalid strings
-  if (stringValue === '' || stringValue === 'null' || stringValue === 'undefined') {
+  // Check for empty or invalid strings - be more strict
+  if (stringValue === '' || stringValue === 'null' || stringValue === 'undefined' || stringValue.length === 0) {
     console.warn('ensureValidSelectItemValue: empty/invalid string value:', value, 'using fallback:', uniqueFallback);
+    return uniqueFallback;
+  }
+  
+  // Additional check for whitespace-only strings
+  if (stringValue.replace(/\s/g, '') === '') {
+    console.warn('ensureValidSelectItemValue: whitespace-only value:', value, 'using fallback:', uniqueFallback);
     return uniqueFallback;
   }
   

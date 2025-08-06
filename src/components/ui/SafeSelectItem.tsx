@@ -17,9 +17,19 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
   disabled,
   ...props 
 }) => {
+  // Double-check to ensure value is never empty string
   const safeValue = ensureValidSelectItemValue(value);
   
-  console.log('SafeSelectItem: Ensuring safe value:', { 
+  // Additional safety check - if somehow we still get an empty string, don't render
+  if (!safeValue || safeValue === '' || safeValue === 'null' || safeValue === 'undefined') {
+    console.error('SafeSelectItem: Attempted to render with invalid value:', { 
+      original: value, 
+      processed: safeValue 
+    });
+    return null;
+  }
+  
+  console.log('SafeSelectItem: Rendering with safe value:', { 
     original: value, 
     safe: safeValue,
     isEmpty: value === '' || value === null || value === undefined 
