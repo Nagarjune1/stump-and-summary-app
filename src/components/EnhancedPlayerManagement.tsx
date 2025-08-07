@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Search, Filter, Camera, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const EnhancedPlayerManagement = () => {
   const [players, setPlayers] = useState([]);
@@ -127,6 +128,15 @@ const EnhancedPlayerManagement = () => {
     }
   };
 
+  // Filter and validate teams to ensure no empty values
+  const validTeams = teams.filter(team => 
+    team && 
+    team.id && 
+    String(team.id).trim() !== '' &&
+    team.name && 
+    String(team.name).trim() !== ''
+  );
+
   return (
     <div className="space-y-6">
       <Card>
@@ -152,12 +162,20 @@ const EnhancedPlayerManagement = () => {
                 <SelectValue placeholder="Filter by team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Teams</SelectItem>
-                {teams.map(team => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value={ensureValidSelectItemValue("", "all_teams")}>All Teams</SelectItem>
+                {validTeams.length === 0 ? (
+                  <SelectItem value={ensureValidSelectItemValue("no-teams", "no_teams")}>No teams available</SelectItem>
+                ) : (
+                  validTeams.map((team, index) => {
+                    const safeTeamId = ensureValidSelectItemValue(team.id, `team_${index}`);
+                    
+                    return (
+                      <SelectItem key={team.id} value={safeTeamId}>
+                        {team.name}
+                      </SelectItem>
+                    );
+                  })
+                )}
               </SelectContent>
             </Select>
           </div>
