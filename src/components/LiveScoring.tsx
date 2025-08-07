@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import MatchSetup from "./scoring/MatchSetup";
 import PlayerSelection from "./scoring/PlayerSelection";
 import ScoringControls from "./scoring/ScoringControls";
 import ScoreDisplay from "./scoring/ScoreDisplay";
+import ScoringRuleEngine from "./scoring/ScoringRuleEngine";
 import { validatePlayer, formatOvers } from "@/utils/scoringUtils";
 
 interface Match {
@@ -95,6 +97,7 @@ const LiveScoring = () => {
       extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0 }
     }
   ]);
+  const [matchEnded, setMatchEnded] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<'match-selection' | 'toss' | 'player-selection' | 'match-setup' | 'scoring'>('match-selection');
 
   useEffect(() => {
@@ -262,10 +265,39 @@ const LiveScoring = () => {
     }
   };
 
+  const checkInningsEnd = () => {
+    const totalOvers = matchSetup?.overs || 20;
+    const ballsPerOver = matchSetup?.ballsPerOver || 6;
+    
+    // Check if overs are completed
+    if (currentOver >= totalOvers) {
+      console.log('Innings ended - overs completed:', currentOver, '>=', totalOvers);
+      setMatchEnded(true);
+      toast({
+        title: "Innings Complete!",
+        description: `${totalOvers} overs completed. Innings ended.`,
+      });
+      return true;
+    }
+
+    // Check if all wickets are down
+    if (teamInnings[currentInnings - 1].totalWickets >= 10) {
+      console.log('Innings ended - all out');
+      setMatchEnded(true);
+      toast({
+        title: "All Out!",
+        description: "Team is all out. Innings ended.",
+      });
+      return true;
+    }
+
+    return false;
+  };
+
   const handleScore = (runs: number) => {
     console.log(`Scoring ${runs} runs`);
     
-    if (!validateScoringState()) return;
+    if (!validateScoringState() || matchEnded) return;
     
     const updatedBatsmen = [...currentBatsmen];
     updatedBatsmen[strikeBatsmanIndex].runs += runs;
@@ -285,21 +317,31 @@ const LiveScoring = () => {
     setTeamInnings(updatedTeamInnings);
 
     setCurrentBall(prev => prev + 1);
-    setCurrentBallInOver(prev => prev + 1);
+    setCurrentBallInOver(prev => {
+      const newBallInOver = prev + 1;
+      const ballsPerOver = matchSetup?.ballsPerOver || 6;
+      
+      // Check if over is completed
+      if (newBallInOver >= ballsPerOver) {
+        handleOverComplete();
+        return 0; // Reset for new over
+      }
+      
+      return newBallInOver;
+    });
 
+    // Switch strike for odd runs
     if (runs % 2 !== 0) {
       switchStrike();
     }
 
-    if (currentBallInOver + 1 >= (matchSetup?.ballsPerOver || 6)) {
-      handleOverComplete();
-    }
+    // Don't check innings end here - let the over completion handle it
   };
 
   const handleWicket = (dismissalType: string) => {
     console.log(`Wicket taken: ${dismissalType}`);
     
-    if (!validateScoringState()) return;
+    if (!validateScoringState() || matchEnded) return;
 
     const updatedBatsmen = [...currentBatsmen];
     updatedBatsmen[strikeBatsmanIndex].balls += 1;
@@ -311,20 +353,32 @@ const LiveScoring = () => {
     setTeamInnings(updatedTeamInnings);
 
     setCurrentBall(prev => prev + 1);
-    setCurrentBallInOver(prev => prev + 1);
-
-    if (currentBallInOver + 1 >= (matchSetup?.ballsPerOver || 6)) {
-      handleOverComplete();
-    }
+    setCurrentBallInOver(prev => {
+      const newBallInOver = prev + 1;
+      const ballsPerOver = matchSetup?.ballsPerOver || 6;
+      
+      // Check if over is completed
+      if (newBallInOver >= ballsPerOver) {
+        handleOverComplete();
+        return 0; // Reset for new over
+      }
+      
+      return newBallInOver;
+    });
 
     toast({
       title: "Wicket!",
       description: `${updatedBatsmen[strikeBatsmanIndex].name} is out (${dismissalType})`,
     });
+
+    // Check if innings should end after wicket
+    setTimeout(() => checkInningsEnd(), 100);
   };
 
   const handleExtra = (extraType: string, runs: number = 1) => {
     console.log(`Extra added: ${extraType} for ${runs} runs`);
+
+    if (matchEnded) return;
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
@@ -334,14 +388,22 @@ const LiveScoring = () => {
     // Wide and No-ball don't count as legal deliveries
     if (extraType === 'wides' || extraType === 'noballs') {
       // Ball is re-bowled, don't increment ball count
+      console.log('Extra ball - no ball count increment');
     } else {
       // Byes and leg-byes are legal deliveries
       setCurrentBall(prev => prev + 1);
-      setCurrentBallInOver(prev => prev + 1);
-      
-      if (currentBallInOver + 1 >= (matchSetup?.ballsPerOver || 6)) {
-        handleOverComplete();
-      }
+      setCurrentBallInOver(prev => {
+        const newBallInOver = prev + 1;
+        const ballsPerOver = matchSetup?.ballsPerOver || 6;
+        
+        // Check if over is completed
+        if (newBallInOver >= ballsPerOver) {
+          handleOverComplete();
+          return 0; // Reset for new over
+        }
+        
+        return newBallInOver;
+      });
     }
   };
 
@@ -351,7 +413,7 @@ const LiveScoring = () => {
   };
 
   const handleOverComplete = () => {
-    console.log('Over completed');
+    console.log('Over completed - current over:', currentOver);
 
     if (currentBowler) {
       const updatedBowler = { ...currentBowler };
@@ -363,15 +425,39 @@ const LiveScoring = () => {
     updatedTeamInnings[currentInnings - 1].overs += 1;
     setTeamInnings(updatedTeamInnings);
 
-    setCurrentOver(prev => prev + 1);
+    setCurrentOver(prev => {
+      const newOver = prev + 1;
+      console.log('New over:', newOver, 'Total overs allowed:', matchSetup?.overs);
+      
+      // Check if innings should end after this over
+      setTimeout(() => checkInningsEnd(), 100);
+      
+      return newOver;
+    });
+    
     setCurrentBallInOver(0);
     
+    // Switch strike at end of over
     switchStrike();
     
     toast({
       title: "Over Complete!",
-      description: `Over ${currentOver + 1} completed. Please select new bowler if needed.`,
+      description: `Over ${currentOver + 1} completed.`,
     });
+  };
+
+  const handleBowlerChangeRequired = () => {
+    console.log('Bowler change required');
+    // This will be called by the ScoringRuleEngine
+  };
+
+  const handleInningsEnd = (reason: string) => {
+    console.log('Innings ended:', reason);
+    setMatchEnded(true);
+  };
+
+  const handlePowerplayEnd = () => {
+    console.log('Powerplay ended');
   };
 
   const switchStrike = () => {
@@ -473,52 +559,78 @@ const LiveScoring = () => {
         
       case 'scoring':
         return (
-          <div className="space-y-6">
-            <ScoreDisplay 
-              teamInnings={teamInnings}
-              currentInnings={currentInnings}
-              currentOver={currentOver}
-              currentBallInOver={currentBallInOver}
-              selectedMatch={selectedMatch}
-              currentBatsmen={currentBatsmen}
-              currentBowler={currentBowler}
-              strikeBatsmanIndex={strikeBatsmanIndex}
-              matchSetup={matchSetup}
-            />
-            
-            <PlayerSelection
-              currentBatsmen={currentBatsmen}
-              currentBowler={currentBowler}
-              players={allPlayers}
-              strikeBatsmanIndex={strikeBatsmanIndex}
-              currentInnings={currentInnings}
-              battingTeamId={currentInnings === 1 ? 
-                (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '') :
-                (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '')
-              }
-              bowlingTeamId={currentInnings === 1 ? 
-                (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '') :
-                (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '')
-              }
-              onUpdateBatsman={handleUpdateBatsman}
-              onUpdateBowler={handleUpdateBowler}
-            />
-            
-            <ScoringControls
-              onScore={handleScore}
-              onWicket={handleWicket}
-              onExtra={handleExtra}
-              onBoundary={handleBoundary}
-              onUndoLastBall={() => {}}
-              isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
-              currentOver={currentOver}
-              currentBall={currentBallInOver}
-              totalOvers={matchSetup?.overs || 20}
-              powerplayOvers={matchSetup?.powerplayOvers || 6}
-              isPowerplay={currentOver < (matchSetup?.powerplayOvers || 6)}
-              isFreehit={false}
-            />
-          </div>
+          <ScoringRuleEngine
+            currentOver={currentOver}
+            currentBall={currentBallInOver}
+            totalOvers={matchSetup?.overs || 20}
+            powerplayOvers={matchSetup?.powerplayOvers || 6}
+            wickets={teamInnings[currentInnings - 1]?.totalWickets || 0}
+            totalPlayers={11}
+            onBowlerChangeRequired={handleBowlerChangeRequired}
+            onInningsEnd={handleInningsEnd}
+            onPowerplayEnd={handlePowerplayEnd}
+          >
+            <div className="space-y-6">
+              <ScoreDisplay 
+                teamInnings={teamInnings}
+                currentInnings={currentInnings}
+                currentOver={currentOver}
+                currentBallInOver={currentBallInOver}
+                selectedMatch={selectedMatch}
+                currentBatsmen={currentBatsmen}
+                currentBowler={currentBowler}
+                strikeBatsmanIndex={strikeBatsmanIndex}
+                matchSetup={matchSetup}
+              />
+              
+              {!matchEnded && (
+                <>
+                  <PlayerSelection
+                    currentBatsmen={currentBatsmen}
+                    currentBowler={currentBowler}
+                    players={allPlayers}
+                    strikeBatsmanIndex={strikeBatsmanIndex}
+                    currentInnings={currentInnings}
+                    battingTeamId={currentInnings === 1 ? 
+                      (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '') :
+                      (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '')
+                    }
+                    bowlingTeamId={currentInnings === 1 ? 
+                      (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '') :
+                      (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '')
+                    }
+                    onUpdateBatsman={handleUpdateBatsman}
+                    onUpdateBowler={handleUpdateBowler}
+                  />
+                  
+                  <ScoringControls
+                    onScore={handleScore}
+                    onWicket={handleWicket}
+                    onExtra={handleExtra}
+                    onBoundary={handleBoundary}
+                    onUndoLastBall={() => {}}
+                    isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
+                    currentOver={currentOver}
+                    currentBall={currentBallInOver}
+                    totalOvers={matchSetup?.overs || 20}
+                    powerplayOvers={matchSetup?.powerplayOvers || 6}
+                    isPowerplay={currentOver < (matchSetup?.powerplayOvers || 6)}
+                    isFreehit={false}
+                  />
+                </>
+              )}
+              
+              {matchEnded && (
+                <div className="text-center py-8">
+                  <h2 className="text-2xl font-bold text-green-600 mb-4">Match Ended</h2>
+                  <p className="text-gray-600">
+                    Final Score: {teamInnings[currentInnings - 1]?.totalRuns}/{teamInnings[currentInnings - 1]?.totalWickets} 
+                    ({formatOvers(teamInnings[currentInnings - 1]?.overs || 0, teamInnings[currentInnings - 1]?.balls || 0)} overs)
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScoringRuleEngine>
         );
         
       default:
@@ -538,7 +650,7 @@ const LiveScoring = () => {
             </Badge>
             {currentStep === 'scoring' && (
               <Badge variant="outline">
-                Innings {currentInnings}
+                Innings {currentInnings} {matchEnded ? '(Ended)' : ''}
               </Badge>
             )}
           </div>
