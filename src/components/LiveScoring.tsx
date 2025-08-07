@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,8 @@ const LiveScoring = () => {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchStarted, setMatchStarted] = useState(false);
   const [currentInnings, setCurrentInnings] = useState(1);
+  const [battingTeamId, setBattingTeamId] = useState('');
+  const [bowlingTeamId, setBowlingTeamId] = useState('');
   const [currentOver, setCurrentOver] = useState(1);
   const [currentBall, setCurrentBall] = useState(1);
   const [totalScore, setTotalScore] = useState(0);
@@ -67,6 +70,7 @@ const LiveScoring = () => {
   useEffect(() => {
     if (selectedMatch && matchStarted) {
       fetchPlayers();
+      initializeInnings();
     }
   }, [selectedMatch, matchStarted]);
 
@@ -75,6 +79,13 @@ const LiveScoring = () => {
       calculateRunRates();
     }
   }, [totalScore, currentOver, currentBall, selectedMatch, currentInnings]);
+
+  const initializeInnings = () => {
+    // Set batting and bowling teams for first innings
+    // Assuming team1 bats first (this can be determined by toss)
+    setBattingTeamId(selectedMatch?.team1_id || '');
+    setBowlingTeamId(selectedMatch?.team2_id || '');
+  };
 
   const fetchPlayers = async () => {
     if (!selectedMatch) return;
@@ -95,6 +106,7 @@ const LiveScoring = () => {
         ...(team2Players || []).map(p => ({ ...p, runs: 0, balls: 0, fours: 0, sixes: 0 }))
       ];
       
+      console.log('LiveScoring: Fetched players:', allPlayers.length);
       setPlayers(allPlayers);
     } catch (error) {
       console.error('Error fetching players:', error);
@@ -115,6 +127,31 @@ const LiveScoring = () => {
     }
   };
 
+  const startSecondInnings = () => {
+    console.log('Starting second innings');
+    setTeam1Score({ runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 });
+    
+    // Switch teams for second innings
+    setBattingTeamId(selectedMatch?.team2_id || '');
+    setBowlingTeamId(selectedMatch?.team1_id || '');
+    
+    setCurrentInnings(2);
+    setCurrentOver(1);
+    setCurrentBall(1);
+    setTotalScore(0);
+    setTotalWickets(0);
+    setCurrentBatsmen([
+      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: selectedMatch?.team2_id || '' },
+      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: selectedMatch?.team2_id || '' }
+    ]);
+    setCurrentBowler({ id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, overs: 0, wickets: 0, team_id: selectedMatch?.team1_id || '' });
+    setStrikeBatsmanIndex(0);
+    setBallHistory([]);
+    
+    updateMatchStatus('in_progress');
+    toast.success('First innings completed! Starting second innings...');
+  };
+
   const checkMatchCompletion = () => {
     if (!selectedMatch) return;
     
@@ -125,33 +162,13 @@ const LiveScoring = () => {
     
     if (inningsComplete) {
       if (currentInnings === 1) {
-        setTeam1Score({ runs: totalScore, wickets: totalWickets, overs: currentOver - 1 + (currentBall - 1) / 6 });
         startSecondInnings();
       } else {
         completeMatch();
       }
     } else if (currentInnings === 2 && totalScore > team1Score.runs) {
-      // Team 2 has already won by reaching the target
       completeMatch();
     }
-  };
-
-  const startSecondInnings = () => {
-    setCurrentInnings(2);
-    setCurrentOver(1);
-    setCurrentBall(1);
-    setTotalScore(0);
-    setTotalWickets(0);
-    setCurrentBatsmen([
-      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' },
-      { id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, team_id: '' }
-    ]);
-    setCurrentBowler({ id: '', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, overs: 0, wickets: 0, team_id: '' });
-    setStrikeBatsmanIndex(0);
-    setBallHistory([]);
-    
-    updateMatchStatus('in_progress');
-    toast.success('First innings completed! Starting second innings...');
   };
 
   const completeMatch = () => {
@@ -217,6 +234,12 @@ const LiveScoring = () => {
     }
 
     if (!selectedMatch) return;
+
+    // Validate mandatory selections
+    if (!currentBatsmen[0]?.id || !currentBatsmen[1]?.id || !currentBowler?.id) {
+      toast.error('Please select striker, non-striker, and bowler before recording balls');
+      return;
+    }
 
     try {
       const ballData = {
@@ -353,7 +376,7 @@ const LiveScoring = () => {
     return (
       <MatchSetup 
         matchData={selectedMatch} 
-        onStartMatch={() => setMatchStarted(true)}
+        onStart={() => setMatchStarted(true)}
         onBack={() => setSelectedMatch(null)}
       />
     );
@@ -426,6 +449,9 @@ const LiveScoring = () => {
             currentBowler={currentBowler}
             players={players}
             strikeBatsmanIndex={strikeBatsmanIndex}
+            currentInnings={currentInnings}
+            battingTeamId={battingTeamId}
+            bowlingTeamId={bowlingTeamId}
             onUpdateBatsman={handleUpdateBatsman}
             onUpdateBowler={handleUpdateBowler}
           />
@@ -442,7 +468,7 @@ const LiveScoring = () => {
             <DialogTitle>Select New Batsman</DialogTitle>
           </DialogHeader>
           <NewBatsmanSelector
-            players={players}
+            players={players.filter(p => p.team_id === battingTeamId)}
             currentBatsmen={currentBatsmen}
             onSelect={handleNewBatsman}
             wicketInfo={wicketInfo}

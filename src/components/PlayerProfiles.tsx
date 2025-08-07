@@ -7,13 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Plus, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PlayerDetailView from "./PlayerDetailView";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Team {
   id: string;
@@ -96,7 +94,9 @@ const PlayerProfiles = () => {
         .order('name');
       
       if (error) throw error;
-      setTeams(data || []);
+      // Filter out teams with invalid IDs
+      const validTeams = (data || []).filter(team => team.id && String(team.id).trim() !== '');
+      setTeams(validTeams);
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast({
@@ -124,8 +124,14 @@ const PlayerProfiles = () => {
       
       if (error) throw error;
       
-      setPlayers(data || []);
-      setFilteredPlayers(data || []);
+      // Filter out players with invalid data
+      const validPlayers = (data || []).filter(player => 
+        player.id && String(player.id).trim() !== '' &&
+        player.name && String(player.name).trim() !== ''
+      );
+      
+      setPlayers(validPlayers);
+      setFilteredPlayers(validPlayers);
     } catch (error) {
       console.error('Error fetching players:', error);
       toast({
@@ -253,10 +259,10 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SafeSelectItem value="Batsman">Batsman</SafeSelectItem>
-                    <SafeSelectItem value="Bowler">Bowler</SafeSelectItem>
-                    <SafeSelectItem value="All-rounder">All-rounder</SafeSelectItem>
-                    <SafeSelectItem value="Wicket-keeper">Wicket-keeper</SafeSelectItem>
+                    <SelectItem value="Batsman">Batsman</SelectItem>
+                    <SelectItem value="Bowler">Bowler</SelectItem>
+                    <SelectItem value="All-rounder">All-rounder</SelectItem>
+                    <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -268,14 +274,11 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select team" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teams.map((team) => {
-                      const safeTeamId = ensureValidSelectItemValue(team.id);
-                      return (
-                        <SafeSelectItem key={team.id} value={safeTeamId}>
-                          {team.name}
-                        </SafeSelectItem>
-                      );
-                    })}
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -287,8 +290,8 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select batting style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SafeSelectItem value="Right-handed">Right-handed</SafeSelectItem>
-                    <SafeSelectItem value="Left-handed">Left-handed</SafeSelectItem>
+                    <SelectItem value="Right-handed">Right-handed</SelectItem>
+                    <SelectItem value="Left-handed">Left-handed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -300,11 +303,11 @@ const PlayerProfiles = () => {
                     <SelectValue placeholder="Select bowling style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SafeSelectItem value="Fast">Fast</SafeSelectItem>
-                    <SafeSelectItem value="Medium">Medium</SafeSelectItem>
-                    <SafeSelectItem value="Spin">Spin</SafeSelectItem>
-                    <SafeSelectItem value="Off-spin">Off-spin</SafeSelectItem>
-                    <SafeSelectItem value="Leg-spin">Leg-spin</SafeSelectItem>
+                    <SelectItem value="Fast">Fast</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Spin">Spin</SelectItem>
+                    <SelectItem value="Off-spin">Off-spin</SelectItem>
+                    <SelectItem value="Leg-spin">Leg-spin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -336,15 +339,12 @@ const PlayerProfiles = () => {
                 <SelectValue placeholder="Filter by team" />
               </SelectTrigger>
               <SelectContent>
-                <SafeSelectItem value="">All Teams</SafeSelectItem>
-                {teams.map((team) => {
-                  const safeTeamId = ensureValidSelectItemValue(team.id);
-                  return (
-                    <SafeSelectItem key={team.id} value={safeTeamId}>
-                      {team.name}
-                    </SafeSelectItem>
-                  );
-                })}
+                <SelectItem value="">All Teams</SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -353,11 +353,11 @@ const PlayerProfiles = () => {
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
-                <SafeSelectItem value="">All Roles</SafeSelectItem>
-                <SafeSelectItem value="Batsman">Batsman</SafeSelectItem>
-                <SafeSelectItem value="Bowler">Bowler</SafeSelectItem>
-                <SafeSelectItem value="All-rounder">All-rounder</SafeSelectItem>
-                <SafeSelectItem value="Wicket-keeper">Wicket-keeper</SafeSelectItem>
+                <SelectItem value="">All Roles</SelectItem>
+                <SelectItem value="Batsman">Batsman</SelectItem>
+                <SelectItem value="Bowler">Bowler</SelectItem>
+                <SelectItem value="All-rounder">All-rounder</SelectItem>
+                <SelectItem value="Wicket-keeper">Wicket-keeper</SelectItem>
               </SelectContent>
             </Select>
           </div>
