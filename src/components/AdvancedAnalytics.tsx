@@ -90,8 +90,7 @@ const AdvancedAnalytics = () => {
         .select(`
           *,
           team1:teams!matches_team1_id_fkey(name),
-          team2:teams!matches_team2_id_fkey(name),
-          match_stats(*)
+          team2:teams!matches_team2_id_fkey(name)
         `)
         .or(`team1_id.eq.${selectedTeam},team2_id.eq.${selectedTeam}`)
         .eq('status', 'completed');
@@ -116,9 +115,9 @@ const AdvancedAnalytics = () => {
       const { data: matches, error: matchError } = await matchQuery;
       if (matchError) throw matchError;
 
-      // Fetch player statistics
+      // Fetch player statistics from match_stats table
       const { data: playerStats, error: playerError } = await supabase
-        .from('player_match_stats')
+        .from('match_stats')
         .select(`
           *,
           player:players(name, team_id),
@@ -152,16 +151,21 @@ const AdvancedAnalytics = () => {
     const wins = teamMatches.filter(m => m.winner_team_id === teamId).length;
     const totalMatches = teamMatches.length;
     
-    // Calculate team scores
+    // Calculate team scores - parse the score strings
     const teamScores = teamMatches.map(match => {
       const isTeam1 = match.team1_id === teamId;
-      return isTeam1 ? match.team1_score : match.team2_score;
-    }).filter(score => score !== null && score !== undefined);
+      const scoreStr = isTeam1 ? match.team1_score : match.team2_score;
+      if (!scoreStr) return 0;
+      
+      // Extract runs from score string like "150/5" or "150"
+      const runs = parseInt(scoreStr.split('/')[0]) || 0;
+      return runs;
+    }).filter(score => score > 0);
 
     const totalRuns = teamScores.reduce((sum, score) => sum + score, 0);
-    const averageScore = totalRuns / teamScores.length || 0;
-    const highestScore = Math.max(...teamScores, 0);
-    const lowestScore = Math.min(...teamScores, 999);
+    const averageScore = teamScores.length > 0 ? totalRuns / teamScores.length : 0;
+    const highestScore = teamScores.length > 0 ? Math.max(...teamScores) : 0;
+    const lowestScore = teamScores.length > 0 ? Math.min(...teamScores) : 0;
 
     // Process player statistics
     const teamPlayerStats = playerStats.filter(stat => 
@@ -266,8 +270,10 @@ const AdvancedAnalytics = () => {
         monthData.wins += 1;
       }
       
-      const teamScore = match.team1_id === teamId ? match.team1_score : match.team2_score;
-      monthData.runs += teamScore || 0;
+      const isTeam1 = match.team1_id === teamId;
+      const scoreStr = isTeam1 ? match.team1_score : match.team2_score;
+      const runs = scoreStr ? parseInt(scoreStr.split('/')[0]) || 0 : 0;
+      monthData.runs += runs;
     });
 
     const monthlyPerformance = Array.from(monthlyMap.entries())
@@ -295,7 +301,7 @@ const AdvancedAnalytics = () => {
       totalWickets: 0, // Would need bowling stats
       averageScore,
       highestScore,
-      lowestScore: lowestScore === 999 ? 0 : lowestScore,
+      lowestScore,
       winPercentage: totalMatches > 0 ? (wins / totalMatches) * 100 : 0,
       recentForm,
       topScorers,
