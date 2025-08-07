@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,7 @@ interface Player {
   balls?: number;
   fours?: number;
   sixes?: number;
+  overs?: number;
 }
 
 interface TeamInnings {
@@ -328,7 +328,7 @@ const LiveScoring = () => {
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
-    updatedTeamInnings[currentInnings - 1].extras[extraType] += runs;
+    updatedTeamInnings[currentInnings - 1].extras[extraType as keyof typeof updatedTeamInnings[0]['extras']] += runs;
     setTeamInnings(updatedTeamInnings);
 
     // Wide and No-ball don't count as legal deliveries
@@ -510,7 +510,7 @@ const LiveScoring = () => {
               onExtra={handleExtra}
               onBoundary={handleBoundary}
               onUndoLastBall={() => {}}
-              isValidToScore={currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id}
+              isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
               currentOver={currentOver}
               currentBall={currentBallInOver}
               totalOvers={matchSetup?.overs || 20}
