@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { createSafeSelectOptions, ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const WicketSelector = ({ 
   open, 
@@ -26,10 +27,13 @@ const WicketSelector = ({
     { value: "hit_wicket", label: "Hit Wicket" }
   ];
 
-  // Use safe validation for fielding players with more robust filtering
-  const validFieldingPlayers = createSafeSelectOptions(
-    fieldingPlayers.filter(p => p && p.id && String(p.id).trim() && p.name && String(p.name).trim()), 
-    'fielder'
+  // Filter and validate fielding players more strictly
+  const validFieldingPlayers = fieldingPlayers.filter(p => 
+    p && 
+    p.id && 
+    String(p.id).trim() !== '' &&
+    p.name && 
+    String(p.name).trim() !== ''
   );
 
   console.log('WicketSelector: Valid fielding players:', validFieldingPlayers.length);
@@ -78,18 +82,12 @@ const WicketSelector = ({
                 <SelectValue placeholder="Select dismissal type" />
               </SelectTrigger>
               <SelectContent>
-                {dismissalTypes.map((type) => {
-                  const safeValue = ensureValidSelectItemValue(type.value, `dismissal_${type.value}_${Date.now()}`);
-                  
-                  // Skip if somehow still empty
-                  if (!safeValue || safeValue.trim() === '') {
-                    console.error('WicketSelector: Skipping dismissal type with empty value:', type);
-                    return null;
-                  }
+                {dismissalTypes.map((type, index) => {
+                  const safeValue = ensureValidSelectItemValue(type.value, `dismissal_${index}`);
                   
                   return (
                     <SelectItem 
-                      key={type.value} 
+                      key={`dismissal_${index}`} 
                       value={safeValue}
                     >
                       {type.label}
@@ -111,24 +109,22 @@ const WicketSelector = ({
                   <SelectValue placeholder="Select fielder" />
                 </SelectTrigger>
                 <SelectContent>
-                  {validFieldingPlayers.map((player, index) => {
-                    const safeId = ensureValidSelectItemValue(player.id, `fielder_${index}_${Date.now()}`);
-                    
-                    // Skip if somehow still empty
-                    if (!safeId || safeId.trim() === '') {
-                      console.error('WicketSelector: Skipping fielder with empty value:', player);
-                      return null;
-                    }
-                    
-                    return (
-                      <SelectItem 
-                        key={safeId} 
-                        value={safeId}
-                      >
-                        {player.name}
-                      </SelectItem>
-                    );
-                  })}
+                  {validFieldingPlayers.length === 0 ? (
+                    <SelectItem value="no-fielders-available">No fielders available</SelectItem>
+                  ) : (
+                    validFieldingPlayers.map((player, index) => {
+                      const safeId = ensureValidSelectItemValue(player.id, `fielder_${index}`);
+                      
+                      return (
+                        <SelectItem 
+                          key={`fielder_${index}`} 
+                          value={safeId}
+                        >
+                          {player.name}
+                        </SelectItem>
+                      );
+                    })
+                  )}
                 </SelectContent>
               </Select>
             </div>

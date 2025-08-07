@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { createSafeSelectOptions, ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const PlayerSelector = ({ 
   match, 
@@ -17,14 +17,21 @@ const PlayerSelector = ({
   const [selectedBatsmen, setSelectedBatsmen] = useState([]);
   const [selectedBowler, setSelectedBowler] = useState(null);
 
-  // Use safe validation for players with proper filtering
-  const validTeam1Players = createSafeSelectOptions(
-    team1Players.filter(p => p && p.id && p.name), 
-    'team1_player'
+  // Filter and validate players more strictly
+  const validTeam1Players = team1Players.filter(p => 
+    p && 
+    p.id && 
+    String(p.id).trim() !== '' &&
+    p.name && 
+    String(p.name).trim() !== ''
   );
-  const validTeam2Players = createSafeSelectOptions(
-    team2Players.filter(p => p && p.id && p.name), 
-    'team2_player'
+  
+  const validTeam2Players = team2Players.filter(p => 
+    p && 
+    p.id && 
+    String(p.id).trim() !== '' &&
+    p.name && 
+    String(p.name).trim() !== ''
   );
 
   console.log('PlayerSelector: Valid players:', {
@@ -113,9 +120,8 @@ const PlayerSelector = ({
             {battingPlayers.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
-              battingPlayers.map((player) => {
-                // Ensure player ID is valid for any potential SelectItem usage
-                const safePlayerId = ensureValidSelectItemValue(player.id, `batsman_${player.name}_${Date.now()}`);
+              battingPlayers.map((player, index) => {
+                const safePlayerId = ensureValidSelectItemValue(player.id, `batsman_${index}`);
                 
                 return (
                   <div
@@ -163,9 +169,8 @@ const PlayerSelector = ({
             {bowlingPlayers.length === 0 ? (
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
-              bowlingPlayers.map((player) => {
-                // Ensure player ID is valid for any potential SelectItem usage
-                const safePlayerId = ensureValidSelectItemValue(player.id, `bowler_${player.name}_${Date.now()}`);
+              bowlingPlayers.map((player, index) => {
+                const safePlayerId = ensureValidSelectItemValue(player.id, `bowler_${index}`);
                 
                 return (
                   <div
