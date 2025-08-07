@@ -1,14 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface CreateMatchProps {
@@ -233,9 +231,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                     const safeTeamId = ensureValidSelectItemValue(team.id, `team1_${index}`);
                     console.log('Rendering Team 1 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
                     return (
-                      <SafeSelectItem key={`team1_${index}`} value={safeTeamId}>
+                      <SelectItem key={`team1_${index}`} value={safeTeamId}>
                         {team.name}
-                      </SafeSelectItem>
+                      </SelectItem>
                     );
                   })}
                 </SelectContent>
@@ -253,9 +251,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                     const safeTeamId = ensureValidSelectItemValue(team.id, `team2_${index}`);
                     console.log('Rendering Team 2 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
                     return (
-                      <SafeSelectItem key={`team2_${index}`} value={safeTeamId}>
+                      <SelectItem key={`team2_${index}`} value={safeTeamId}>
                         {team.name}
-                      </SafeSelectItem>
+                      </SelectItem>
                     );
                   })}
                 </SelectContent>
@@ -274,9 +272,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                   const safeVenueName = ensureValidSelectItemValue(venue.name, `venue_${index}`);
                   console.log('Rendering venue option:', { originalName: venue.name, safeName: safeVenueName });
                   return (
-                    <SafeSelectItem key={`venue_${index}`} value={safeVenueName}>
+                    <SelectItem key={`venue_${index}`} value={safeVenueName}>
                       {venue.name} - {venue.location}
-                    </SafeSelectItem>
+                    </SelectItem>
                   );
                 })}
               </SelectContent>
@@ -327,11 +325,11 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                   <SelectValue placeholder="Select Format" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SafeSelectItem value="T20">T20</SafeSelectItem>
-                  <SafeSelectItem value="ODI">ODI</SafeSelectItem>
-                  <SafeSelectItem value="Test">Test</SafeSelectItem>
-                  <SafeSelectItem value="T10">T10</SafeSelectItem>
-                  <SafeSelectItem value="Custom">Custom</SafeSelectItem>
+                  <SelectItem value="T20">T20</SelectItem>
+                  <SelectItem value="ODI">ODI</SelectItem>
+                  <SelectItem value="Test">Test</SelectItem>
+                  <SelectItem value="T10">T10</SelectItem>
+                  <SelectItem value="Custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
             </div>

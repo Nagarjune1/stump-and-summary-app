@@ -42,3 +42,24 @@ export const isValidSelectItemValue = (value: any): boolean => {
     return false;
   }
 };
+
+/**
+ * Creates safe select options from an array of objects
+ */
+export const createSafeSelectOptions = (items: any[], fallbackPrefix = 'item'): any[] => {
+  return items
+    .filter(item => item && item.id && item.name)
+    .map(item => ({
+      ...item,
+      id: ensureValidSelectItemValue(item.id, `${fallbackPrefix}_${item.name || 'unknown'}`),
+      name: item.name || 'Unknown'
+    }));
+};
+
+/**
+ * Creates a safe team value for select components
+ */
+export const createSafeTeamValue = (teamName: string, teamNumber: number): string => {
+  const safeName = teamName ? String(teamName).trim() : `Team ${teamNumber}`;
+  return ensureValidSelectItemValue(safeName, `team_${teamNumber}`);
+};

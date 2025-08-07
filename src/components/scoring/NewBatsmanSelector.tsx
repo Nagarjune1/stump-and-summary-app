@@ -1,9 +1,7 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -76,9 +74,9 @@ const NewBatsmanSelector = ({
                   });
                   
                   return (
-                    <SafeSelectItem key={player.id} value={safePlayerId}>
+                    <SelectItem key={player.id} value={safePlayerId}>
                       {player.name}
-                    </SafeSelectItem>
+                    </SelectItem>
                   );
                 })}
               </SelectContent>

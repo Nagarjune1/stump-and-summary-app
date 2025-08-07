@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Target } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { ensureValidSelectItemValue } from "@/utils/selectUtils";
@@ -102,9 +100,9 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
               }
               
               return (
-                <SafeSelectItem key={match.id} value={safeMatchId}>
+                <SelectItem key={match.id} value={safeMatchId}>
                   {match.team1_name} vs {match.team2_name} - {new Date(match.match_date).toLocaleDateString()}
-                </SafeSelectItem>
+                </SelectItem>
               );
             })}
           </SelectContent>

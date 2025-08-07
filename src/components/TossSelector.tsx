@@ -1,9 +1,7 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeTeamValue, ensureValidSelectItemValue } from "@/utils/selectUtils";
@@ -86,12 +84,12 @@ const TossSelector = ({
               <SelectValue placeholder="Select toss winner" />
             </SelectTrigger>
             <SelectContent>
-              <SafeSelectItem value={team1Value}>
+              <SelectItem value={team1Value}>
                 {match.team1?.name || 'Team 1'}
-              </SafeSelectItem>
-              <SafeSelectItem value={team2Value}>
+              </SelectItem>
+              <SelectItem value={team2Value}>
                 {match.team2?.name || 'Team 2'}
-              </SafeSelectItem>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -103,12 +101,12 @@ const TossSelector = ({
               <SelectValue placeholder="Select decision" />
             </SelectTrigger>
             <SelectContent>
-              <SafeSelectItem value={ensureValidSelectItemValue("bat", "toss_bat_decision")}>
+              <SelectItem value={ensureValidSelectItemValue("bat", "toss_bat_decision")}>
                 Chose to bat first
-              </SafeSelectItem>
-              <SafeSelectItem value={ensureValidSelectItemValue("bowl", "toss_bowl_decision")}>
+              </SelectItem>
+              <SelectItem value={ensureValidSelectItemValue("bowl", "toss_bowl_decision")}>
                 Chose to bowl first
-              </SafeSelectItem>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
