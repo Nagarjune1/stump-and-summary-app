@@ -1,471 +1,574 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SafeSelectItem from "@/components/ui/SafeSelectItem";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, Target, Award, Users, Activity, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { TrendingUp, Target, Users, Award, Calendar, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
-interface Match {
-  id: string;
-  match_date: string;
-  team1?: { name: string };
-  team2?: { name: string };
-  status: string;
-}
-
-interface Player {
-  id: string;
-  name: string;
-  role: string;
-  team_id: string;
-  teams?: { name: string };
-}
-
-interface MatchStat {
-  runs_scored?: number;
-  wickets_taken?: number;
-  strike_rate?: number;
-  economy_rate?: number;
-  players?: { name: string; role: string };
-  matches?: {
-    match_date: string;
-    team1?: { name: string };
-    team2?: { name: string };
-  };
-}
-
-interface PerformanceMetric {
-  player: string;
-  runs: number;
-  wickets: number;
-  strikeRate: number;
-  economy: number;
-  match: string;
-}
-
-interface TrendData {
-  date: string;
-  runs: number;
-  wickets: number;
-  matches: number;
-}
-
-interface PlayerComparison {
-  name: string;
+interface AnalyticsData {
+  totalMatches: number;
   totalRuns: number;
   totalWickets: number;
-  matches: number;
-  role: string;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  winPercentage: number;
+  recentForm: string[];
+  topScorers: Array<{
+    name: string;
+    runs: number;
+    matches: number;
+    average: number;
+  }>;
+  topBowlers: Array<{
+    name: string;
+    wickets: number;
+    matches: number;
+    average: number;
+  }>;
+  venueStats: Array<{
+    venue: string;
+    matches: number;
+    wins: number;
+    winRate: number;
+  }>;
+  monthlyPerformance: Array<{
+    month: string;
+    matches: number;
+    wins: number;
+    runs: number;
+  }>;
 }
 
 const AdvancedAnalytics = () => {
-  const [selectedMatch, setSelectedMatch] = useState("");
-  const [selectedPlayer, setSelectedPlayer] = useState("");
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [analytics, setAnalytics] = useState({
-    performanceMetrics: [] as PerformanceMetric[],
-    trendAnalysis: [] as TrendData[],
-    playerComparison: [] as PlayerComparison[],
-    teamPerformance: []
-  });
+  const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [teams, setTeams] = useState<any[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState<string>("all");
 
   useEffect(() => {
-    fetchMatches();
-    fetchPlayers();
+    fetchTeams();
   }, []);
 
   useEffect(() => {
-    if (selectedMatch || selectedPlayer) {
-      generateAnalytics();
+    if (selectedTeam) {
+      fetchAnalyticsData();
     }
-  }, [selectedMatch, selectedPlayer]);
+  }, [selectedTeam, timeRange]);
 
-  const fetchMatches = async () => {
+  const fetchTeams = async () => {
     try {
       const { data, error } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          match_date,
-          team1:teams!matches_team1_id_fkey(name),
-          team2:teams!matches_team2_id_fkey(name),
-          status
-        `)
-        .eq('status', 'completed')
-        .order('match_date', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching matches:', error);
-        return;
-      }
-      
-      setMatches(data || []);
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-    }
-  };
-
-  const fetchPlayers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, name, role, team_id, teams(name)')
+        .from('teams')
+        .select('*')
         .order('name');
 
-      if (error) {
-        console.error('Error fetching players:', error);
-        return;
-      }
-      
-      setPlayers(data || []);
+      if (error) throw error;
+      setTeams(data || []);
     } catch (error) {
-      console.error('Error fetching players:', error);
-    }
-  };
-
-  const generateAnalytics = async () => {
-    try {
-      let query = supabase
-        .from('match_stats')
-        .select(`
-          *,
-          players(name, role),
-          matches(match_date, team1:teams!matches_team1_id_fkey(name), team2:teams!matches_team2_id_fkey(name))
-        `);
-
-      if (selectedMatch) {
-        query = query.eq('match_id', selectedMatch);
-      }
-      if (selectedPlayer) {
-        query = query.eq('player_id', selectedPlayer);
-      }
-
-      const { data: statsData, error } = await query;
-      if (error) {
-        console.error('Error generating analytics:', error);
-        return;
-      }
-
-      const performanceMetrics = processPerformanceMetrics(statsData);
-      const trendAnalysis = processTrendAnalysis(statsData);
-      const playerComparison = processPlayerComparison(statsData);
-      const teamPerformance = processTeamPerformance(statsData);
-
-      setAnalytics({
-        performanceMetrics,
-        trendAnalysis,
-        playerComparison,
-        teamPerformance
-      });
-    } catch (error) {
-      console.error('Error generating analytics:', error);
+      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
-        description: "Failed to generate analytics",
+        description: "Failed to fetch teams",
         variant: "destructive"
       });
     }
   };
 
-  const processPerformanceMetrics = (data: MatchStat[]): PerformanceMetric[] => {
-    if (!data?.length) return [];
-    
-    return data.map(stat => ({
-      player: stat.players?.name || 'Unknown',
-      runs: stat.runs_scored || 0,
-      wickets: stat.wickets_taken || 0,
-      strikeRate: stat.strike_rate || 0,
-      economy: stat.economy_rate || 0,
-      match: `${stat.matches?.team1?.name || 'Team1'} vs ${stat.matches?.team2?.name || 'Team2'}`
-    }));
+  const fetchAnalyticsData = async () => {
+    if (!selectedTeam) return;
+
+    setLoading(true);
+    try {
+      // Fetch matches for the selected team
+      let matchQuery = supabase
+        .from('matches')
+        .select(`
+          *,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name),
+          match_stats(*)
+        `)
+        .or(`team1_id.eq.${selectedTeam},team2_id.eq.${selectedTeam}`)
+        .eq('status', 'completed');
+
+      // Apply time range filter
+      if (timeRange !== 'all') {
+        const date = new Date();
+        switch (timeRange) {
+          case '30d':
+            date.setDate(date.getDate() - 30);
+            break;
+          case '90d':
+            date.setDate(date.getDate() - 90);
+            break;
+          case '1y':
+            date.setFullYear(date.getFullYear() - 1);
+            break;
+        }
+        matchQuery = matchQuery.gte('match_date', date.toISOString());
+      }
+
+      const { data: matches, error: matchError } = await matchQuery;
+      if (matchError) throw matchError;
+
+      // Fetch player statistics
+      const { data: playerStats, error: playerError } = await supabase
+        .from('player_match_stats')
+        .select(`
+          *,
+          player:players(name, team_id),
+          match:matches(team1_id, team2_id, winner_team_id)
+        `)
+        .in('match_id', matches?.map(m => m.id) || []);
+
+      if (playerError) throw playerError;
+
+      // Process the data
+      const analytics = processAnalyticsData(matches || [], playerStats || [], selectedTeam);
+      setAnalyticsData(analytics);
+
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch analytics data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const processTrendAnalysis = (data: MatchStat[]): TrendData[] => {
-    if (!data?.length) return [];
+  const processAnalyticsData = (matches: any[], playerStats: any[], teamId: string): AnalyticsData => {
+    const teamMatches = matches.filter(m => 
+      m.team1_id === teamId || m.team2_id === teamId
+    );
+
+    const wins = teamMatches.filter(m => m.winner_team_id === teamId).length;
+    const totalMatches = teamMatches.length;
     
-    const trends: { [key: string]: TrendData } = {};
-    data.forEach(stat => {
-      const date = stat.matches?.match_date;
-      if (!date) return;
+    // Calculate team scores
+    const teamScores = teamMatches.map(match => {
+      const isTeam1 = match.team1_id === teamId;
+      return isTeam1 ? match.team1_score : match.team2_score;
+    }).filter(score => score !== null && score !== undefined);
+
+    const totalRuns = teamScores.reduce((sum, score) => sum + score, 0);
+    const averageScore = totalRuns / teamScores.length || 0;
+    const highestScore = Math.max(...teamScores, 0);
+    const lowestScore = Math.min(...teamScores, 999);
+
+    // Process player statistics
+    const teamPlayerStats = playerStats.filter(stat => 
+      stat.player?.team_id === teamId
+    );
+
+    // Top scorers
+    const scorerMap = new Map();
+    teamPlayerStats.forEach(stat => {
+      const playerId = stat.player_id;
+      const playerName = stat.player?.name || 'Unknown';
       
-      if (!trends[date]) {
-        trends[date] = { date, runs: 0, wickets: 0, matches: 0 };
-      }
-      trends[date].runs += stat.runs_scored || 0;
-      trends[date].wickets += stat.wickets_taken || 0;
-      trends[date].matches += 1;
-    });
-    
-    return Object.values(trends).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
-
-  const processPlayerComparison = (data: MatchStat[]): PlayerComparison[] => {
-    if (!data?.length) return [];
-    
-    const playerStats: { [key: string]: PlayerComparison } = {};
-    data.forEach(stat => {
-      const player = stat.players?.name || 'Unknown';
-      if (!playerStats[player]) {
-        playerStats[player] = {
-          name: player,
-          totalRuns: 0,
-          totalWickets: 0,
+      if (!scorerMap.has(playerId)) {
+        scorerMap.set(playerId, {
+          name: playerName,
+          runs: 0,
           matches: 0,
-          role: stat.players?.role || 'Unknown'
-        };
+          totalBalls: 0
+        });
       }
-      playerStats[player].totalRuns += stat.runs_scored || 0;
-      playerStats[player].totalWickets += stat.wickets_taken || 0;
-      playerStats[player].matches += 1;
+      
+      const player = scorerMap.get(playerId);
+      player.runs += stat.runs_scored || 0;
+      player.matches += 1;
+      player.totalBalls += stat.balls_faced || 0;
     });
+
+    const topScorers = Array.from(scorerMap.values())
+      .map(player => ({
+        ...player,
+        average: player.matches > 0 ? player.runs / player.matches : 0
+      }))
+      .sort((a, b) => b.runs - a.runs)
+      .slice(0, 5);
+
+    // Top bowlers
+    const bowlerMap = new Map();
+    teamPlayerStats.forEach(stat => {
+      const playerId = stat.player_id;
+      const playerName = stat.player?.name || 'Unknown';
+      
+      if (!bowlerMap.has(playerId)) {
+        bowlerMap.set(playerId, {
+          name: playerName,
+          wickets: 0,
+          matches: 0,
+          runsConceded: 0
+        });
+      }
+      
+      const bowler = bowlerMap.get(playerId);
+      bowler.wickets += stat.wickets_taken || 0;
+      bowler.matches += stat.overs_bowled > 0 ? 1 : 0;
+      bowler.runsConceded += stat.runs_conceded || 0;
+    });
+
+    const topBowlers = Array.from(bowlerMap.values())
+      .filter(bowler => bowler.matches > 0)
+      .map(bowler => ({
+        ...bowler,
+        average: bowler.wickets > 0 ? bowler.runsConceded / bowler.wickets : 0
+      }))
+      .sort((a, b) => b.wickets - a.wickets)
+      .slice(0, 5);
+
+    // Venue statistics
+    const venueMap = new Map();
+    teamMatches.forEach(match => {
+      const venue = match.venue || 'Unknown';
+      if (!venueMap.has(venue)) {
+        venueMap.set(venue, { matches: 0, wins: 0 });
+      }
+      const venueData = venueMap.get(venue);
+      venueData.matches += 1;
+      if (match.winner_team_id === teamId) {
+        venueData.wins += 1;
+      }
+    });
+
+    const venueStats = Array.from(venueMap.entries())
+      .map(([venue, data]) => ({
+        venue,
+        matches: data.matches,
+        wins: data.wins,
+        winRate: (data.wins / data.matches) * 100
+      }))
+      .sort((a, b) => b.matches - a.matches);
+
+    // Monthly performance
+    const monthlyMap = new Map();
+    teamMatches.forEach(match => {
+      const date = new Date(match.match_date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, { matches: 0, wins: 0, runs: 0 });
+      }
+      
+      const monthData = monthlyMap.get(monthKey);
+      monthData.matches += 1;
+      if (match.winner_team_id === teamId) {
+        monthData.wins += 1;
+      }
+      
+      const teamScore = match.team1_id === teamId ? match.team1_score : match.team2_score;
+      monthData.runs += teamScore || 0;
+    });
+
+    const monthlyPerformance = Array.from(monthlyMap.entries())
+      .map(([month, data]) => ({
+        month,
+        matches: data.matches,
+        wins: data.wins,
+        runs: data.runs
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-12); // Last 12 months
+
+    // Recent form (last 10 matches)
+    const recentMatches = teamMatches
+      .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
+      .slice(0, 10);
     
-    return Object.values(playerStats);
-  };
+    const recentForm = recentMatches.map(match => 
+      match.winner_team_id === teamId ? 'W' : 'L'
+    );
 
-  const processTeamPerformance = (data: MatchStat[]) => {
-    return [];
-  };
-
-  const exportAnalytics = () => {
-    const analyticsData = {
-      generatedAt: new Date().toISOString(),
-      filters: { selectedMatch, selectedPlayer },
-      analytics
+    return {
+      totalMatches,
+      totalRuns,
+      totalWickets: 0, // Would need bowling stats
+      averageScore,
+      highestScore,
+      lowestScore: lowestScore === 999 ? 0 : lowestScore,
+      winPercentage: totalMatches > 0 ? (wins / totalMatches) * 100 : 0,
+      recentForm,
+      topScorers,
+      topBowlers,
+      venueStats,
+      monthlyPerformance
     };
-    
-    const blob = new Blob([JSON.stringify(analyticsData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cricket-analytics-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Analytics Exported",
-      description: "Analytics data has been downloaded as JSON file",
-    });
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Advanced Analytics</h2>
-          <p className="text-gray-600">Deep insights into player and team performance</p>
-        </div>
-        <Button onClick={exportAnalytics} className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Export Data
-        </Button>
+  if (!selectedTeam) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="w-6 h-6" />
+              Advanced Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Select a Team</h3>
+              <p className="text-gray-600 mb-6">Choose a team to view detailed analytics and performance insights</p>
+              
+              <div className="max-w-md mx-auto">
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+    );
+  }
 
-      {/* Filters */}
+  const selectedTeamData = teams.find(t => t.id === selectedTeam);
+
+  return (
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Filters & Options
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                <TrendingUp className="w-6 h-6" />
+                {selectedTeamData?.name} Analytics
+              </CardTitle>
+              <p className="text-gray-600 mt-1">Comprehensive performance insights and statistics</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="1y">Last Year</SelectItem>
+                  <SelectItem value="90d">Last 90 Days</SelectItem>
+                  <SelectItem value="30d">Last 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="flex gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2">Select Match</label>
-            <Select value={selectedMatch} onValueChange={setSelectedMatch}>
-              <SelectTrigger>
-                <SelectValue placeholder="All matches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SafeSelectItem value="">All matches</SafeSelectItem>
-                {matches.map((match) => (
-                  <SafeSelectItem key={match.id} value={ensureValidSelectItemValue(match.id)}>
-                    {match.team1?.name} vs {match.team2?.name} ({new Date(match.match_date).toLocaleDateString()})
-                  </SafeSelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2">Select Player</label>
-            <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-              <SelectTrigger>
-                <SelectValue placeholder="All players" />
-              </SelectTrigger>
-              <SelectContent>
-                <SafeSelectItem value="">All players</SafeSelectItem>
-                {players.map((player) => (
-                  <SafeSelectItem key={player.id} value={ensureValidSelectItemValue(player.id)}>
-                    {player.name} ({player.role})
-                  </SafeSelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
       </Card>
 
-      <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="performance">Performance Metrics</TabsTrigger>
-          <TabsTrigger value="trends">Trend Analysis</TabsTrigger>
-          <TabsTrigger value="comparison">Player Comparison</TabsTrigger>
-          <TabsTrigger value="insights">AI Insights</TabsTrigger>
-        </TabsList>
+      {loading ? (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Loading analytics data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : analyticsData ? (
+        <>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Matches</p>
+                    <p className="text-2xl font-bold">{analyticsData.totalMatches}</p>
+                  </div>
+                  <Calendar className="w-8 h-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="performance" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Win Percentage</p>
+                    <p className="text-2xl font-bold">{analyticsData.winPercentage.toFixed(1)}%</p>
+                  </div>
+                  <Award className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Average Score</p>
+                    <p className="text-2xl font-bold">{analyticsData.averageScore.toFixed(0)}</p>
+                  </div>
+                  <Target className="w-8 h-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Highest Score</p>
+                    <p className="text-2xl font-bold">{analyticsData.highestScore}</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Form */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Performance Overview
-              </CardTitle>
+              <CardTitle>Recent Form (Last 10 Matches)</CardTitle>
             </CardHeader>
             <CardContent>
-              {analytics.performanceMetrics.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={analytics.performanceMetrics}>
+              <div className="flex gap-2">
+                {analyticsData.recentForm.map((result, index) => (
+                  <Badge
+                    key={index}
+                    variant={result === 'W' ? 'default' : 'destructive'}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      result === 'W' ? 'bg-green-600' : 'bg-red-600'
+                    }`}
+                  >
+                    {result}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Scorers */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Scorers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData.topScorers}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="player" />
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="runs" fill="#8884d8" name="Runs" />
-                    <Bar dataKey="wickets" fill="#82ca9d" name="Wickets" />
+                    <Bar dataKey="runs" fill="#8884d8" />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No performance data available. Select filters to view analytics.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Performance Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analytics.trendAnalysis.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={analytics.trendAnalysis}>
+            {/* Top Bowlers */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Bowlers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData.topBowlers}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="runs" stroke="#8884d8" name="Total Runs" />
-                    <Line type="monotone" dataKey="wickets" stroke="#82ca9d" name="Total Wickets" />
-                  </LineChart>
+                    <Bar dataKey="wickets" fill="#82ca9d" />
+                  </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No trend data available. Play more matches to see trends.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
 
-        <TabsContent value="comparison" className="space-y-4">
+          {/* Monthly Performance */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Player Performance Comparison
-              </CardTitle>
+              <CardTitle>Monthly Performance Trend</CardTitle>
             </CardHeader>
             <CardContent>
-              {analytics.playerComparison.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {analytics.playerComparison.map((player, index) => (
-                    <Card key={player.name} className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">{player.name}</h3>
-                        <Badge variant="outline">{player.role}</Badge>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Total Runs:</span>
-                          <span className="font-medium">{player.totalRuns}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Total Wickets:</span>
-                          <span className="font-medium">{player.totalWickets}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Matches:</span>
-                          <span className="font-medium">{player.matches}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Avg per Match:</span>
-                          <span className="font-medium">
-                            {player.matches > 0 ? (player.totalRuns / player.matches).toFixed(1) : '0.0'} runs
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No comparison data available. Play matches to compare players.
-                </div>
-              )}
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={analyticsData.monthlyPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="matches" fill="#8884d8" name="Matches" />
+                  <Line yAxisId="right" type="monotone" dataKey="wins" stroke="#82ca9d" name="Wins" />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="insights" className="space-y-4">
+          {/* Venue Statistics */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                AI-Powered Insights
+                <MapPin className="w-5 h-5" />
+                Venue Performance
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-2">Performance Insights</h3>
-                  <p className="text-blue-700 text-sm">
-                    Based on current data, we're analyzing player performance patterns. 
-                    More insights will be available as you play more matches and collect more data.
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold text-green-900 mb-2">Recommendations</h3>
-                  <ul className="text-green-700 text-sm space-y-1">
-                    <li>• Play more matches to unlock detailed AI insights</li>
-                    <li>• Track player performance across different match formats</li>
-                    <li>• Monitor team composition effectiveness</li>
-                    <li>• Analyze batting and bowling partnerships</li>
-                  </ul>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h3 className="font-semibold text-orange-900 mb-2">Coming Soon</h3>
-                  <p className="text-orange-700 text-sm">
-                    Advanced AI features including predictive analytics, match outcome predictions, 
-                    and personalized coaching recommendations will be available in future updates.
-                  </p>
-                </div>
+                {analyticsData.venueStats.slice(0, 5).map((venue, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{venue.venue}</p>
+                      <p className="text-sm text-gray-600">{venue.matches} matches</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-lg">{venue.winRate.toFixed(1)}%</p>
+                      <p className="text-sm text-gray-600">{venue.wins} wins</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </>
+      ) : (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center">
+              <p className="text-gray-500">No data available for the selected team and time range.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

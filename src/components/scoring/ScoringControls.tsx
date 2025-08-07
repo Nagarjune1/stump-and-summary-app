@@ -1,11 +1,16 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 
 interface ScoringControlsProps {
-  onRecordBall: (runs: number, extras?: number, extraType?: string, isWicket?: boolean, wicketType?: string) => void;
-  isDisabled?: boolean;
+  onScore: (runs: number) => void;
+  onWicket: (dismissalType: string) => void;
+  onExtra: (extraType: string, runs?: number) => void;
+  onBoundary: (boundaryType: 'four' | 'six') => void;
+  onUndoLastBall: () => void;
+  isValidToScore: boolean;
   currentOver?: number;
   currentBall?: number;
   totalOvers?: number;
@@ -15,8 +20,12 @@ interface ScoringControlsProps {
 }
 
 const ScoringControls = ({ 
-  onRecordBall, 
-  isDisabled = false,
+  onScore,
+  onWicket,
+  onExtra,
+  onBoundary,
+  onUndoLastBall,
+  isValidToScore,
   currentOver = 0,
   currentBall = 0,
   totalOvers = 20,
@@ -26,19 +35,40 @@ const ScoringControls = ({
 }: ScoringControlsProps) => {
   
   const handleRunsClick = (runs: number) => {
-    onRecordBall(runs);
+    if (runs === 4) {
+      onBoundary('four');
+    } else if (runs === 6) {
+      onBoundary('six');
+    } else {
+      onScore(runs);
+    }
   };
 
   const handleExtraClick = (extraType: string, extraRuns: number = 1) => {
-    onRecordBall(0, extraRuns, extraType);
+    onExtra(extraType, extraRuns);
   };
 
   const handleWicketClick = (wicketType: string) => {
-    onRecordBall(0, 0, '', true, wicketType);
+    onWicket(wicketType);
   };
 
   const isLastOver = currentOver === totalOvers - 1;
   const isLastBallOfOver = currentBall === 5;
+
+  if (!isValidToScore) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Score Ball</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">Please select both batsmen and a bowler to start scoring</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -81,7 +111,6 @@ const ScoringControls = ({
                 ${runs === 6 ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
                 ${runs === 0 ? "text-gray-600" : ""}
               `}
-              disabled={isDisabled}
               size="lg"
             >
               {runs}
@@ -92,18 +121,16 @@ const ScoringControls = ({
         {/* Extra Buttons */}
         <div className="grid grid-cols-2 gap-2">
           <Button
-            onClick={() => handleExtraClick('wide')}
+            onClick={() => handleExtraClick('wides')}
             variant="outline"
             className="text-orange-600 border-orange-300 hover:bg-orange-50"
-            disabled={isDisabled}
           >
             Wide Ball
           </Button>
           <Button
-            onClick={() => handleExtraClick('no-ball')}
+            onClick={() => handleExtraClick('noballs')}
             variant="outline"
             className="text-red-600 border-red-300 hover:bg-red-50"
-            disabled={isDisabled}
           >
             No Ball
           </Button>
@@ -114,7 +141,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('bowled')}
             variant="destructive"
-            disabled={isDisabled || isFreehit}
+            disabled={isFreehit}
             className="text-sm"
           >
             Bowled
@@ -123,7 +150,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('caught')}
             variant="destructive"
-            disabled={isDisabled || isFreehit}
+            disabled={isFreehit}
             className="text-sm"
           >
             Caught
@@ -132,7 +159,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('lbw')}
             variant="destructive"
-            disabled={isDisabled || isFreehit}
+            disabled={isFreehit}
             className="text-sm"
           >
             LBW
@@ -145,7 +172,6 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('run out')}
             variant="destructive"
-            disabled={isDisabled}
             className="text-sm"
           >
             Run Out
@@ -153,7 +179,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('stumped')}
             variant="destructive"
-            disabled={isDisabled || isFreehit}
+            disabled={isFreehit}
             className="text-sm"
           >
             Stumped
@@ -162,7 +188,6 @@ const ScoringControls = ({
           <Button
             onClick={() => handleWicketClick('hit wicket')}
             variant="destructive"
-            disabled={isDisabled}
             className="text-sm"
           >
             Hit Wicket
@@ -190,6 +215,18 @@ const ScoringControls = ({
             </p>
           </div>
         )}
+
+        {/* Undo Button */}
+        <div className="pt-2 border-t">
+          <Button
+            onClick={onUndoLastBall}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            Undo Last Ball
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -385,7 +385,6 @@ const LiveScoring = () => {
           <MatchSetup
             matchData={selectedMatch}
             onMatchSetupComplete={handleMatchSetupComplete}
-            onStartMatch={() => setCurrentStep('scoring')}
             onBack={() => setCurrentStep('player-selection')}
           />
         );
@@ -430,6 +429,12 @@ const LiveScoring = () => {
               onBoundary={handleBoundary}
               onUndoLastBall={() => {}}
               isValidToScore={currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id}
+              currentOver={currentOver}
+              currentBall={currentBallInOver}
+              totalOvers={matchSetup?.totalOvers || 20}
+              powerplayOvers={matchSetup?.powerplayOvers || 6}
+              isPowerplay={currentOver < (matchSetup?.powerplayOvers || 6)}
+              isFreehit={false}
             />
           </div>
         );
