@@ -65,7 +65,9 @@ const LiveScoring = () => {
   const [team1Players, setTeam1Players] = useState<Player[]>([]);
   const [team2Players, setTeam2Players] = useState<Player[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
-  const [battingTeam, setBattingTeam] = useState<number | null>(null);
+  const [tossWinnerTeamId, setTossWinnerTeamId] = useState<string>('');
+  const [tossDecision, setTossDecision] = useState<string>('');
+  const [battingFirstTeam, setBattingFirstTeam] = useState<number | null>(null);
   const [currentBatsmen, setCurrentBatsmen] = useState<Player[]>([
     { id: '', name: '', team_id: '', runs: 0, balls: 0, fours: 0, sixes: 0 },
     { id: '', name: '', team_id: '', runs: 0, balls: 0, fours: 0, sixes: 0 }
@@ -75,7 +77,6 @@ const LiveScoring = () => {
   const [matchSetup, setMatchSetup] = useState<any>(null);
   const [currentInnings, setCurrentInnings] = useState<number>(1);
   const [currentOver, setCurrentOver] = useState<number>(0);
-  const [currentBall, setCurrentBall] = useState<number>(0);
   const [currentBallInOver, setCurrentBallInOver] = useState<number>(0);
   const [teamInnings, setTeamInnings] = useState<TeamInnings[]>([
     {
@@ -99,6 +100,7 @@ const LiveScoring = () => {
   ]);
   const [matchEnded, setMatchEnded] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<'match-selection' | 'toss' | 'player-selection' | 'match-setup' | 'scoring'>('match-selection');
+  const [isProcessingScore, setIsProcessingScore] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedMatch) {
@@ -162,13 +164,20 @@ const LiveScoring = () => {
     setCurrentStep('toss');
   };
 
-  const handleTossComplete = (tossWinnerTeamId: string, decision: string) => {
-    console.log('Toss completed:', { tossWinnerTeamId, decision });
-
-    const tossWinner = tossWinnerTeamId === selectedMatch?.team1_id ? 1 : 2;
-    const battingFirst = (decision === 'bat') ? tossWinner : (tossWinner === 1 ? 2 : 1);
-
-    setBattingTeam(battingFirst);
+  const handleTossComplete = (winnerTeamId: string, decision: string) => {
+    console.log('Toss completed:', { winnerTeamId, decision });
+    
+    setTossWinnerTeamId(winnerTeamId);
+    setTossDecision(decision);
+    
+    // Determine which team bats first based on toss decision
+    const tossWinnerTeam = winnerTeamId === selectedMatch?.team1_id ? 1 : 2;
+    const battingFirst = (decision === 'bat') ? tossWinnerTeam : (tossWinnerTeam === 1 ? 2 : 1);
+    
+    console.log('Toss winner team number:', tossWinnerTeam);
+    console.log('Team batting first:', battingFirst);
+    
+    setBattingFirstTeam(battingFirst);
     setCurrentStep('player-selection');
   };
 
@@ -226,10 +235,10 @@ const LiveScoring = () => {
         id: selectedPlayer.id,
         name: selectedPlayer.name,
         team_id: selectedPlayer.team_id,
-        runs: 0,
-        balls: 0,
-        fours: 0,
-        sixes: 0
+        runs: updatedBatsmen[index].runs || 0,
+        balls: updatedBatsmen[index].balls || 0,
+        fours: updatedBatsmen[index].fours || 0,
+        sixes: updatedBatsmen[index].sixes || 0
       };
     } else {
       updatedBatsmen[index] = {
@@ -256,9 +265,9 @@ const LiveScoring = () => {
         id: selectedPlayer.id,
         name: selectedPlayer.name,
         team_id: selectedPlayer.team_id,
-        overs: 0,
-        runs: 0,
-        wickets: 0
+        overs: currentBowler?.overs || 0,
+        runs: currentBowler?.runs || 0,
+        wickets: currentBowler?.wickets || 0
       });
     } else {
       setCurrentBowler(null);
@@ -267,27 +276,18 @@ const LiveScoring = () => {
 
   const checkInningsEnd = () => {
     const totalOvers = matchSetup?.overs || 20;
-    const ballsPerOver = matchSetup?.ballsPerOver || 6;
     
     // Check if overs are completed
     if (currentOver >= totalOvers) {
       console.log('Innings ended - overs completed:', currentOver, '>=', totalOvers);
-      setMatchEnded(true);
-      toast({
-        title: "Innings Complete!",
-        description: `${totalOvers} overs completed. Innings ended.`,
-      });
+      handleInningsEnd('overs_completed');
       return true;
     }
 
     // Check if all wickets are down
     if (teamInnings[currentInnings - 1].totalWickets >= 10) {
       console.log('Innings ended - all out');
-      setMatchEnded(true);
-      toast({
-        title: "All Out!",
-        description: "Team is all out. Innings ended.",
-      });
+      handleInningsEnd('all_out');
       return true;
     }
 
@@ -295,9 +295,12 @@ const LiveScoring = () => {
   };
 
   const handleScore = (runs: number) => {
-    console.log(`Scoring ${runs} runs`);
+    if (isProcessingScore || !validateScoringState() || matchEnded) {
+      return;
+    }
     
-    if (!validateScoringState() || matchEnded) return;
+    setIsProcessingScore(true);
+    console.log(`Scoring ${runs} runs`);
     
     const updatedBatsmen = [...currentBatsmen];
     updatedBatsmen[strikeBatsmanIndex].runs += runs;
@@ -316,7 +319,13 @@ const LiveScoring = () => {
     updatedTeamInnings[currentInnings - 1].balls += 1;
     setTeamInnings(updatedTeamInnings);
 
-    setCurrentBall(prev => prev + 1);
+    // Update bowler stats
+    if (currentBowler) {
+      const updatedBowler = { ...currentBowler };
+      updatedBowler.runs = (updatedBowler.runs || 0) + runs;
+      setCurrentBowler(updatedBowler);
+    }
+
     setCurrentBallInOver(prev => {
       const newBallInOver = prev + 1;
       const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -334,14 +343,17 @@ const LiveScoring = () => {
     if (runs % 2 !== 0) {
       switchStrike();
     }
-
-    // Don't check innings end here - let the over completion handle it
+    
+    setTimeout(() => setIsProcessingScore(false), 100);
   };
 
   const handleWicket = (dismissalType: string) => {
-    console.log(`Wicket taken: ${dismissalType}`);
+    if (isProcessingScore || !validateScoringState() || matchEnded) {
+      return;
+    }
     
-    if (!validateScoringState() || matchEnded) return;
+    setIsProcessingScore(true);
+    console.log(`Wicket taken: ${dismissalType}`);
 
     const updatedBatsmen = [...currentBatsmen];
     updatedBatsmen[strikeBatsmanIndex].balls += 1;
@@ -352,7 +364,13 @@ const LiveScoring = () => {
     updatedTeamInnings[currentInnings - 1].balls += 1;
     setTeamInnings(updatedTeamInnings);
 
-    setCurrentBall(prev => prev + 1);
+    // Update bowler stats
+    if (currentBowler) {
+      const updatedBowler = { ...currentBowler };
+      updatedBowler.wickets = (updatedBowler.wickets || 0) + 1;
+      setCurrentBowler(updatedBowler);
+    }
+
     setCurrentBallInOver(prev => {
       const newBallInOver = prev + 1;
       const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -372,26 +390,37 @@ const LiveScoring = () => {
     });
 
     // Check if innings should end after wicket
-    setTimeout(() => checkInningsEnd(), 100);
+    setTimeout(() => {
+      checkInningsEnd();
+      setIsProcessingScore(false);
+    }, 100);
   };
 
   const handleExtra = (extraType: string, runs: number = 1) => {
+    if (isProcessingScore || matchEnded) {
+      return;
+    }
+    
+    setIsProcessingScore(true);
     console.log(`Extra added: ${extraType} for ${runs} runs`);
-
-    if (matchEnded) return;
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
     updatedTeamInnings[currentInnings - 1].extras[extraType as keyof typeof updatedTeamInnings[0]['extras']] += runs;
     setTeamInnings(updatedTeamInnings);
 
+    // Update bowler stats
+    if (currentBowler) {
+      const updatedBowler = { ...currentBowler };
+      updatedBowler.runs = (updatedBowler.runs || 0) + runs;
+      setCurrentBowler(updatedBowler);
+    }
+
     // Wide and No-ball don't count as legal deliveries
     if (extraType === 'wides' || extraType === 'noballs') {
-      // Ball is re-bowled, don't increment ball count
       console.log('Extra ball - no ball count increment');
     } else {
       // Byes and leg-byes are legal deliveries
-      setCurrentBall(prev => prev + 1);
       setCurrentBallInOver(prev => {
         const newBallInOver = prev + 1;
         const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -405,6 +434,8 @@ const LiveScoring = () => {
         return newBallInOver;
       });
     }
+    
+    setTimeout(() => setIsProcessingScore(false), 100);
   };
 
   const handleBoundary = (boundaryType: 'four' | 'six') => {
@@ -425,16 +456,7 @@ const LiveScoring = () => {
     updatedTeamInnings[currentInnings - 1].overs += 1;
     setTeamInnings(updatedTeamInnings);
 
-    setCurrentOver(prev => {
-      const newOver = prev + 1;
-      console.log('New over:', newOver, 'Total overs allowed:', matchSetup?.overs);
-      
-      // Check if innings should end after this over
-      setTimeout(() => checkInningsEnd(), 100);
-      
-      return newOver;
-    });
-    
+    setCurrentOver(prev => prev + 1);
     setCurrentBallInOver(0);
     
     // Switch strike at end of over
@@ -444,16 +466,61 @@ const LiveScoring = () => {
       title: "Over Complete!",
       description: `Over ${currentOver + 1} completed.`,
     });
+
+    // Check if innings should end after this over
+    setTimeout(() => checkInningsEnd(), 100);
   };
 
   const handleBowlerChangeRequired = () => {
     console.log('Bowler change required');
-    // This will be called by the ScoringRuleEngine
+    toast({
+      title: "Bowler Change Required",
+      description: "Please select a new bowler for the next over.",
+    });
   };
 
   const handleInningsEnd = (reason: string) => {
-    console.log('Innings ended:', reason);
-    setMatchEnded(true);
+    console.log('Innings ended:', reason, 'Current innings:', currentInnings);
+    
+    if (currentInnings === 1) {
+      // Start 2nd innings
+      setCurrentInnings(2);
+      setCurrentOver(0);
+      setCurrentBallInOver(0);
+      
+      // Reset players for 2nd innings
+      setCurrentBatsmen([
+        { id: '', name: '', team_id: '', runs: 0, balls: 0, fours: 0, sixes: 0 },
+        { id: '', name: '', team_id: '', runs: 0, balls: 0, fours: 0, sixes: 0 }
+      ]);
+      setCurrentBowler(null);
+      setStrikeBatsmanIndex(0);
+      
+      // Initialize 2nd innings team data
+      const updatedTeamInnings = [...teamInnings];
+      updatedTeamInnings[1] = {
+        teamId: battingFirstTeam === 2 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '',
+        teamName: battingFirstTeam === 2 ? selectedMatch?.team1_name || '' : selectedMatch?.team2_name || '',
+        totalRuns: 0,
+        totalWickets: 0,
+        overs: 0,
+        balls: 0,
+        extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0 }
+      };
+      setTeamInnings(updatedTeamInnings);
+      
+      toast({
+        title: "1st Innings Complete!",
+        description: `${teamInnings[0].teamName} scored ${teamInnings[0].totalRuns}/${teamInnings[0].totalWickets}. Starting 2nd innings.`,
+      });
+    } else {
+      // Match completed
+      setMatchEnded(true);
+      toast({
+        title: "Match Complete!",
+        description: "Both innings completed. Match ended.",
+      });
+    }
   };
 
   const handlePowerplayEnd = () => {
@@ -493,14 +560,14 @@ const LiveScoring = () => {
     setCurrentStep('scoring');
     
     setCurrentInnings(1);
-    setCurrentBall(0);
     setCurrentOver(0);
     setCurrentBallInOver(0);
     
+    // Initialize team innings based on who bats first
     setTeamInnings([
       {
-        teamId: battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '',
-        teamName: battingTeam === 1 ? selectedMatch?.team1_name || '' : selectedMatch?.team2_name || '',
+        teamId: battingFirstTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '',
+        teamName: battingFirstTeam === 1 ? selectedMatch?.team1_name || '' : selectedMatch?.team2_name || '',
         totalRuns: 0,
         totalWickets: 0,
         overs: 0,
@@ -508,8 +575,8 @@ const LiveScoring = () => {
         extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0 }
       },
       {
-        teamId: battingTeam === 2 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '',
-        teamName: battingTeam === 2 ? selectedMatch?.team1_name || '' : selectedMatch?.team2_name || '',
+        teamId: battingFirstTeam === 2 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '',
+        teamName: battingFirstTeam === 2 ? selectedMatch?.team1_name || '' : selectedMatch?.team2_name || '',
         totalRuns: 0,
         totalWickets: 0,
         overs: 0,
@@ -522,6 +589,22 @@ const LiveScoring = () => {
       title: "Ready to Score!",
       description: "Match setup complete. You can now start scoring.",
     });
+  };
+
+  const getCurrentBattingTeamId = () => {
+    if (currentInnings === 1) {
+      return battingFirstTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '';
+    } else {
+      return battingFirstTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '';
+    }
+  };
+
+  const getCurrentBowlingTeamId = () => {
+    if (currentInnings === 1) {
+      return battingFirstTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '';
+    } else {
+      return battingFirstTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '';
+    }
   };
 
   const renderContent = () => {
@@ -542,7 +625,7 @@ const LiveScoring = () => {
           <PlayerSelector
             match={selectedMatch}
             onPlayersSelected={handlePlayersSelected}
-            battingTeam={battingTeam}
+            battingTeam={battingFirstTeam}
             team1Players={team1Players}
             team2Players={team2Players}
           />
@@ -591,14 +674,8 @@ const LiveScoring = () => {
                     players={allPlayers}
                     strikeBatsmanIndex={strikeBatsmanIndex}
                     currentInnings={currentInnings}
-                    battingTeamId={currentInnings === 1 ? 
-                      (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '') :
-                      (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '')
-                    }
-                    bowlingTeamId={currentInnings === 1 ? 
-                      (battingTeam === 1 ? selectedMatch?.team2_id || '' : selectedMatch?.team1_id || '') :
-                      (battingTeam === 1 ? selectedMatch?.team1_id || '' : selectedMatch?.team2_id || '')
-                    }
+                    battingTeamId={getCurrentBattingTeamId()}
+                    bowlingTeamId={getCurrentBowlingTeamId()}
                     onUpdateBatsman={handleUpdateBatsman}
                     onUpdateBowler={handleUpdateBowler}
                   />
@@ -624,8 +701,11 @@ const LiveScoring = () => {
                 <div className="text-center py-8">
                   <h2 className="text-2xl font-bold text-green-600 mb-4">Match Ended</h2>
                   <p className="text-gray-600">
-                    Final Score: {teamInnings[currentInnings - 1]?.totalRuns}/{teamInnings[currentInnings - 1]?.totalWickets} 
-                    ({formatOvers(teamInnings[currentInnings - 1]?.overs || 0, teamInnings[currentInnings - 1]?.balls || 0)} overs)
+                    Final Scores:<br/>
+                    {teamInnings[0]?.teamName}: {teamInnings[0]?.totalRuns}/{teamInnings[0]?.totalWickets} 
+                    ({formatOvers(teamInnings[0]?.overs || 0, teamInnings[0]?.balls || 0)} overs)<br/>
+                    {teamInnings[1]?.teamName}: {teamInnings[1]?.totalRuns}/{teamInnings[1]?.totalWickets} 
+                    ({formatOvers(teamInnings[1]?.overs || 0, teamInnings[1]?.balls || 0)} overs)
                   </p>
                 </div>
               )}
@@ -650,7 +730,7 @@ const LiveScoring = () => {
             </Badge>
             {currentStep === 'scoring' && (
               <Badge variant="outline">
-                Innings {currentInnings} {matchEnded ? '(Ended)' : ''}
+                Innings {currentInnings} {matchEnded ? '(Match Ended)' : ''}
               </Badge>
             )}
           </div>
