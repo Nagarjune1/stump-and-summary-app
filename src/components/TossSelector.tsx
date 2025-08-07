@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/
 import SafeSelectItem from "@/components/ui/SafeSelectItem";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { createSafeTeamValue } from "@/utils/selectUtils";
+import { createSafeTeamValue, ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const TossSelector = ({ 
   match,
@@ -103,8 +103,12 @@ const TossSelector = ({
               <SelectValue placeholder="Select decision" />
             </SelectTrigger>
             <SelectContent>
-              <SafeSelectItem value="bat">Chose to bat first</SafeSelectItem>
-              <SafeSelectItem value="bowl">Chose to bowl first</SafeSelectItem>
+              <SafeSelectItem value={ensureValidSelectItemValue("bat", "toss_bat_decision")}>
+                Chose to bat first
+              </SafeSelectItem>
+              <SafeSelectItem value={ensureValidSelectItemValue("bowl", "toss_bowl_decision")}>
+                Chose to bowl first
+              </SafeSelectItem>
             </SelectContent>
           </Select>
         </div>

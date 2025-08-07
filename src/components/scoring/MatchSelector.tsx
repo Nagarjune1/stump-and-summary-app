@@ -43,13 +43,16 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
 
       if (error) throw error;
       
-      // Transform the data to match our Match interface
-      const transformedMatches = (data || []).map(match => ({
-        ...match,
-        team1_name: match.team1?.name || 'Team 1',
-        team2_name: match.team2?.name || 'Team 2'
-      }));
+      // Transform the data to match our Match interface and filter out invalid matches
+      const transformedMatches = (data || [])
+        .map(match => ({
+          ...match,
+          team1_name: match.team1?.name || 'Team 1',
+          team2_name: match.team2?.name || 'Team 2'
+        }))
+        .filter(match => match.id && String(match.id).trim() !== '');
       
+      console.log('MatchSelector: Valid matches after filtering:', transformedMatches.length);
       setMatches(transformedMatches);
     } catch (error) {
       console.error('Error fetching matches:', error);
@@ -90,7 +93,14 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
           </SelectTrigger>
           <SelectContent>
             {matches.map((match) => {
-              const safeMatchId = ensureValidSelectItemValue(match.id);
+              const safeMatchId = ensureValidSelectItemValue(match.id, `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+              
+              // Skip if somehow still empty
+              if (!safeMatchId || safeMatchId.trim() === '') {
+                console.error('MatchSelector: Skipping match with empty ID:', match);
+                return null;
+              }
+              
               return (
                 <SafeSelectItem key={match.id} value={safeMatchId}>
                   {match.team1_name} vs {match.team2_name} - {new Date(match.match_date).toLocaleDateString()}
