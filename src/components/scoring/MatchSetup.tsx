@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,12 @@ import { toast } from "@/hooks/use-toast";
 
 interface MatchSetupProps {
   matchData: any;
-  onMatchSetupComplete: (setupData: any) => void;
+  onMatchSetupComplete?: (setupData: any) => void;
+  onStartMatch?: () => void;
   onBack: () => void;
 }
 
-const MatchSetup = ({ matchData, onMatchSetupComplete, onBack }: MatchSetupProps) => {
+const MatchSetup = ({ matchData, onMatchSetupComplete, onStartMatch, onBack }: MatchSetupProps) => {
   const [overs, setOvers] = useState(matchData?.overs || 20);
   const [ballsPerOver, setBallsPerOver] = useState(6);
   const [powerplayOvers, setPowerplayOvers] = useState(0);
@@ -97,7 +99,13 @@ const MatchSetup = ({ matchData, onMatchSetupComplete, onBack }: MatchSetupProps
       description: "All scoring rules configured successfully",
     });
 
-    onMatchSetupComplete(setupData);
+    if (onMatchSetupComplete) {
+      onMatchSetupComplete(setupData);
+    }
+    
+    if (onStartMatch) {
+      onStartMatch();
+    }
   };
 
   return (

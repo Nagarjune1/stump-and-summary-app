@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -342,8 +341,12 @@ const LiveScoring = () => {
     }
   };
 
+  const handleMatchSelect = (match: Match) => {
+    setSelectedMatch(match);
+  };
+
   if (!selectedMatch) {
-    return <MatchSelector onMatchSelect={setSelectedMatch} />;
+    return <MatchSelector onMatchSelect={handleMatchSelect} />;
   }
 
   if (!matchStarted) {
@@ -439,7 +442,7 @@ const LiveScoring = () => {
             <DialogTitle>Select New Batsman</DialogTitle>
           </DialogHeader>
           <NewBatsmanSelector
-            availablePlayers={players}
+            players={players}
             currentBatsmen={currentBatsmen}
             onSelect={handleNewBatsman}
             wicketInfo={wicketInfo}
