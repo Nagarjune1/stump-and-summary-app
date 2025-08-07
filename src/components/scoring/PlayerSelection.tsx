@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ensureValidSelectValue, validatePlayer, calculateStrikeRate } from "@/utils/scoringUtils";
 
 interface Player {
   id: string;
@@ -19,7 +20,7 @@ interface Player {
 
 interface PlayerSelectionProps {
   currentBatsmen: Player[];
-  currentBowler: Player;
+  currentBowler: Player | null;
   players: Player[];
   strikeBatsmanIndex: number;
   currentInnings: number;
@@ -44,32 +45,41 @@ const PlayerSelection = ({
   console.log('PlayerSelection: Batting team ID:', battingTeamId);
   console.log('PlayerSelection: Bowling team ID:', bowlingTeamId);
 
-  // Filter players based on teams and ensure valid data
+  // Filter and validate players
   const battingTeamPlayers = players.filter(player => 
-    player && 
-    player.id && 
-    String(player.id).trim() !== '' &&
-    player.name && 
-    String(player.name).trim() !== '' &&
-    player.team_id === battingTeamId
+    validatePlayer(player) && player.team_id === battingTeamId
   );
 
   const bowlingTeamPlayers = players.filter(player => 
-    player && 
-    player.id && 
-    String(player.id).trim() !== '' &&
-    player.name && 
-    String(player.name).trim() !== '' &&
-    player.team_id === bowlingTeamId
+    validatePlayer(player) && player.team_id === bowlingTeamId
   );
 
-  console.log('PlayerSelection: Batting team players:', battingTeamPlayers.length);
-  console.log('PlayerSelection: Bowling team players:', bowlingTeamPlayers.length);
+  console.log('PlayerSelection: Valid batting team players:', battingTeamPlayers.length);
+  console.log('PlayerSelection: Valid bowling team players:', bowlingTeamPlayers.length);
 
   // Check if mandatory selections are missing
   const isStrikerMissing = !currentBatsmen[strikeBatsmanIndex]?.id;
   const isNonStrikerMissing = !currentBatsmen[strikeBatsmanIndex === 0 ? 1 : 0]?.id;
   const isBowlerMissing = !currentBowler?.id;
+
+  const renderPlayerSelectOptions = (playersList: Player[], fallbackMessage: string) => {
+    if (playersList.length === 0) {
+      return (
+        <SelectItem value={ensureValidSelectValue('no-players', 'no_players')}>
+          {fallbackMessage}
+        </SelectItem>
+      );
+    }
+
+    return playersList.map((player, index) => {
+      const safeValue = ensureValidSelectValue(player.id, `player_${index}`);
+      return (
+        <SelectItem key={player.id} value={safeValue}>
+          {player.name}
+        </SelectItem>
+      );
+    });
+  };
 
   return (
     <Card>
@@ -102,9 +112,9 @@ const PlayerSelection = ({
                 Batsman {index + 1} {index === strikeBatsmanIndex ? '(Striker) *' : '(Non-striker) *'}
               </Label>
               <Select 
-                value={batsman?.id || ""} 
+                value={batsman?.id ? ensureValidSelectValue(batsman.id, `batsman_${index}`) : ""} 
                 onValueChange={(value) => {
-                  if (value && value.trim() !== '' && value !== 'no-players') {
+                  if (value && !value.startsWith('no_players') && !value.startsWith('no-players')) {
                     onUpdateBatsman(index, 'id', value);
                   }
                 }}
@@ -113,20 +123,14 @@ const PlayerSelection = ({
                   <SelectValue placeholder={`Select batsman ${index + 1}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {battingTeamPlayers.length === 0 ? (
-                    <SelectItem value="no-players">No batting team players found</SelectItem>
-                  ) : (
-                    battingTeamPlayers.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.name}
-                      </SelectItem>
-                    ))
-                  )}
+                  {renderPlayerSelectOptions(battingTeamPlayers, "No batting team players found")}
                 </SelectContent>
               </Select>
               {batsman?.name && (
                 <div className="text-sm text-gray-600">
-                  {batsman.runs || 0} ({batsman.balls || 0}b) • {batsman.fours || 0}×4, {batsman.sixes || 0}×6
+                  {batsman.runs || 0} ({batsman.balls || 0}b) • 
+                  {batsman.fours || 0}×4, {batsman.sixes || 0}×6 • 
+                  SR: {calculateStrikeRate(batsman.runs || 0, batsman.balls || 0).toFixed(1)}
                 </div>
               )}
             </div>
@@ -139,9 +143,9 @@ const PlayerSelection = ({
             Current Bowler *
           </Label>
           <Select 
-            value={currentBowler?.id || ""} 
+            value={currentBowler?.id ? ensureValidSelectValue(currentBowler.id, 'bowler') : ""} 
             onValueChange={(value) => {
-              if (value && value.trim() !== '' && value !== 'no-players') {
+              if (value && !value.startsWith('no_players') && !value.startsWith('no-players')) {
                 onUpdateBowler('id', value);
               }
             }}
@@ -150,20 +154,15 @@ const PlayerSelection = ({
               <SelectValue placeholder="Select bowler" />
             </SelectTrigger>
             <SelectContent>
-              {bowlingTeamPlayers.length === 0 ? (
-                <SelectItem value="no-players">No bowling team players found</SelectItem>
-              ) : (
-                bowlingTeamPlayers.map((player) => (
-                  <SelectItem key={player.id} value={player.id}>
-                    {player.name}
-                  </SelectItem>
-                ))
-              )}
+              {renderPlayerSelectOptions(bowlingTeamPlayers, "No bowling team players found")}
             </SelectContent>
           </Select>
           {currentBowler?.name && (
             <div className="text-sm text-gray-600">
               {(currentBowler.overs || 0).toFixed(1)}-{currentBowler.runs || 0}-{currentBowler.wickets || 0}
+              {(currentBowler.overs || 0) > 0 && (
+                <span> • ECO: {((currentBowler.runs || 0) / (currentBowler.overs || 1)).toFixed(1)}</span>
+              )}
             </div>
           )}
         </div>

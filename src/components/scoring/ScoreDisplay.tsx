@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatOvers, calculateStrikeRate, calculateEconomy } from "@/utils/scoringUtils";
 
 interface TeamInnings {
   teamId: string;
@@ -50,12 +51,6 @@ const ScoreDisplay = ({
   strikeBatsmanIndex,
   matchSetup
 }: ScoreDisplayProps) => {
-  const formatOvers = (overs: number, balls: number = 0) => {
-    const completeOvers = Math.floor(overs);
-    const remainingBalls = balls % 6;
-    return `${completeOvers}.${remainingBalls}`;
-  };
-
   const getCurrentTeamInnings = () => {
     return teamInnings[currentInnings - 1] || {
       teamName: 'Team',
@@ -79,11 +74,24 @@ const ScoreDisplay = ({
     
     const target = teamInnings[0].totalRuns + 1;
     const remaining = target - currentTeam.totalRuns;
-    const ballsLeft = (matchSetup?.totalOvers || 20) * 6 - (currentTeam.overs * 6 + currentTeam.balls);
+    const ballsLeft = (matchSetup?.overs || 20) * 6 - (currentTeam.overs * 6 + currentTeam.balls);
     
     if (ballsLeft <= 0) return 0;
     return (remaining / ballsLeft) * 6;
   };
+
+  const getValidBatsman = (index: number) => {
+    return currentBatsmen[index] || { 
+      name: 'Not Selected', 
+      runs: 0, 
+      balls: 0, 
+      fours: 0, 
+      sixes: 0 
+    };
+  };
+
+  const striker = getValidBatsman(strikeBatsmanIndex);
+  const nonStriker = getValidBatsman(strikeBatsmanIndex === 0 ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -91,7 +99,7 @@ const ScoreDisplay = ({
         <Card className={currentInnings === 1 ? "ring-2 ring-blue-500" : ""}>
           <CardHeader>
             <CardTitle className="text-lg">
-              {teamInnings[0]?.teamName || selectedMatch?.team1_name} - 1st Innings
+              {teamInnings[0]?.teamName || selectedMatch?.team1_name || 'Team 1'} - 1st Innings
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -107,7 +115,7 @@ const ScoreDisplay = ({
         <Card className={currentInnings === 2 ? "ring-2 ring-blue-500" : ""}>
           <CardHeader>
             <CardTitle className="text-lg">
-              {teamInnings[1]?.teamName || selectedMatch?.team2_name} - 2nd Innings
+              {teamInnings[1]?.teamName || selectedMatch?.team2_name || 'Team 2'} - 2nd Innings
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -149,8 +157,8 @@ const ScoreDisplay = ({
             </div>
             <div>
               <span className="font-medium">Batsmen:</span> 
-              {currentBatsmen[0]?.name && currentBatsmen[1]?.name ? 
-                ` ${currentBatsmen[strikeBatsmanIndex]?.name}* (${currentBatsmen[strikeBatsmanIndex]?.runs || 0}), ${currentBatsmen[strikeBatsmanIndex === 0 ? 1 : 0]?.name} (${currentBatsmen[strikeBatsmanIndex === 0 ? 1 : 0]?.runs || 0})` :
+              {striker.name && nonStriker.name ? 
+                ` ${striker.name}* (${striker.runs || 0}), ${nonStriker.name} (${nonStriker.runs || 0})` :
                 ' Not selected'
               }
             </div>
@@ -158,6 +166,32 @@ const ScoreDisplay = ({
               <span className="font-medium">Bowler:</span> {currentBowler?.name || 'Not selected'}
             </div>
           </div>
+          
+          {/* Detailed batting stats */}
+          {striker.name && striker.name !== 'Not Selected' && (
+            <div className="mt-4 p-3 bg-green-50 rounded">
+              <div className="text-sm font-medium text-green-800 mb-2">On Strike: {striker.name}</div>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>Runs: {striker.runs || 0} ({striker.balls || 0} balls)</div>
+                <div>Strike Rate: {calculateStrikeRate(striker.runs || 0, striker.balls || 0).toFixed(1)}</div>
+                <div>Fours: {striker.fours || 0}</div>
+                <div>Sixes: {striker.sixes || 0}</div>
+              </div>
+            </div>
+          )}
+          
+          {/* Bowler stats */}
+          {currentBowler?.name && (
+            <div className="mt-4 p-3 bg-red-50 rounded">
+              <div className="text-sm font-medium text-red-800 mb-2">Bowling: {currentBowler.name}</div>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>Overs: {(currentBowler.overs || 0).toFixed(1)}</div>
+                <div>Runs: {currentBowler.runs || 0}</div>
+                <div>Wickets: {currentBowler.wickets || 0}</div>
+                <div>Economy: {calculateEconomy(currentBowler.runs || 0, currentBowler.overs || 1).toFixed(1)}</div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
