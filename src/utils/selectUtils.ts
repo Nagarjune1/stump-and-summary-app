@@ -2,8 +2,8 @@
 // Utility functions for safe Select component usage
 
 export const ensureValidSelectItemValue = (value: any, fallback?: string): string => {
-  // Generate unique fallback
-  const uniqueFallback = fallback || `validated_${Date.now()}_${Math.random().toString(36).substr(2, 15)}`;
+  // Generate unique fallback with more entropy
+  const uniqueFallback = fallback || `validated_${Date.now()}_${Math.random().toString(36).substr(2, 15)}_${Math.floor(Math.random() * 10000)}`;
   
   // Handle null/undefined
   if (value === null || value === undefined) {
@@ -18,11 +18,12 @@ export const ensureValidSelectItemValue = (value: any, fallback?: string): strin
     return uniqueFallback;
   }
   
-  // Validate string is not empty
+  // Validate string is not empty - critical check
   if (stringValue === '' || 
       stringValue === 'null' || 
       stringValue === 'undefined' || 
-      stringValue.length === 0) {
+      stringValue.length === 0 ||
+      stringValue.trim().length === 0) {
     return uniqueFallback;
   }
   
@@ -40,7 +41,6 @@ export const createSafePlayerValue = (player: any, index: number): string => {
   return ensureValidSelectItemValue(playerId, fallback);
 };
 
-// Add back the missing createSafeSelectOptions function
 export const createSafeSelectOptions = (players: any[], prefix: string = 'player') => {
   if (!Array.isArray(players)) {
     console.warn('createSafeSelectOptions: players is not an array, returning empty array');

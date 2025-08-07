@@ -35,7 +35,7 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
     // Trim whitespace
     stringValue = stringValue.trim();
     
-    // Check for empty or invalid strings
+    // Check for empty or invalid strings - this is the critical fix
     if (stringValue === '' || 
         stringValue === 'null' || 
         stringValue === 'undefined' || 
@@ -48,11 +48,13 @@ const SafeSelectItem: React.FC<SafeSelectItemProps> = ({
 
   const safeValue = createSafeValue(value);
   
-  // Double check - if somehow still empty, don't render
-  if (!safeValue || safeValue.trim() === '') {
-    console.error('SafeSelectItem: Critical validation failed, not rendering');
+  // Triple check - if somehow still empty or invalid, don't render
+  if (!safeValue || safeValue.trim() === '' || safeValue.trim().length === 0) {
+    console.error('SafeSelectItem: Critical validation failed, not rendering item with value:', value);
     return null;
   }
+
+  console.log('SafeSelectItem: Rendering with safe value:', safeValue, 'original:', value);
 
   return (
     <SelectItem 

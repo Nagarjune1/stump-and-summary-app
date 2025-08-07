@@ -36,8 +36,18 @@ const PlayerSelection = ({
 }: PlayerSelectionProps) => {
   console.log('PlayerSelection: Rendering with players:', players.length);
 
-  // Filter players to ensure they have valid IDs
-  const validPlayers = players.filter(player => player && player.id && player.name);
+  // Filter players to ensure they have valid IDs and names - more strict filtering
+  const validPlayers = players.filter(player => 
+    player && 
+    player.id && 
+    String(player.id).trim() !== '' && 
+    String(player.id).trim().length > 0 &&
+    player.name && 
+    String(player.name).trim() !== '' &&
+    String(player.name).trim().length > 0
+  );
+
+  console.log('PlayerSelection: Valid players after filtering:', validPlayers.length);
 
   return (
     <Card>
@@ -56,7 +66,7 @@ const PlayerSelection = ({
               <Select 
                 value={batsman.id || ""} 
                 onValueChange={(value) => {
-                  if (value) {
+                  if (value && value.trim() !== '') {
                     onUpdateBatsman(index, 'id', value);
                   }
                 }}
@@ -65,16 +75,22 @@ const PlayerSelection = ({
                   <SelectValue placeholder="Select batsman" />
                 </SelectTrigger>
                 <SelectContent>
-                  {validPlayers.map((player) => {
-                    const safePlayerId = ensureValidSelectItemValue(player.id);
+                  {validPlayers.map((player, playerIndex) => {
+                    const safePlayerId = ensureValidSelectItemValue(player.id, `batsman_${index}_${playerIndex}_${Date.now()}`);
                     console.log('PlayerSelection: Rendering batsman option:', { 
                       originalId: player.id,
                       safeId: safePlayerId,
                       name: player.name
                     });
                     
+                    // Double check the safe ID is not empty before rendering
+                    if (!safePlayerId || safePlayerId.trim() === '') {
+                      console.error('PlayerSelection: Skipping player with empty safe ID:', player);
+                      return null;
+                    }
+                    
                     return (
-                      <SafeSelectItem key={player.id} value={safePlayerId}>
+                      <SafeSelectItem key={`batsman_${index}_${player.id}_${playerIndex}`} value={safePlayerId}>
                         {player.name}
                       </SafeSelectItem>
                     );
@@ -96,7 +112,7 @@ const PlayerSelection = ({
           <Select 
             value={currentBowler?.id || ""} 
             onValueChange={(value) => {
-              if (value) {
+              if (value && value.trim() !== '') {
                 onUpdateBowler('id', value);
               }
             }}
@@ -105,16 +121,22 @@ const PlayerSelection = ({
               <SelectValue placeholder="Select bowler" />
             </SelectTrigger>
             <SelectContent>
-              {validPlayers.map((player) => {
-                const safePlayerId = ensureValidSelectItemValue(player.id);
+              {validPlayers.map((player, playerIndex) => {
+                const safePlayerId = ensureValidSelectItemValue(player.id, `bowler_${playerIndex}_${Date.now()}`);
                 console.log('PlayerSelection: Rendering bowler option:', { 
                   originalId: player.id,
                   safeId: safePlayerId,
                   name: player.name
                 });
                 
+                // Double check the safe ID is not empty before rendering
+                if (!safePlayerId || safePlayerId.trim() === '') {
+                  console.error('PlayerSelection: Skipping bowler with empty safe ID:', player);
+                  return null;
+                }
+                
                 return (
-                  <SafeSelectItem key={player.id} value={safePlayerId}>
+                  <SafeSelectItem key={`bowler_${player.id}_${playerIndex}`} value={safePlayerId}>
                     {player.name}
                   </SafeSelectItem>
                 );
