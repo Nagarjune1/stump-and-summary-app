@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,6 @@ import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Player {
   id: string;
@@ -41,8 +41,11 @@ const NewBatsmanSelector = ({
     setSelectedBatsman("");
   };
 
-  // Filter out players who are already batting
+  // Filter out players who are already batting and ensure valid IDs
   const availablePlayers = players.filter(player => 
+    player && 
+    player.id && 
+    String(player.id).trim() !== '' &&
     !currentBatsmen.some(batsman => batsman.id === player.id)
   );
 
@@ -65,20 +68,26 @@ const NewBatsmanSelector = ({
                 <SelectValue placeholder="Select next batsman" />
               </SelectTrigger>
               <SelectContent>
-                {availablePlayers.map((player) => {
-                  const safePlayerId = ensureValidSelectItemValue(player.id);
-                  console.log('NewBatsmanSelector: Rendering player option:', { 
-                    originalId: player.id,
-                    safeId: safePlayerId,
-                    name: player.name
-                  });
-                  
-                  return (
-                    <SelectItem key={player.id} value={safePlayerId}>
-                      {player.name}
-                    </SelectItem>
-                  );
-                })}
+                {availablePlayers.length === 0 ? (
+                  <SelectItem value="no-players-available">No players available</SelectItem>
+                ) : (
+                  availablePlayers.map((player) => {
+                    // Ensure we always have a valid, non-empty value
+                    const playerValue = player.id || `fallback_player_${Date.now()}_${Math.random()}`;
+                    
+                    console.log('NewBatsmanSelector: Rendering player option:', { 
+                      originalId: player.id,
+                      value: playerValue,
+                      name: player.name
+                    });
+                    
+                    return (
+                      <SelectItem key={player.id} value={playerValue}>
+                        {player.name}
+                      </SelectItem>
+                    );
+                  })
+                )}
               </SelectContent>
             </Select>
           </div>

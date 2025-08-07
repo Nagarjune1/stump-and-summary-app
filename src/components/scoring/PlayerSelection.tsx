@@ -104,7 +104,7 @@ const PlayerSelection = ({
               <Select 
                 value={batsman?.id || ""} 
                 onValueChange={(value) => {
-                  if (value && value.trim() !== '') {
+                  if (value && value.trim() !== '' && value !== 'no-players') {
                     onUpdateBatsman(index, 'id', value);
                   }
                 }}
@@ -114,7 +114,7 @@ const PlayerSelection = ({
                 </SelectTrigger>
                 <SelectContent>
                   {battingTeamPlayers.length === 0 ? (
-                    <SelectItem value="no-players" disabled>No batting team players found</SelectItem>
+                    <SelectItem value="no-players">No batting team players found</SelectItem>
                   ) : (
                     battingTeamPlayers.map((player) => (
                       <SelectItem key={player.id} value={player.id}>
@@ -141,7 +141,7 @@ const PlayerSelection = ({
           <Select 
             value={currentBowler?.id || ""} 
             onValueChange={(value) => {
-              if (value && value.trim() !== '') {
+              if (value && value.trim() !== '' && value !== 'no-players') {
                 onUpdateBowler('id', value);
               }
             }}
@@ -151,7 +151,7 @@ const PlayerSelection = ({
             </SelectTrigger>
             <SelectContent>
               {bowlingTeamPlayers.length === 0 ? (
-                <SelectItem value="no-players" disabled>No bowling team players found</SelectItem>
+                <SelectItem value="no-players">No bowling team players found</SelectItem>
               ) : (
                 bowlingTeamPlayers.map((player) => (
                   <SelectItem key={player.id} value={player.id}>

@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Target } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Match {
   id: string;
@@ -48,7 +48,12 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
           team1_name: match.team1?.name || 'Team 1',
           team2_name: match.team2?.name || 'Team 2'
         }))
-        .filter(match => match.id && String(match.id).trim() !== '');
+        .filter(match => 
+          match.id && 
+          String(match.id).trim() !== '' && 
+          match.team1_name && 
+          match.team2_name
+        );
       
       console.log('MatchSelector: Valid matches after filtering:', transformedMatches.length);
       setMatches(transformedMatches);
@@ -90,21 +95,20 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
             <SelectValue placeholder="Select a match to score" />
           </SelectTrigger>
           <SelectContent>
-            {matches.map((match) => {
-              const safeMatchId = ensureValidSelectItemValue(match.id, `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-              
-              // Skip if somehow still empty
-              if (!safeMatchId || safeMatchId.trim() === '') {
-                console.error('MatchSelector: Skipping match with empty ID:', match);
-                return null;
-              }
-              
-              return (
-                <SelectItem key={match.id} value={safeMatchId}>
-                  {match.team1_name} vs {match.team2_name} - {new Date(match.match_date).toLocaleDateString()}
-                </SelectItem>
-              );
-            })}
+            {matches.length === 0 ? (
+              <SelectItem value="no-matches-available">No matches available</SelectItem>
+            ) : (
+              matches.map((match) => {
+                // Ensure we always have a valid, non-empty value
+                const matchValue = match.id || `fallback_${Date.now()}_${Math.random()}`;
+                
+                return (
+                  <SelectItem key={match.id} value={matchValue}>
+                    {match.team1_name} vs {match.team2_name} - {new Date(match.match_date).toLocaleDateString()}
+                  </SelectItem>
+                );
+              })
+            )}
           </SelectContent>
         </Select>
       </CardContent>
