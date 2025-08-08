@@ -14,6 +14,7 @@ import {
   Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const LiveDashboard = () => {
   const [liveMatches, setLiveMatches] = useState([]);
@@ -25,16 +26,34 @@ const LiveDashboard = () => {
     upcomingToday: 0
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
+    // Set up real-time subscription for live matches
+    const channel = supabase
+      .channel('dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches'
+        },
+        () => fetchDashboardData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       
-      // Fetch live matches
+      // Fetch live matches with team details
       const { data: liveData, error: liveError } = await supabase
         .from('matches')
         .select(`
@@ -101,136 +120,162 @@ const LiveDashboard = () => {
     }
   };
 
+  const handleWatchLive = (matchId) => {
+    navigate(`/live-scoring?match=${matchId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-primary neon-glow">Loading dashboard...</div>
+        <div className="text-lg text-primary neon-glow animate-pulse">Loading dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary neon-glow mb-2">Dashboard</h1>
-        <p className="text-accent">Live cricket matches and statistics</p>
+        <h1 className="text-4xl font-bold text-primary neon-glow mb-2">Live Cricket Dashboard</h1>
+        <p className="text-accent text-lg">Real-time match updates and statistics</p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="neon-card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card className="neon-card border-primary/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-accent flex items-center gap-2">
-              <Activity className="w-4 h-4 text-warning" />
+              <Activity className="w-5 h-5 text-warning" />
               Live Matches
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning neon-glow">{stats.liveMatches}</div>
+            <div className="text-3xl font-bold text-warning neon-glow">{stats.liveMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">Currently in progress</p>
           </CardContent>
         </Card>
 
-        <Card className="neon-card">
+        <Card className="neon-card border-success/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-accent flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-success" />
+              <Trophy className="w-5 h-5 text-success" />
               Completed Today
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{stats.completedToday}</div>
+            <div className="text-3xl font-bold text-success neon-glow">{stats.completedToday}</div>
+            <p className="text-xs text-muted-foreground mt-1">Finished matches</p>
           </CardContent>
         </Card>
 
-        <Card className="neon-card">
+        <Card className="neon-card border-primary/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-accent flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
+              <Clock className="w-5 h-5 text-primary" />
               Upcoming Today
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.upcomingToday}</div>
+            <div className="text-3xl font-bold text-primary neon-glow">{stats.upcomingToday}</div>
+            <p className="text-xs text-muted-foreground mt-1">Scheduled matches</p>
           </CardContent>
         </Card>
 
-        <Card className="neon-card">
+        <Card className="neon-card border-accent/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-accent flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-accent" />
+              <Calendar className="w-5 h-5 text-accent" />
               Total Matches
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{stats.totalMatches}</div>
+            <div className="text-3xl font-bold text-foreground neon-glow">{stats.totalMatches}</div>
+            <p className="text-xs text-muted-foreground mt-1">All time</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Live Matches */}
+      {/* Live Matches Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-primary neon-glow mb-4 flex items-center gap-2">
-          <Play className="w-5 h-5 text-warning" />
-          Live Matches
+        <h2 className="text-2xl font-bold text-primary neon-glow mb-6 flex items-center gap-3">
+          <Play className="w-6 h-6 text-warning" />
+          Live Matches ({stats.liveMatches})
         </h2>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           {liveMatches.length === 0 ? (
             <Card className="neon-card">
-              <CardContent className="p-6 text-center">
-                <Play className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-primary mb-2">No Live Matches</h3>
-                <p className="text-muted-foreground">There are currently no live matches in progress.</p>
+              <CardContent className="p-8 text-center">
+                <Play className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-primary mb-2">No Live Matches</h3>
+                <p className="text-muted-foreground">There are currently no matches in progress.</p>
+                <Button 
+                  onClick={() => navigate('/create-match')}
+                  className="mt-4 bg-primary hover:bg-primary/90 neon-glow"
+                >
+                  Create New Match
+                </Button>
               </CardContent>
             </Card>
           ) : (
             liveMatches.map((match) => (
-              <Card key={match.id} className="neon-card border-warning/30">
+              <Card key={match.id} className="neon-card border-warning/50 shadow-lg shadow-warning/20">
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-2">
-                      <Badge className="cricket-warning neon-glow animate-pulse">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-warning/20 text-warning border-warning neon-glow animate-pulse px-3 py-1">
+                        <Activity className="w-3 h-3 mr-1" />
                         LIVE
                       </Badge>
-                      <span className="text-sm text-accent">{match.venue} • {match.format}</span>
+                      <div className="text-sm text-accent">
+                        {match.venue} • {match.format} • {match.overs} overs
+                      </div>
                     </div>
-                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">
+                    <Button 
+                      onClick={() => handleWatchLive(match.id)}
+                      className="bg-primary hover:bg-primary/90 neon-glow"
+                      size="sm"
+                    >
                       Watch Live
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold text-lg text-foreground">{match.team1?.name || 'Team 1'}</span>
+                        <span className="font-bold text-xl text-foreground">{match.team1?.name || 'Team 1'}</span>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary neon-glow">
+                          <div className="text-3xl font-bold text-primary neon-glow">
                             {match.team1_score || '0/0'}
                           </div>
-                          <div className="text-sm text-accent">({match.team1_overs || '0.0'} overs)</div>
+                          <div className="text-sm text-accent">({match.team1_overs || '0.0'} ov)</div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold text-lg text-foreground">{match.team2?.name || 'Team 2'}</span>
+                        <span className="font-bold text-xl text-foreground">{match.team2?.name || 'Team 2'}</span>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary neon-glow">
+                          <div className="text-3xl font-bold text-primary neon-glow">
                             {match.team2_score || '0/0'}
                           </div>
-                          <div className="text-sm text-accent">({match.team2_overs || '0.0'} overs)</div>
+                          <div className="text-sm text-accent">({match.team2_overs || '0.0'} ov)</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex justify-between text-sm text-accent">
-                      <span>Match: {match.format} • {match.venue}</span>
-                      <span>Tournament: {match.tournament || 'Friendly'}</span>
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <div className="flex justify-between items-center text-sm text-accent">
+                      <span>Format: {match.format} • Venue: {match.venue}</span>
+                      <span>Tournament: {match.tournament || 'Friendly Match'}</span>
                     </div>
+                    {match.result && (
+                      <div className="mt-2 text-sm font-medium text-success">
+                        Result: {match.result}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -239,27 +284,27 @@ const LiveDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Matches */}
+      {/* Recent Results */}
       <div>
-        <h2 className="text-xl font-semibold text-primary neon-glow mb-4 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-success" />
+        <h2 className="text-2xl font-bold text-primary neon-glow mb-6 flex items-center gap-3">
+          <Trophy className="w-6 h-6 text-success" />
           Recent Results
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {recentMatches.length === 0 ? (
-            <Card className="neon-card">
-              <CardContent className="p-6 text-center">
-                <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-primary mb-2">No Recent Matches</h3>
+            <Card className="neon-card col-span-full">
+              <CardContent className="p-8 text-center">
+                <Trophy className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-primary mb-2">No Recent Matches</h3>
                 <p className="text-muted-foreground">No completed matches to display.</p>
               </CardContent>
             </Card>
           ) : (
             recentMatches.map((match) => (
-              <Card key={match.id} className="neon-card">
+              <Card key={match.id} className="neon-card border-success/30">
                 <CardContent className="p-4">
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <Badge variant="outline" className="text-success border-success">
                         Completed
@@ -279,8 +324,8 @@ const LiveDashboard = () => {
                     </div>
 
                     {match.result && (
-                      <div className="text-sm text-success font-medium">
-                        Result: {match.result}
+                      <div className="text-sm text-success font-medium border-t border-border pt-2">
+                        {match.result}
                       </div>
                     )}
                     

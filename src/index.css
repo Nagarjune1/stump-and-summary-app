@@ -3,96 +3,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Neon Blue Cricket App Theme */
+/* Enhanced Neon Blue Cricket App Theme */
 
 @layer base {
   :root {
-    /* Neon Blue Theme Colors */
-    --background: 218 40% 6%; /* #0A0F1E - Dark background */
-    --foreground: 193 100% 90%; /* Light text */
+    /* Neon Blue Theme Colors - Enhanced for better contrast */
+    --background: 218 40% 4%; /* #080C17 - Darker background */
+    --foreground: 193 100% 95%; /* #F0FDFF - Brighter text */
 
-    --card: 218 28% 9%; /* #101828 - Dark navy with transparency */
-    --card-foreground: 193 100% 90%;
+    --card: 218 28% 8%; /* #0F1419 - Dark navy card */
+    --card-foreground: 193 100% 95%;
 
-    --popover: 218 28% 9%;
-    --popover-foreground: 193 100% 90%;
+    --popover: 218 28% 8%;
+    --popover-foreground: 193 100% 95%;
 
-    --primary: 187 100% 50%; /* #00E5FF - Neon Blue */
-    --primary-foreground: 218 40% 6%;
+    --primary: 187 100% 55%; /* #00E5FF - Brighter Neon Blue */
+    --primary-foreground: 218 40% 4%;
 
-    --secondary: 218 28% 15%;
+    --secondary: 218 28% 12%;
     --secondary-foreground: 193 100% 90%;
 
-    --muted: 218 28% 12%;
-    --muted-foreground: 193 50% 70%;
+    --muted: 218 28% 10%;
+    --muted-foreground: 193 50% 75%;
 
-    --accent: 191 100% 50%; /* #00F6FF - Neon Cyan */
-    --accent-foreground: 218 40% 6%;
+    --accent: 191 100% 55%; /* #00F6FF - Brighter Neon Cyan */
+    --accent-foreground: 218 40% 4%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 193 100% 90%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 193 100% 95%;
 
-    --border: 218 28% 15%;
-    --input: 218 28% 12%;
-    --ring: 187 100% 50%;
+    --border: 218 28% 18%;
+    --input: 218 28% 10%;
+    --ring: 187 100% 55%;
 
-    --success: 150 100% 50%; /* #00FF9C - Neon Green */
-    --success-foreground: 218 40% 6%;
+    --success: 150 100% 55%; /* #00FF9C - Brighter Neon Green */
+    --success-foreground: 218 40% 4%;
 
-    --warning: 20 100% 58%; /* #FF7E29 - Neon Orange */
-    --warning-foreground: 218 40% 6%;
+    --warning: 20 100% 65%; /* #FF7E29 - Brighter Neon Orange */
+    --warning-foreground: 218 40% 4%;
 
-    --header: 218 40% 6%;
-    --header-foreground: 187 100% 50%;
+    --header: 218 40% 4%;
+    --header-foreground: 187 100% 55%;
 
     --radius: 0.75rem;
 
     /* Sidebar colors for neon theme */
-    --sidebar-background: 218 28% 8%;
-    --sidebar-foreground: 193 100% 90%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 218 40% 6%;
-    --sidebar-accent: 191 100% 50%;
-    --sidebar-accent-foreground: 218 40% 6%;
-    --sidebar-border: 218 28% 15%;
-    --sidebar-ring: 187 100% 50%;
+    --sidebar-background: 218 28% 6%;
+    --sidebar-foreground: 193 100% 95%;
+    --sidebar-primary: 187 100% 55%;
+    --sidebar-primary-foreground: 218 40% 4%;
+    --sidebar-accent: 191 100% 55%;
+    --sidebar-accent-foreground: 218 40% 4%;
+    --sidebar-border: 218 28% 18%;
+    --sidebar-ring: 187 100% 55%;
   }
 
   .dark {
-    /* Same colors for dark mode since we're using a dark theme by default */
-    --background: 218 40% 6%;
-    --foreground: 193 100% 90%;
-    --card: 218 28% 9%;
-    --card-foreground: 193 100% 90%;
-    --popover: 218 28% 9%;
-    --popover-foreground: 193 100% 90%;
-    --primary: 187 100% 50%;
-    --primary-foreground: 218 40% 6%;
-    --secondary: 218 28% 15%;
+    /* Same enhanced colors for dark mode */
+    --background: 218 40% 4%;
+    --foreground: 193 100% 95%;
+    --card: 218 28% 8%;
+    --card-foreground: 193 100% 95%;
+    --popover: 218 28% 8%;
+    --popover-foreground: 193 100% 95%;
+    --primary: 187 100% 55%;
+    --primary-foreground: 218 40% 4%;
+    --secondary: 218 28% 12%;
     --secondary-foreground: 193 100% 90%;
-    --muted: 218 28% 12%;
-    --muted-foreground: 193 50% 70%;
-    --accent: 191 100% 50%;
-    --accent-foreground: 218 40% 6%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 193 100% 90%;
-    --border: 218 28% 15%;
-    --input: 218 28% 12%;
-    --ring: 187 100% 50%;
-    --success: 150 100% 50%;
-    --success-foreground: 218 40% 6%;
-    --warning: 20 100% 58%;
-    --warning-foreground: 218 40% 6%;
-    --header: 218 40% 6%;
-    --header-foreground: 187 100% 50%;
-    --sidebar-background: 218 28% 8%;
-    --sidebar-foreground: 193 100% 90%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 218 40% 6%;
-    --sidebar-accent: 191 100% 50%;
-    --sidebar-accent-foreground: 218 40% 6%;
-    --sidebar-border: 218 28% 15%;
-    --sidebar-ring: 187 100% 50%;
+    --muted: 218 28% 10%;
+    --muted-foreground: 193 50% 75%;
+    --accent: 191 100% 55%;
+    --accent-foreground: 218 40% 4%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 193 100% 95%;
+    --border: 218 28% 18%;
+    --input: 218 28% 10%;
+    --ring: 187 100% 55%;
+    --success: 150 100% 55%;
+    --success-foreground: 218 40% 4%;
+    --warning: 20 100% 65%;
+    --warning-foreground: 218 40% 4%;
+    --header: 218 40% 4%;
+    --header-foreground: 187 100% 55%;
+    --sidebar-background: 218 28% 6%;
+    --sidebar-foreground: 193 100% 95%;
+    --sidebar-primary: 187 100% 55%;
+    --sidebar-primary-foreground: 218 40% 4%;
+    --sidebar-accent: 191 100% 55%;
+    --sidebar-accent-foreground: 218 40% 4%;
+    --sidebar-border: 218 28% 18%;
+    --sidebar-ring: 187 100% 55%;
   }
 }
 
@@ -102,22 +102,65 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
   }
 
-  /* Neon glow effects */
+  /* Enhanced neon glow effects */
   .neon-glow {
-    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+    text-shadow: 
+      0 0 5px currentColor, 
+      0 0 10px currentColor, 
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      text-shadow: 
+        0 0 5px currentColor, 
+        0 0 10px currentColor, 
+        0 0 15px currentColor;
+    }
+    to {
+      text-shadow: 
+        0 0 10px currentColor, 
+        0 0 15px currentColor, 
+        0 0 20px currentColor,
+        0 0 25px currentColor;
+    }
   }
 
   .neon-border {
-    box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+    box-shadow: 
+      0 0 5px hsl(var(--primary)), 
+      0 0 10px hsl(var(--primary)), 
+      0 0 15px hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.5);
   }
 
   .neon-card {
-    background: hsl(var(--card) / 0.85);
+    background: hsl(var(--card) / 0.9);
     border: 1px solid hsl(var(--primary) / 0.3);
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.1),
+      0 4px 20px hsl(var(--background) / 0.5);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .neon-card:hover {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 
+      0 0 15px hsl(var(--primary) / 0.2),
+      0 8px 30px hsl(var(--background) / 0.7);
+  }
+
+  /* Enhanced contrast for better readability */
+  .text-contrast {
+    color: hsl(var(--foreground));
+    text-shadow: 0 1px 2px hsl(var(--background) / 0.8);
   }
 
   /* Cricket-specific utility classes */
@@ -127,17 +170,116 @@
 
   .cricket-success {
     @apply bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))];
+    box-shadow: 0 0 10px hsl(var(--success) / 0.3);
   }
 
   .cricket-warning {
     @apply bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))];
+    box-shadow: 0 0 10px hsl(var(--warning) / 0.3);
   }
 
   .cricket-primary {
     @apply bg-primary text-primary-foreground;
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
   }
 
   .cricket-accent {
     @apply bg-accent text-accent-foreground;
+    box-shadow: 0 0 10px hsl(var(--accent) / 0.3);
+  }
+
+  /* Enhanced button styles */
+  .btn-neon {
+    @apply relative overflow-hidden;
+    background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
+    border: 1px solid hsl(var(--primary) / 0.5);
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.3),
+      inset 0 0 10px hsl(var(--primary) / 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .btn-neon:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 0 20px hsl(var(--primary) / 0.5),
+      0 10px 30px hsl(var(--primary) / 0.2),
+      inset 0 0 15px hsl(var(--primary) / 0.2);
+  }
+
+  /* Enhanced table styling */
+  .neon-table {
+    @apply bg-card/50 backdrop-blur;
+    border: 1px solid hsl(var(--border));
+  }
+
+  .neon-table th {
+    @apply bg-primary/10 text-primary font-bold;
+    border-bottom: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  .neon-table td {
+    @apply text-foreground;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .neon-table tr:hover {
+    @apply bg-primary/5;
+  }
+
+  /* Enhanced form elements */
+  .neon-input {
+    @apply bg-input border-border text-foreground;
+    border: 1px solid hsl(var(--border));
+    transition: all 0.3s ease;
+  }
+
+  .neon-input:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  }
+
+  .neon-select {
+    @apply bg-input border-border text-foreground;
+    border: 1px solid hsl(var(--border));
+  }
+
+  .neon-select:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  }
+
+  /* Enhanced scroll styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.7);
+  }
+
+  /* Loading animation */
+  .loading-glow {
+    animation: loading-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes loading-pulse {
+    0%, 100% {
+      opacity: 1;
+      text-shadow: 0 0 10px currentColor;
+    }
+    50% {
+      opacity: 0.5;
+      text-shadow: 0 0 5px currentColor;
+    }
   }
 }

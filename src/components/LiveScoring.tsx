@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,9 @@ import PlayerSelection from "./scoring/PlayerSelection";
 import ScoringControls from "./scoring/ScoringControls";
 import ScoreDisplay from "./scoring/ScoreDisplay";
 import ScoringRuleEngine from "./scoring/ScoringRuleEngine";
+import BowlerChangeModal from "./scoring/BowlerChangeModal";
+import NewBatsmanModal from "./scoring/NewBatsmanModal";
+import WicketSelector from "./WicketSelector";
 import { validatePlayer, formatOvers } from "@/utils/scoringUtils";
 
 interface Match {
@@ -101,6 +103,10 @@ const LiveScoring = () => {
   const [matchEnded, setMatchEnded] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<'match-selection' | 'toss' | 'player-selection' | 'match-setup' | 'scoring'>('match-selection');
   const [isProcessingScore, setIsProcessingScore] = useState<boolean>(false);
+  const [showBowlerChangeModal, setShowBowlerChangeModal] = useState(false);
+  const [showNewBatsmanModal, setShowNewBatsmanModal] = useState(false);
+  const [showWicketModal, setShowWicketModal] = useState(false);
+  const [wicketDetails, setWicketDetails] = useState(null);
 
   useEffect(() => {
     if (selectedMatch) {
@@ -276,6 +282,7 @@ const LiveScoring = () => {
 
   const checkInningsEnd = () => {
     const totalOvers = matchSetup?.overs || 20;
+    const currentTeamScore = teamInnings[currentInnings - 1];
     
     // Check if overs are completed
     if (currentOver >= totalOvers) {
@@ -285,10 +292,20 @@ const LiveScoring = () => {
     }
 
     // Check if all wickets are down
-    if (teamInnings[currentInnings - 1].totalWickets >= 10) {
+    if (currentTeamScore.totalWickets >= 10) {
       console.log('Innings ended - all out');
       handleInningsEnd('all_out');
       return true;
+    }
+
+    // Check if target is achieved in 2nd innings
+    if (currentInnings === 2 && teamInnings[0]) {
+      const target = teamInnings[0].totalRuns + 1;
+      if (currentTeamScore.totalRuns >= target) {
+        console.log('Innings ended - target achieved');
+        handleInningsEnd('target_achieved');
+        return true;
+      }
     }
 
     return false;
@@ -344,7 +361,14 @@ const LiveScoring = () => {
       switchStrike();
     }
     
-    setTimeout(() => setIsProcessingScore(false), 100);
+    // Check if innings ends after this ball
+    setTimeout(() => {
+      if (checkInningsEnd()) {
+        setIsProcessingScore(false);
+        return;
+      }
+      setIsProcessingScore(false);
+    }, 100);
   };
 
   const handleWicket = (dismissalType: string) => {
@@ -355,8 +379,11 @@ const LiveScoring = () => {
     setIsProcessingScore(true);
     console.log(`Wicket taken: ${dismissalType}`);
 
+    const dismissedBatsman = currentBatsmen[strikeBatsmanIndex];
     const updatedBatsmen = [...currentBatsmen];
     updatedBatsmen[strikeBatsmanIndex].balls += 1;
+    updatedBatsmen[strikeBatsmanIndex].isOut = true;
+    updatedBatsmen[strikeBatsmanIndex].dismissalType = dismissalType;
     setCurrentBatsmen(updatedBatsmen);
 
     const updatedTeamInnings = [...teamInnings];
@@ -384,16 +411,32 @@ const LiveScoring = () => {
       return newBallInOver;
     });
 
+    // Set wicket details for new batsman modal
+    setWicketDetails({
+      dismissedPlayer: dismissedBatsman,
+      dismissalType: dismissalType,
+    });
+
     toast({
       title: "Wicket!",
-      description: `${updatedBatsmen[strikeBatsmanIndex].name} is out (${dismissalType})`,
+      description: `${dismissedBatsman.name} is out (${dismissalType})`,
     });
 
     // Check if innings should end after wicket
     setTimeout(() => {
-      checkInningsEnd();
+      if (checkInningsEnd()) {
+        setIsProcessingScore(false);
+        return;
+      }
+      // Show new batsman modal if innings continues
+      setShowNewBatsmanModal(true);
       setIsProcessingScore(false);
-    }, 100);
+    }, 1000);
+  };
+
+  const handleWicketSelect = (dismissalDetails: string) => {
+    setShowWicketModal(false);
+    handleWicket(dismissalDetails);
   };
 
   const handleExtra = (extraType: string, runs: number = 1) => {
@@ -464,18 +507,23 @@ const LiveScoring = () => {
     
     toast({
       title: "Over Complete!",
-      description: `Over ${currentOver + 1} completed.`,
+      description: `Over ${currentOver + 1} completed. Select new bowler.`,
     });
 
-    // Check if innings should end after this over
-    setTimeout(() => checkInningsEnd(), 100);
+    // Show bowler change modal
+    setTimeout(() => {
+      if (!checkInningsEnd()) {
+        setShowBowlerChangeModal(true);
+      }
+    }, 1000);
   };
 
-  const handleBowlerChangeRequired = () => {
-    console.log('Bowler change required');
+  const handleBowlerChange = (newBowler: any) => {
+    setCurrentBowler(newBowler);
+    setShowBowlerChangeModal(false);
     toast({
-      title: "Bowler Change Required",
-      description: "Please select a new bowler for the next over.",
+      title: "Bowler Changed",
+      description: `${newBowler.name} is now bowling`,
     });
   };
 
@@ -607,6 +655,19 @@ const LiveScoring = () => {
     }
   };
 
+  const handleNewBatsman = (newBatsman: any) => {
+    const updatedBatsmen = [...currentBatsmen];
+    updatedBatsmen[strikeBatsmanIndex] = newBatsman;
+    setCurrentBatsmen(updatedBatsmen);
+    setShowNewBatsmanModal(false);
+    setWicketDetails(null);
+    
+    toast({
+      title: "New Batsman",
+      description: `${newBatsman.name} is now batting`,
+    });
+  };
+
   const renderContent = () => {
     switch (currentStep) {
       case 'match-selection':
@@ -641,76 +702,136 @@ const LiveScoring = () => {
         );
         
       case 'scoring':
+        const battingTeamPlayers = battingFirstTeam === 1 ? team1Players : team2Players;
+        const bowlingTeamPlayers = battingFirstTeam === 1 ? team2Players : team1Players;
+        
+        // Fix the team assignment based on current innings
+        const currentBattingTeamPlayers = currentInnings === 1 ? 
+          (battingFirstTeam === 1 ? team1Players : team2Players) :
+          (battingFirstTeam === 1 ? team2Players : team1Players);
+          
+        const currentBowlingTeamPlayers = currentInnings === 1 ? 
+          (battingFirstTeam === 1 ? team2Players : team1Players) :
+          (battingFirstTeam === 1 ? team1Players : team2Players);
+
         return (
-          <ScoringRuleEngine
-            currentOver={currentOver}
-            currentBall={currentBallInOver}
-            totalOvers={matchSetup?.overs || 20}
-            powerplayOvers={matchSetup?.powerplayOvers || 6}
-            wickets={teamInnings[currentInnings - 1]?.totalWickets || 0}
-            totalPlayers={11}
-            onBowlerChangeRequired={handleBowlerChangeRequired}
-            onInningsEnd={handleInningsEnd}
-            onPowerplayEnd={handlePowerplayEnd}
-          >
-            <div className="space-y-6">
-              <ScoreDisplay 
-                teamInnings={teamInnings}
-                currentInnings={currentInnings}
-                currentOver={currentOver}
-                currentBallInOver={currentBallInOver}
-                selectedMatch={selectedMatch}
-                currentBatsmen={currentBatsmen}
-                currentBowler={currentBowler}
-                strikeBatsmanIndex={strikeBatsmanIndex}
-                matchSetup={matchSetup}
-              />
-              
-              {!matchEnded && (
-                <>
-                  <PlayerSelection
-                    currentBatsmen={currentBatsmen}
-                    currentBowler={currentBowler}
-                    players={allPlayers}
-                    strikeBatsmanIndex={strikeBatsmanIndex}
-                    currentInnings={currentInnings}
-                    battingTeamId={getCurrentBattingTeamId()}
-                    bowlingTeamId={getCurrentBowlingTeamId()}
-                    onUpdateBatsman={handleUpdateBatsman}
-                    onUpdateBowler={handleUpdateBowler}
-                  />
-                  
-                  <ScoringControls
-                    onScore={handleScore}
-                    onWicket={handleWicket}
-                    onExtra={handleExtra}
-                    onBoundary={handleBoundary}
-                    onUndoLastBall={() => {}}
-                    isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
-                    currentOver={currentOver}
-                    currentBall={currentBallInOver}
-                    totalOvers={matchSetup?.overs || 20}
-                    powerplayOvers={matchSetup?.powerplayOvers || 6}
-                    isPowerplay={currentOver < (matchSetup?.powerplayOvers || 6)}
-                    isFreehit={false}
-                  />
-                </>
-              )}
-              
-              {matchEnded && (
-                <div className="text-center py-8">
-                  <h2 className="text-2xl font-bold text-green-600 mb-4">Match Ended</h2>
-                  <p className="text-gray-600">
-                    Final Scores:<br/>
-                    {teamInnings[0]?.teamName}: {teamInnings[0]?.totalRuns}/{teamInnings[0]?.totalWickets} 
-                    ({formatOvers(teamInnings[0]?.overs || 0, teamInnings[0]?.balls || 0)} overs)<br/>
-                    {teamInnings[1]?.teamName}: {teamInnings[1]?.totalRuns}/{teamInnings[1]?.totalWickets} 
-                    ({formatOvers(teamInnings[1]?.overs || 0, teamInnings[1]?.balls || 0)} overs)
-                  </p>
-                </div>
-              )}
-            </div>
-          </ScoringRuleEngine>
+          <>
+            <ScoringRuleEngine
+              currentOver={currentOver}
+              currentBall={currentBallInOver}
+              totalOvers={matchSetup?.overs || 20}
+              powerplayOvers={matchSetup?.powerplayOvers || 6}
+              wickets={teamInnings[currentInnings - 1]?.totalWickets || 0}
+              totalPlayers={11}
+              onBowlerChangeRequired={() => setShowBowlerChangeModal(true)}
+              onInningsEnd={handleInningsEnd}
+              onPowerplayEnd={handlePowerplayEnd}
+            >
+              <div className="space-y-6">
+                <ScoreDisplay 
+                  teamInnings={teamInnings}
+                  currentInnings={currentInnings}
+                  currentOver={currentOver}
+                  currentBallInOver={currentBallInOver}
+                  selectedMatch={selectedMatch}
+                  currentBatsmen={currentBatsmen}
+                  currentBowler={currentBowler}
+                  strikeBatsmanIndex={strikeBatsmanIndex}
+                  matchSetup={matchSetup}
+                />
+                
+                {!matchEnded && (
+                  <>
+                    <PlayerSelection
+                      currentBatsmen={currentBatsmen}
+                      currentBowler={currentBowler}
+                      players={allPlayers}
+                      strikeBatsmanIndex={strikeBatsmanIndex}
+                      currentInnings={currentInnings}
+                      battingTeamId={getCurrentBattingTeamId()}
+                      bowlingTeamId={getCurrentBowlingTeamId()}
+                      onUpdateBatsman={handleUpdateBatsman}
+                      onUpdateBowler={handleUpdateBowler}
+                    />
+                    
+                    <ScoringControls
+                      onScore={handleScore}
+                      onWicket={() => setShowWicketModal(true)}
+                      onExtra={handleExtra}
+                      onBoundary={handleBoundary}
+                      onUndoLastBall={() => {}}
+                      isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
+                      currentOver={currentOver}
+                      currentBall={currentBallInOver}
+                      totalOvers={matchSetup?.overs || 20}
+                      powerplayOvers={matchSetup?.powerplayOvers || 6}
+                      isPowerplay={currentOver < (matchSetup?.powerplayOvers || 6)}
+                      isFreehit={false}
+                    />
+                  </>
+                )}
+                
+                {matchEnded && (
+                  <div className="text-center py-8 bg-card/50 rounded-lg border border-primary/30">
+                    <h2 className="text-3xl font-bold text-success neon-glow mb-4">Match Ended</h2>
+                    <div className="space-y-2 text-foreground">
+                      <p className="text-lg">
+                        <strong>{teamInnings[0]?.teamName}:</strong> {teamInnings[0]?.totalRuns}/{teamInnings[0]?.totalWickets} 
+                        ({formatOvers(teamInnings[0]?.overs || 0, teamInnings[0]?.balls || 0)} overs)
+                      </p>
+                      <p className="text-lg">
+                        <strong>{teamInnings[1]?.teamName}:</strong> {teamInnings[1]?.totalRuns}/{teamInnings[1]?.totalWickets} 
+                        ({formatOvers(teamInnings[1]?.overs || 0, teamInnings[1]?.balls || 0)} overs)
+                      </p>
+                      {teamInnings[1] && teamInnings[0] && (
+                        <div className="mt-4 p-4 bg-success/10 border border-success/30 rounded">
+                          <p className="text-success font-semibold text-lg">
+                            {teamInnings[1].totalRuns > teamInnings[0].totalRuns 
+                              ? `${teamInnings[1].teamName} won by ${10 - teamInnings[1].totalWickets} wickets`
+                              : teamInnings[0].totalRuns > teamInnings[1].totalRuns
+                              ? `${teamInnings[0].teamName} won by ${teamInnings[0].totalRuns - teamInnings[1].totalRuns} runs`
+                              : "Match Tied"
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScoringRuleEngine>
+
+            {/* Modals */}
+            <BowlerChangeModal
+              open={showBowlerChangeModal}
+              onClose={() => setShowBowlerChangeModal(false)}
+              onBowlerSelect={handleBowlerChange}
+              bowlingTeamPlayers={currentBowlingTeamPlayers}
+              currentBowler={currentBowler}
+              currentOver={currentOver}
+            />
+
+            <NewBatsmanModal
+              open={showNewBatsmanModal}
+              onClose={() => {
+                setShowNewBatsmanModal(false);
+                setWicketDetails(null);
+              }}
+              onBatsmanSelect={handleNewBatsman}
+              battingTeamPlayers={currentBattingTeamPlayers}
+              currentBatsmen={currentBatsmen}
+              wicketDetails={wicketDetails}
+            />
+
+            <WicketSelector
+              open={showWicketModal}
+              onClose={() => setShowWicketModal(false)}
+              onWicketSelect={handleWicketSelect}
+              fieldingPlayers={currentBowlingTeamPlayers}
+              currentBowler={currentBowler}
+              currentBatsman={currentBatsmen[strikeBatsmanIndex]}
+            />
+          </>
         );
         
       default:
@@ -719,17 +840,17 @@ const LiveScoring = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <Card>
+    <div className="min-h-screen bg-background">
+      <Card className="m-4 neon-card border-primary/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-2xl font-bold">Live Cricket Scoring</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary neon-glow">Live Cricket Scoring</CardTitle>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="border-primary/30 text-accent">
               <Clock className="mr-2 h-4 w-4" />
               {selectedMatch ? `${selectedMatch.team1_name} vs ${selectedMatch.team2_name}` : 'No Match Selected'}
             </Badge>
             {currentStep === 'scoring' && (
-              <Badge variant="outline">
+              <Badge variant="outline" className="border-warning text-warning">
                 Innings {currentInnings} {matchEnded ? '(Match Ended)' : ''}
               </Badge>
             )}
