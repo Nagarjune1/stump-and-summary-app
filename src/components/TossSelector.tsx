@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const TossSelector = ({ 
   match,
@@ -65,9 +66,9 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Create safe team values - ensure they're never empty
-  const team1Value = match.team1?.name || `team1_${match.id}` || 'team1_fallback';
-  const team2Value = match.team2?.name || `team2_${match.id}` || 'team2_fallback';
+  // Create safe team values using the utility function - ensure they're never empty
+  const team1Value = ensureValidSelectItemValue(match.team1?.name || `team1_${match.id}`, 'team1');
+  const team2Value = ensureValidSelectItemValue(match.team2?.name || `team2_${match.id}`, 'team2');
 
   console.log('TossSelector: Team values:', { team1Value, team2Value });
 
@@ -101,10 +102,10 @@ const TossSelector = ({
               <SelectValue placeholder="Select decision" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bat">
+              <SelectItem value={ensureValidSelectItemValue('bat', 'bat_decision')}>
                 Chose to bat first
               </SelectItem>
-              <SelectItem value="bowl">
+              <SelectItem value={ensureValidSelectItemValue('bowl', 'bowl_decision')}>
                 Chose to bowl first
               </SelectItem>
             </SelectContent>
