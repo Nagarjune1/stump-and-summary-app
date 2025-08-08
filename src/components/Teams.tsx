@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, Edit, Trash2, Users, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import TeamPlayers from "./TeamPlayers";
 
 interface Team {
   id: string;
@@ -27,6 +28,7 @@ const Teams = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   
   const [newTeam, setNewTeam] = useState({
     name: "",
@@ -207,10 +209,23 @@ const Teams = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleTeamPlayersClick = (team: Team) => {
+    setSelectedTeam(team);
+  };
+
+  if (selectedTeam) {
+    return (
+      <TeamPlayers 
+        team={selectedTeam} 
+        onBack={() => setSelectedTeam(null)} 
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Loading teams...</div>
+        <div className="text-lg text-primary neon-glow">Loading teams...</div>
       </div>
     );
   }
@@ -219,39 +234,41 @@ const Teams = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Teams Management</h2>
-          <p className="text-gray-600">Manage your cricket teams and their details</p>
+          <h2 className="text-2xl font-bold text-primary neon-glow">Teams Management</h2>
+          <p className="text-accent">Manage your cricket teams and their details</p>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="cricket-success neon-glow">
               <Plus className="w-4 h-4 mr-2" />
               Add Team
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="neon-card max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Team</DialogTitle>
+              <DialogTitle className="text-primary neon-glow">Add New Team</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="teamName">Team Name *</Label>
+                <Label htmlFor="teamName" className="text-foreground">Team Name *</Label>
                 <Input
                   id="teamName"
                   value={newTeam.name}
                   onChange={(e) => setNewTeam({...newTeam, name: e.target.value})}
                   placeholder="Enter team name"
+                  className="bg-input border-border text-foreground"
                 />
               </div>
               
               <div>
-                <Label htmlFor="teamCity">City</Label>
+                <Label htmlFor="teamCity" className="text-foreground">City</Label>
                 <Input
                   id="teamCity"
                   value={newTeam.city}
                   onChange={(e) => setNewTeam({...newTeam, city: e.target.value})}
                   placeholder="Enter city (optional)"
+                  className="bg-input border-border text-foreground"
                 />
               </div>
 
@@ -262,10 +279,11 @@ const Teams = () => {
                     setNewTeam({ name: "", city: "" });
                     setIsAddDialogOpen(false);
                   }}
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleAddTeam} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={handleAddTeam} className="cricket-success neon-glow">
                   Add Team
                 </Button>
               </div>
@@ -275,15 +293,15 @@ const Teams = () => {
       </div>
 
       {/* Search */}
-      <Card>
+      <Card className="neon-card">
         <CardContent className="pt-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-accent" />
             <Input
               placeholder="Search teams or cities..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-input border-border text-foreground"
             />
           </div>
         </CardContent>
@@ -291,11 +309,11 @@ const Teams = () => {
 
       {/* Teams List */}
       {filteredTeams.length === 0 ? (
-        <Card className="text-center py-12">
+        <Card className="neon-card text-center py-12">
           <CardContent>
-            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Teams Found</h3>
-            <p className="text-gray-600 mb-4">
+            <Users className="mx-auto h-12 w-12 text-accent mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-primary">No Teams Found</h3>
+            <p className="text-muted-foreground mb-4">
               {teams.length === 0 
                 ? "Get started by adding your first team" 
                 : "No teams match your search criteria"}
@@ -303,7 +321,7 @@ const Teams = () => {
             {teams.length === 0 && (
               <Button 
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-green-600 hover:bg-green-700"
+                className="cricket-success neon-glow"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Your First Team
@@ -314,19 +332,19 @@ const Teams = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTeams.map((team) => (
-            <Card key={team.id} className="hover:shadow-lg transition-shadow">
+            <Card key={team.id} className="neon-card hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold">
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold neon-glow">
                         {team.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg">{team.name}</h3>
+                      <h3 className="font-semibold text-lg text-primary neon-glow">{team.name}</h3>
                       {team.city && (
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <div className="flex items-center gap-1 text-sm text-accent">
                           <MapPin className="w-3 h-3" />
                           {team.city}
                         </div>
@@ -339,6 +357,7 @@ const Teams = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => openEditDialog(team)}
+                      className="text-accent hover:bg-accent/10"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -346,7 +365,7 @@ const Teams = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteTeam(team)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -354,15 +373,18 @@ const Teams = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Players:</span>
-                    <Badge variant="outline">
+                  <div 
+                    className="flex justify-between items-center cursor-pointer hover:bg-muted/10 p-2 rounded transition-colors"
+                    onClick={() => handleTeamPlayersClick(team)}
+                  >
+                    <span className="text-muted-foreground">Players:</span>
+                    <Badge variant="outline" className="text-primary border-primary hover:bg-primary/10">
                       <Users className="w-3 h-3 mr-1" />
                       {team.playerCount || 0}
                     </Badge>
                   </div>
                   
-                  <div className="flex justify-between items-center text-sm text-gray-500">
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
                     <span>Created:</span>
                     <span>{new Date(team.created_at).toLocaleDateString()}</span>
                   </div>
@@ -375,29 +397,31 @@ const Teams = () => {
 
       {/* Edit Team Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="neon-card max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
+            <DialogTitle className="text-primary neon-glow">Edit Team</DialogTitle>
           </DialogHeader>
           {editingTeam && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="editTeamName">Team Name *</Label>
+                <Label htmlFor="editTeamName" className="text-foreground">Team Name *</Label>
                 <Input
                   id="editTeamName"
                   value={editingTeam.name}
                   onChange={(e) => setEditingTeam({...editingTeam, name: e.target.value})}
                   placeholder="Enter team name"
+                  className="bg-input border-border text-foreground"
                 />
               </div>
               
               <div>
-                <Label htmlFor="editTeamCity">City</Label>
+                <Label htmlFor="editTeamCity" className="text-foreground">City</Label>
                 <Input
                   id="editTeamCity"
                   value={editingTeam.city || ""}
                   onChange={(e) => setEditingTeam({...editingTeam, city: e.target.value})}
                   placeholder="Enter city (optional)"
+                  className="bg-input border-border text-foreground"
                 />
               </div>
 
@@ -408,10 +432,11 @@ const Teams = () => {
                     setEditingTeam(null);
                     setIsEditDialogOpen(false);
                   }}
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleEditTeam} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleEditTeam} className="cricket-primary neon-glow">
                   Update Team
                 </Button>
               </div>
@@ -422,7 +447,7 @@ const Teams = () => {
 
       {/* Summary */}
       {teams.length > 0 && (
-        <div className="text-sm text-gray-500 text-center pt-4 border-t">
+        <div className="text-sm text-muted-foreground text-center pt-4 border-t border-border">
           Total: {teams.length} teams • Showing: {filteredTeams.length} teams
         </div>
       )}

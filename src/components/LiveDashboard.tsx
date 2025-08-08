@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,57 +13,101 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const LiveDashboard = () => {
-  // Mock data for live matches and statistics
-  const liveMatches = [
-    {
-      id: 1,
-      team1: { name: 'Mumbai Indians', code: 'MI', score: 180, wickets: 4, overs: 18.2 },
-      team2: { name: 'Chennai Super Kings', code: 'CSK', score: 145, wickets: 6, overs: 16.0 },
-      status: 'LIVE',
-      venue: 'Wankhede Stadium',
-      format: 'T20',
-      currentBatsman: 'MS Dhoni',
-      currentBowler: 'Jasprit Bumrah'
-    },
-    {
-      id: 2,
-      team1: { name: 'Royal Challengers', code: 'RCB', score: 165, wickets: 8, overs: 20.0 },
-      team2: { name: 'Kolkata Knight Riders', code: 'KKR', score: 89, wickets: 3, overs: 12.1 },
-      status: 'LIVE',
-      venue: 'Eden Gardens',
-      format: 'T20',
-      currentBatsman: 'Andre Russell',
-      currentBowler: 'Yuzvendra Chahal'
-    }
-  ];
+  const [liveMatches, setLiveMatches] = useState([]);
+  const [recentMatches, setRecentMatches] = useState([]);
+  const [stats, setStats] = useState({
+    totalMatches: 0,
+    liveMatches: 0,
+    completedToday: 0,
+    upcomingToday: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const recentMatches = [
-    {
-      id: 3,
-      team1: { name: 'Delhi Capitals', code: 'DC', score: 195, wickets: 5 },
-      team2: { name: 'Punjab Kings', code: 'PBKS', score: 178, wickets: 8 },
-      winner: 'Delhi Capitals',
-      venue: 'Arun Jaitley Stadium',
-      date: '2024-01-07'
-    },
-    {
-      id: 4,
-      team1: { name: 'Rajasthan Royals', code: 'RR', score: 156, wickets: 7 },
-      team2: { name: 'Sunrisers Hyderabad', code: 'SRH', score: 160, wickets: 4 },
-      winner: 'Sunrisers Hyderabad',
-      venue: 'Sawai Mansingh Stadium',
-      date: '2024-01-06'
-    }
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const stats = {
-    totalMatches: 156,
-    liveMatches: 2,
-    completedToday: 3,
-    upcomingToday: 4
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch live matches
+      const { data: liveData, error: liveError } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `)
+        .eq('status', 'live')
+        .order('created_at', { ascending: false });
+
+      if (liveError) throw liveError;
+
+      // Fetch recent completed matches
+      const { data: recentData, error: recentError } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          team1:teams!matches_team1_id_fkey(name),
+          team2:teams!matches_team2_id_fkey(name)
+        `)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (recentError) throw recentError;
+
+      // Fetch statistics
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { count: totalCount } = await supabase
+        .from('matches')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: liveCount } = await supabase
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'live');
+
+      const { count: completedTodayCount } = await supabase
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .eq('match_date', today);
+
+      const { count: upcomingTodayCount } = await supabase
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'upcoming')
+        .eq('match_date', today);
+
+      setLiveMatches(liveData || []);
+      setRecentMatches(recentData || []);
+      setStats({
+        totalMatches: totalCount || 0,
+        liveMatches: liveCount || 0,
+        completedToday: completedTodayCount || 0,
+        upcomingToday: upcomingTodayCount || 0
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-primary neon-glow">Loading dashboard...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -132,58 +176,66 @@ const LiveDashboard = () => {
         </h2>
         
         <div className="space-y-4">
-          {liveMatches.map((match) => (
-            <Card key={match.id} className="neon-card border-warning/30">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-warning text-warning-foreground neon-glow animate-pulse">
-                      LIVE
-                    </Badge>
-                    <span className="text-sm text-accent">{match.venue} • {match.format}</span>
-                  </div>
-                  <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">
-                    Watch Live
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-lg text-foreground">{match.team1.code}</span>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary neon-glow">
-                          {match.team1.score}/{match.team1.wickets}
-                        </div>
-                        <div className="text-sm text-accent">({match.team1.overs} overs)</div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">{match.team1.name}</div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-lg text-foreground">{match.team2.code}</span>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary neon-glow">
-                          {match.team2.score}/{match.team2.wickets}
-                        </div>
-                        <div className="text-sm text-accent">({match.team2.overs} overs)</div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">{match.team2.name}</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex justify-between text-sm text-accent">
-                    <span>Batting: {match.currentBatsman}</span>
-                    <span>Bowling: {match.currentBowler}</span>
-                  </div>
-                </div>
+          {liveMatches.length === 0 ? (
+            <Card className="neon-card">
+              <CardContent className="p-6 text-center">
+                <Play className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-primary mb-2">No Live Matches</h3>
+                <p className="text-muted-foreground">There are currently no live matches in progress.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            liveMatches.map((match) => (
+              <Card key={match.id} className="neon-card border-warning/30">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <Badge className="cricket-warning neon-glow animate-pulse">
+                        LIVE
+                      </Badge>
+                      <span className="text-sm text-accent">{match.venue} • {match.format}</span>
+                    </div>
+                    <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/10">
+                      Watch Live
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-lg text-foreground">{match.team1?.name || 'Team 1'}</span>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary neon-glow">
+                            {match.team1_score || '0/0'}
+                          </div>
+                          <div className="text-sm text-accent">({match.team1_overs || '0.0'} overs)</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-lg text-foreground">{match.team2?.name || 'Team 2'}</span>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary neon-glow">
+                            {match.team2_score || '0/0'}
+                          </div>
+                          <div className="text-sm text-accent">({match.team2_overs || '0.0'} overs)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex justify-between text-sm text-accent">
+                      <span>Match: {match.format} • {match.venue}</span>
+                      <span>Tournament: {match.tournament || 'Friendly'}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 
@@ -195,35 +247,51 @@ const LiveDashboard = () => {
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {recentMatches.map((match) => (
-            <Card key={match.id} className="neon-card">
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <Badge variant="outline" className="text-success border-success">
-                      Completed
-                    </Badge>
-                    <span className="text-sm text-accent">{match.date}</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{match.team1.code}</span>
-                      <span className="font-bold text-primary">{match.team1.score}/{match.team1.wickets}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{match.team2.code}</span>
-                      <span className="font-bold text-primary">{match.team2.score}/{match.team2.wickets}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-sm text-success font-medium">
-                    Winner: {match.winner}
-                  </div>
-                </div>
+          {recentMatches.length === 0 ? (
+            <Card className="neon-card">
+              <CardContent className="p-6 text-center">
+                <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-primary mb-2">No Recent Matches</h3>
+                <p className="text-muted-foreground">No completed matches to display.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            recentMatches.map((match) => (
+              <Card key={match.id} className="neon-card">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Badge variant="outline" className="text-success border-success">
+                        Completed
+                      </Badge>
+                      <span className="text-sm text-accent">{new Date(match.match_date).toLocaleDateString()}</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">{match.team1?.name || 'Team 1'}</span>
+                        <span className="font-bold text-primary">{match.team1_score || '0/0'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">{match.team2?.name || 'Team 2'}</span>
+                        <span className="font-bold text-primary">{match.team2_score || '0/0'}</span>
+                      </div>
+                    </div>
+
+                    {match.result && (
+                      <div className="text-sm text-success font-medium">
+                        Result: {match.result}
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-muted-foreground">
+                      {match.venue} • {match.format}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

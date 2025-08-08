@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, Calendar, MapPin, Trophy, IndianRupee, Plus, Shuffle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const TournamentRegistration = ({ tournaments, onUpdate }) => {
   const [teams, setTeams] = useState([]);
@@ -60,7 +61,11 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
   const handleRegisterTeam = async () => {
     if (!selectedTournament || !selectedTeam) {
-      toast.error('Please select both tournament and team');
+      toast({
+        title: "Error",
+        description: "Please select both tournament and team",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -76,14 +81,21 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
       if (error) {
         if (error.code === '23505') {
-          toast.error('Team is already registered for this tournament');
+          toast({
+            title: "Error",
+            description: "Team is already registered for this tournament",
+            variant: "destructive"
+          });
         } else {
           throw error;
         }
         return;
       }
 
-      toast.success('Team registered successfully!');
+      toast({
+        title: "Success!",
+        description: "Team registered successfully!",
+      });
       setShowRegistrationDialog(false);
       setSelectedTournament('');
       setSelectedTeam('');
@@ -91,7 +103,11 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
       onUpdate();
     } catch (error) {
       console.error('Error registering team:', error);
-      toast.error('Failed to register team');
+      toast({
+        title: "Error",
+        description: "Failed to register team",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -106,11 +122,18 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
       if (error) throw error;
 
-      toast.success(`Payment status updated to ${status}`);
+      toast({
+        title: "Success!",
+        description: `Payment status updated to ${status}`,
+      });
       fetchRegistrations();
     } catch (error) {
       console.error('Error updating payment status:', error);
-      toast.error('Failed to update payment status');
+      toast({
+        title: "Error",
+        description: "Failed to update payment status",
+        variant: "destructive"
+      });
     }
   };
 
@@ -131,7 +154,11 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
       if (teamsError) throw teamsError;
 
       if (registeredTeams.length < 2) {
-        toast.error('At least 2 paid teams required to generate fixtures');
+        toast({
+          title: "Error",
+          description: "At least 2 paid teams required to generate fixtures",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -182,12 +209,19 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
         }
       }
 
-      toast.success(`Generated ${fixtures.length} fixtures successfully!`);
+      toast({
+        title: "Success!",
+        description: `Generated ${fixtures.length} fixtures successfully!`,
+      });
       setShowFixtureDialog(false);
       
     } catch (error) {
       console.error('Error generating fixtures:', error);
-      toast.error('Failed to generate fixtures');
+      toast({
+        title: "Error",
+        description: "Failed to generate fixtures",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -195,10 +229,10 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
   const getPaymentStatusColor = (status) => {
     switch (status) {
-      case 'paid': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'refunded': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'paid': return 'cricket-success';
+      case 'pending': return 'cricket-warning';
+      case 'refunded': return 'bg-destructive';
+      default: return 'bg-muted';
     }
   };
 
@@ -214,35 +248,35 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Tournament Registration</h2>
-          <p className="text-gray-600">Manage team registrations for tournaments</p>
+          <h2 className="text-2xl font-bold text-primary neon-glow">Tournament Registration</h2>
+          <p className="text-accent">Manage team registrations for tournaments</p>
         </div>
         
         <div className="flex gap-2">
           <Dialog open={showRegistrationDialog} onOpenChange={setShowRegistrationDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="cricket-success neon-glow">
                 <Plus className="w-4 h-4 mr-2" />
                 Register Team
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="neon-card">
               <DialogHeader>
-                <DialogTitle>Register Team for Tournament</DialogTitle>
+                <DialogTitle className="text-primary neon-glow">Register Team for Tournament</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="tournament">Select Tournament</Label>
+                  <Label htmlFor="tournament" className="text-foreground">Select Tournament</Label>
                   <Select value={selectedTournament} onValueChange={setSelectedTournament}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-input border-border text-foreground">
                       <SelectValue placeholder="Choose tournament" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="neon-card">
                       {openTournaments.map((tournament) => (
-                        <SelectItem key={tournament.id} value={tournament.id}>
+                        <SelectItem key={tournament.id} value={ensureValidSelectItemValue(tournament.id, `tournament_${tournament.name}`)}>
                           {tournament.name}
                           {tournament.registration_fee > 0 && (
-                            <span className="text-sm text-gray-500 ml-2">
+                            <span className="text-sm text-muted-foreground ml-2">
                               (₹{tournament.registration_fee})
                             </span>
                           )}
@@ -253,16 +287,16 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
                 </div>
 
                 <div>
-                  <Label htmlFor="team">Select Team</Label>
+                  <Label htmlFor="team" className="text-foreground">Select Team</Label>
                   <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-input border-border text-foreground">
                       <SelectValue placeholder="Choose team" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="neon-card">
                       {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
+                        <SelectItem key={team.id} value={ensureValidSelectItemValue(team.id, `team_${team.name}`)}>
                           {team.name}
-                          {team.city && <span className="text-sm text-gray-500 ml-2">({team.city})</span>}
+                          {team.city && <span className="text-sm text-muted-foreground ml-2">({team.city})</span>}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -270,10 +304,10 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowRegistrationDialog(false)}>
+                  <Button variant="outline" onClick={() => setShowRegistrationDialog(false)} className="border-border text-foreground hover:bg-muted">
                     Cancel
                   </Button>
-                  <Button onClick={handleRegisterTeam} disabled={loading}>
+                  <Button onClick={handleRegisterTeam} disabled={loading} className="cricket-primary neon-glow">
                     {loading ? 'Registering...' : 'Register Team'}
                   </Button>
                 </div>
@@ -284,27 +318,27 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
       </div>
 
       {/* Open Tournaments */}
-      <Card>
+      <Card className="neon-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-primary neon-glow">
             <Trophy className="w-5 h-5" />
             Open for Registration
           </CardTitle>
         </CardHeader>
         <CardContent>
           {openTournaments.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No tournaments open for registration</p>
+            <p className="text-muted-foreground text-center py-4">No tournaments open for registration</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {openTournaments.map((tournament) => {
                 const registeredCount = getRegisteredTeamsCount(tournament.id);
                 
                 return (
-                  <Card key={tournament.id} className="border-green-200">
+                  <Card key={tournament.id} className="neon-card border-success/30">
                     <CardContent className="p-4">
                       <div className="space-y-2">
                         <div className="flex justify-between items-start">
-                          <h3 className="font-semibold">{tournament.name}</h3>
+                          <h3 className="font-semibold text-primary neon-glow">{tournament.name}</h3>
                           <Button
                             size="sm"
                             variant="outline"
@@ -313,26 +347,27 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
                               setShowFixtureDialog(true);
                             }}
                             disabled={registeredCount < 2}
+                            className="border-primary text-primary hover:bg-primary/10"
                           >
                             <Shuffle className="w-4 h-4 mr-1" />
                             Generate Fixtures
                           </Button>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-accent">
                           <Calendar className="w-4 h-4" />
                           <span>{new Date(tournament.start_date).toLocaleDateString()}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-accent">
                           <Users className="w-4 h-4" />
                           <span>{registeredCount}/{tournament.max_teams} teams registered</span>
                         </div>
                         {tournament.registration_fee > 0 && (
-                          <div className="flex items-center gap-2 text-sm text-green-600">
+                          <div className="flex items-center gap-2 text-sm text-success">
                             <IndianRupee className="w-4 h-4" />
                             <span>₹{tournament.registration_fee} registration fee</span>
                           </div>
                         )}
-                        <Badge className="bg-green-500 text-white">
+                        <Badge className="cricket-success neon-glow">
                           {tournament.status.replace('_', ' ').toUpperCase()}
                         </Badge>
                       </div>
@@ -346,27 +381,27 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
       </Card>
 
       {/* Recent Registrations */}
-      <Card>
+      <Card className="neon-card">
         <CardHeader>
-          <CardTitle>Recent Registrations</CardTitle>
+          <CardTitle className="text-primary neon-glow">Recent Registrations</CardTitle>
         </CardHeader>
         <CardContent>
           {registrations.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No registrations yet</p>
+            <p className="text-muted-foreground text-center py-4">No registrations yet</p>
           ) : (
             <div className="space-y-3">
               {registrations.slice(0, 10).map((registration) => (
-                <div key={registration.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={registration.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                   <div className="flex-1">
-                    <div className="font-medium">{registration.team?.name}</div>
-                    <div className="text-sm text-gray-600">{registration.tournament?.name}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="font-medium text-primary">{registration.team?.name}</div>
+                    <div className="text-sm text-accent">{registration.tournament?.name}</div>
+                    <div className="text-xs text-muted-foreground">
                       Registered: {new Date(registration.registration_date).toLocaleDateString()}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Badge className={`${getPaymentStatusColor(registration.payment_status)} text-white text-xs`}>
+                    <Badge className={`${getPaymentStatusColor(registration.payment_status)} text-xs neon-glow`}>
                       {registration.payment_status.toUpperCase()}
                     </Badge>
                     
@@ -374,7 +409,7 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
                       <Button
                         size="sm"
                         onClick={() => updatePaymentStatus(registration.id, 'paid')}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="cricket-success neon-glow"
                       >
                         Mark Paid
                       </Button>
@@ -385,6 +420,7 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
                         size="sm"
                         variant="outline"
                         onClick={() => updatePaymentStatus(registration.id, 'pending')}
+                        className="border-warning text-warning hover:bg-warning/10"
                       >
                         Mark Pending
                       </Button>
@@ -399,18 +435,18 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
       {/* Generate Fixtures Dialog */}
       <Dialog open={showFixtureDialog} onOpenChange={setShowFixtureDialog}>
-        <DialogContent>
+        <DialogContent className="neon-card">
           <DialogHeader>
-            <DialogTitle>Generate Tournament Fixtures</DialogTitle>
+            <DialogTitle className="text-primary neon-glow">Generate Tournament Fixtures</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-accent">
               This will generate fixtures for all paid teams in <strong>{selectedTournamentForFixture?.name}</strong>.
               Each team will play against every other team once (Round Robin format).
             </p>
             
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
+              <p className="text-sm text-primary">
                 <strong>{getRegisteredTeamsCount(selectedTournamentForFixture?.id || '')}</strong> teams 
                 are registered and paid. This will generate{' '}
                 <strong>
@@ -421,13 +457,13 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowFixtureDialog(false)}>
+              <Button variant="outline" onClick={() => setShowFixtureDialog(false)} className="border-border text-foreground hover:bg-muted">
                 Cancel
               </Button>
               <Button 
                 onClick={() => generateFixtures(selectedTournamentForFixture?.id)}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="cricket-primary neon-glow"
               >
                 {loading ? 'Generating...' : 'Generate Fixtures'}
               </Button>
