@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Target } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 
 const PlayerSelector = ({ 
   match, 
@@ -121,7 +121,7 @@ const PlayerSelector = ({
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
               battingPlayers.map((player, index) => {
-                const safePlayerId = ensureValidSelectItemValue(player.id, `batsman_${index}`);
+                const safePlayerId = guaranteedNonEmptyValue(player.id, `batsman_${index}`);
                 
                 return (
                   <div
@@ -170,7 +170,7 @@ const PlayerSelector = ({
               <p className="text-gray-500 text-center py-4">No valid players available</p>
             ) : (
               bowlingPlayers.map((player, index) => {
-                const safePlayerId = ensureValidSelectItemValue(player.id, `bowler_${index}`);
+                const safePlayerId = guaranteedNonEmptyValue(player.id, `bowler_${index}`);
                 
                 return (
                   <div

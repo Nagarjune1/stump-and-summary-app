@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ensureValidSelectValue, validatePlayer, calculateStrikeRate } from "@/utils/scoringUtils";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 
 interface Player {
   id: string;
@@ -66,14 +66,14 @@ const PlayerSelection = ({
   const renderPlayerSelectOptions = (playersList: Player[], fallbackMessage: string, fallbackPrefix: string) => {
     if (playersList.length === 0) {
       return (
-        <SelectItem value={ensureValidSelectItemValue('no-players', fallbackPrefix)}>
+        <SelectItem value={guaranteedNonEmptyValue('no-players', fallbackPrefix)}>
           {fallbackMessage}
         </SelectItem>
       );
     }
 
     return playersList.map((player, index) => {
-      const safeValue = ensureValidSelectItemValue(player.id, `${fallbackPrefix}_${index}`);
+      const safeValue = guaranteedNonEmptyValue(player.id, `${fallbackPrefix}_${index}`);
       return (
         <SelectItem key={`${fallbackPrefix}_${index}_${player.id}`} value={safeValue}>
           {player.name}
@@ -113,7 +113,7 @@ const PlayerSelection = ({
                 Batsman {index + 1} {index === strikeBatsmanIndex ? '(Striker) *' : '(Non-striker) *'}
               </Label>
               <Select 
-                value={batsman?.id ? ensureValidSelectValue(batsman.id, `batsman_${index}`) : ""} 
+                value={batsman?.id ? guaranteedNonEmptyValue(batsman.id, `batsman_${index}`) : ""} 
                 onValueChange={(value) => {
                   if (value && !value.startsWith('no_players') && !value.startsWith('no-players') && !value.startsWith('fallback')) {
                     onUpdateBatsman(index, 'id', value);
@@ -144,7 +144,7 @@ const PlayerSelection = ({
             Current Bowler *
           </Label>
           <Select 
-            value={currentBowler?.id ? ensureValidSelectValue(currentBowler.id, 'bowler') : ""} 
+            value={currentBowler?.id ? guaranteedNonEmptyValue(currentBowler.id, 'bowler') : ""} 
             onValueChange={(value) => {
               if (value && !value.startsWith('no_players') && !value.startsWith('no-players') && !value.startsWith('fallback')) {
                 onUpdateBowler('id', value);

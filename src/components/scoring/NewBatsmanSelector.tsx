@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 
 interface Player {
   id: string;
@@ -70,13 +70,13 @@ const NewBatsmanSelector = ({
               </SelectTrigger>
               <SelectContent>
                 {availablePlayers.length === 0 ? (
-                  <SelectItem value={ensureValidSelectItemValue('no-players-available', 'no_players')}>
+                  <SelectItem value={guaranteedNonEmptyValue('no-players-available', 'no_players')}>
                     No players available
                   </SelectItem>
                 ) : (
                   availablePlayers.map((player, index) => {
                     // Ensure we always have a valid, non-empty value
-                    const playerValue = ensureValidSelectItemValue(player.id, `player_${index}`);
+                    const playerValue = guaranteedNonEmptyValue(player.id, `player_${index}`);
                     
                     console.log('NewBatsmanSelector: Rendering player option:', { 
                       originalId: player.id,
