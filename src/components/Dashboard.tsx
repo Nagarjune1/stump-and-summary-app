@@ -1,23 +1,21 @@
+
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Drawer } from 'antd';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  PlayCircleOutlined as Play,
-  PlusCircleOutlined as Plus,
-  TrophyOutlined as Trophy,
-  TrendingUpOutlined as TrendingUp,
-  UserOutlined as User,
-  DownloadOutlined as Download,
-  BookOpenOutlined as BookOpen,
-  AppstoreOutlined as Appstore,
-  SettingOutlined as Setting,
-  NotificationOutlined as Notification,
-  AwardOutlined as Award,
-  UserOutlined,
-  MapPinOutlined as MapPin,
-  UsersOutlined as Users,
-} from '@ant-design/icons';
+  Menu,
+  Play,
+  Plus,
+  Trophy,
+  TrendingUp,
+  User,
+  Download,
+  BookOpen,
+  MapPin,
+  Users,
+  Award
+} from 'lucide-react';
 import LiveScoring from './LiveScoring';
 import CreateMatch from './CreateMatch';
 import EnhancedCricketScoreboard from './EnhancedCricketScoreboard';
@@ -29,13 +27,10 @@ import TournamentManagement from './TournamentManagement';
 import Teams from "./Teams";
 import PlayerProfiles from "./PlayerProfiles";
 
-const { Header, Sider, Content } = Layout;
-
 const Dashboard = () => {
-  const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('live-scoring');
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -50,16 +45,19 @@ const Dashboard = () => {
     };
   }, []);
 
-  const toggleSidebar = () => {
-    if (isMobileView) {
-      setIsDrawerVisible(!isDrawerVisible);
-    } else {
-      setCollapsed(!collapsed);
-    }
+  // Mock data for components that require props
+  const mockMatchData = {
+    team1: { name: 'Team A' },
+    team2: { name: 'Team B' },
+    venue: 'Cricket Stadium',
+    match_date: new Date().toISOString(),
+    format: 'T20'
   };
 
-  const hideDrawer = () => {
-    setIsDrawerVisible(false);
+  const mockScoreData = {
+    runs: 0,
+    wickets: 0,
+    overs: 0
   };
 
   const renderContent = () => {
@@ -69,7 +67,29 @@ const Dashboard = () => {
       case 'matches':
         return <CreateMatch />;
       case 'scoreboard':
-        return <EnhancedCricketScoreboard />;
+        return (
+          <EnhancedCricketScoreboard
+            matchData={mockMatchData}
+            score={mockScoreData}
+            currentBatsmen={[]}
+            currentBowler={null}
+            innings1Score={null}
+            currentInnings={1}
+            currentOver={0}
+            currentBall={0}
+            battingTeam={1}
+            target={0}
+            requiredRunRate={0}
+            currentRunRate={0}
+            recentBalls={[]}
+            team1Players={[]}
+            team2Players={[]}
+            fallOfWickets={[]}
+            bowlers={[]}
+            wickets={[]}
+            oversData={[]}
+          />
+        );
       case 'analytics':
         return <AdvancedAnalytics />;
       case 'tournaments':
@@ -81,7 +101,22 @@ const Dashboard = () => {
       case 'venues':
         return <VenueManagement />;
       case 'export':
-        return <EnhancedExportReport />;
+        return (
+          <EnhancedExportReport
+            matchData={mockMatchData}
+            scoreData={mockScoreData}
+            currentBatsmen={[]}
+            currentBowler={null}
+            innings1Score={null}
+            innings2Score={null}
+            currentInnings={1}
+            winner={null}
+            recentBalls={[]}
+            topPerformers={[]}
+            fallOfWickets={[]}
+            bowlingFigures={[]}
+          />
+        );
       case 'documentation':
         return <Documentation />;
       default:
@@ -89,10 +124,10 @@ const Dashboard = () => {
     }
   };
 
-  const handleMenuClick = (e) => {
-    setActiveTab(e.key);
+  const handleMenuClick = (tabId: string) => {
+    setActiveTab(tabId);
     if (isMobileView) {
-      hideDrawer();
+      setIsSheetOpen(false);
     }
   };
 
@@ -109,75 +144,71 @@ const Dashboard = () => {
     { id: 'documentation', label: 'Documentation', icon: BookOpen },
   ];
 
-  const menuItems = sidebarItems.map(item => ({
-    key: item.id,
-    icon: React.createElement(item.icon),
-    label: item.label,
-  }));
+  const SidebarContent = () => (
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold">Cricket Dashboard</h2>
+      </div>
+      <nav className="flex-1 p-2">
+        <div className="space-y-1">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.id}
+                variant={activeTab === item.id ? "default" : "ghost"}
+                className="w-full justify-start gap-3"
+                onClick={() => handleMenuClick(item.id)}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Button>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      {isMobileView ? (
-        <Drawer
-          title="Cricket Dashboard"
-          placement="left"
-          onClick={hideDrawer}
-          onClose={hideDrawer}
-          visible={isDrawerVisible}
-          style={{
-            textAlign: 'left',
-          }}
-        >
-          <Menu
-            theme="light"
-            mode="inline"
-            defaultSelectedKeys={[activeTab]}
-            selectedKeys={[activeTab]}
-            inlineCollapsed={false}
-            items={menuItems}
-            onClick={handleMenuClick}
-          />
-        </Drawer>
-      ) : (
-        <Sider trigger={null} collapsible collapsed={collapsed}>
-          <div className="demo-logo-vertical" style={{ color: 'white', textAlign: 'center', padding: '16px', fontSize: '20px' }}>
-            {!collapsed ? 'Cricket Dashboard' : 'CD'}
-          </div>
-          <Menu
-            theme="dark"
-            mode="inline"
-            defaultSelectedKeys={[activeTab]}
-            selectedKeys={[activeTab]}
-            items={menuItems}
-            onClick={handleMenuClick}
-          />
-        </Sider>
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      {!isMobileView && (
+        <div className="w-64 border-r bg-card">
+          <SidebarContent />
+        </div>
       )}
-      <Layout className="site-layout">
-        <Header
-          className="site-layout-background"
-          style={{
-            padding: '0 16px',
-            background: '#fff',
-          }}
-        >
-          {React.createElement(isMobileView ? (isDrawerVisible ? MenuUnfoldOutlined : MenuFoldOutlined) : (collapsed ? MenuUnfoldOutlined : MenuFoldOutlined), {
-            className: 'trigger',
-            onClick: toggleSidebar,
-          })}
-        </Header>
-        <Content
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            minHeight: 280,
-            background: '#fff',
-          }}
-        >
+
+      {/* Mobile Sheet */}
+      {isMobileView && (
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-50">
+              <Menu className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="h-16 border-b bg-card px-4 flex items-center">
+          {isMobileView && <div className="w-12" />} {/* Spacer for mobile menu button */}
+          <h1 className="text-xl font-semibold flex-1">
+            {sidebarItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
+          </h1>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-auto p-6">
           {renderContent()}
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+    </div>
   );
 };
 
