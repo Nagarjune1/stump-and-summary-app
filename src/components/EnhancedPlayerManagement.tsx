@@ -162,7 +162,7 @@ const EnhancedPlayerManagement = () => {
                 <SelectValue placeholder="Filter by team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ensureValidSelectItemValue("", "all_teams")}>All Teams</SelectItem>
+                <SelectItem value={ensureValidSelectItemValue("all", "all_teams")}>All Teams</SelectItem>
                 {validTeams.length === 0 ? (
                   <SelectItem value={ensureValidSelectItemValue("no-teams", "no_teams")}>No teams available</SelectItem>
                 ) : (
