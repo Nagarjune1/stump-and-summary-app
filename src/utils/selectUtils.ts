@@ -26,6 +26,11 @@ export const ensureValidSelectItemValue = (value: any, fallbackPrefix = 'fallbac
     return `${fallbackPrefix}_empty_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
   
+  // Additional safety check - if somehow we still have an empty string, generate a fallback
+  if (stringValue.length === 0) {
+    return `${fallbackPrefix}_zero_length_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  
   return stringValue;
 };
 
@@ -37,7 +42,7 @@ export const isValidSelectItemValue = (value: any): boolean => {
   
   try {
     const stringValue = String(value).trim();
-    return stringValue !== '' && stringValue !== 'null' && stringValue !== 'undefined';
+    return stringValue !== '' && stringValue !== 'null' && stringValue !== 'undefined' && stringValue.length > 0;
   } catch {
     return false;
   }
@@ -62,4 +67,13 @@ export const createSafeSelectOptions = (items: any[], fallbackPrefix = 'item'): 
 export const createSafeTeamValue = (teamName: string, teamNumber: number): string => {
   const safeName = teamName ? String(teamName).trim() : `Team ${teamNumber}`;
   return ensureValidSelectItemValue(safeName, `team_${teamNumber}`);
+};
+
+/**
+ * Emergency fallback for any value that might be empty
+ */
+export const guaranteedNonEmptyValue = (value: any, context = 'unknown'): string => {
+  const result = ensureValidSelectItemValue(value, context);
+  // Triple check - if somehow we still have an empty string, force a fallback
+  return result === '' ? `emergency_fallback_${context}_${Date.now()}` : result;
 };

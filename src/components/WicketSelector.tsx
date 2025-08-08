@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 
 const WicketSelector = ({ 
   open, 
@@ -83,7 +83,7 @@ const WicketSelector = ({
               </SelectTrigger>
               <SelectContent>
                 {dismissalTypes.map((type, index) => {
-                  const safeValue = ensureValidSelectItemValue(type.value, `dismissal_${index}`);
+                  const safeValue = guaranteedNonEmptyValue(type.value, `dismissal_${index}`);
                   
                   return (
                     <SelectItem 
@@ -110,12 +110,12 @@ const WicketSelector = ({
                 </SelectTrigger>
                 <SelectContent>
                   {validFieldingPlayers.length === 0 ? (
-                    <SelectItem value={ensureValidSelectItemValue('no-fielders-available', 'no_fielders')}>
+                    <SelectItem value={guaranteedNonEmptyValue('no-fielders-available', 'no_fielders')}>
                       No fielders available
                     </SelectItem>
                   ) : (
                     validFieldingPlayers.map((player, index) => {
-                      const safeId = ensureValidSelectItemValue(player.id, `fielder_${index}`);
+                      const safeId = guaranteedNonEmptyValue(player.id, `fielder_${index}`);
                       
                       return (
                         <SelectItem 
