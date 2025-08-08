@@ -58,7 +58,8 @@ const EnhancedPlayerManagement = () => {
   const filterPlayers = () => {
     let filtered = [...players];
 
-    if (selectedTeam) {
+    // Fix team filtering logic - only filter if selectedTeam exists and is not "all"
+    if (selectedTeam && selectedTeam !== "all" && !selectedTeam.startsWith('all_teams')) {
       filtered = filtered.filter(player => player.team_id === selectedTeam);
     }
 
