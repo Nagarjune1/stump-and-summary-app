@@ -3,109 +3,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cricket Scoring App - Blue-based color scheme with light and dark modes */
+/* Neon Blue Cricket App Theme */
 
 @layer base {
   :root {
-    /* Cricket App Light Mode Colors */
-    --background: 0 0% 100%; /* Clean white */
-    --foreground: 210 100% 20%; /* Dark blue text */
+    /* Neon Blue Theme Colors */
+    --background: 218 40% 6%; /* #0A0F1E - Dark background */
+    --foreground: 193 100% 90%; /* Light text */
 
-    --card: 0 0% 100%; /* Clean white */
-    --card-foreground: 210 100% 20%;
+    --card: 218 28% 9%; /* #101828 - Dark navy with transparency */
+    --card-foreground: 193 100% 90%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 100% 20%;
+    --popover: 218 28% 9%;
+    --popover-foreground: 193 100% 90%;
 
-    --primary: 215 64% 36%; /* #1565C0 - Primary blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 187 100% 50%; /* #00E5FF - Neon Blue */
+    --primary-foreground: 218 40% 6%;
 
-    --secondary: 210 40% 96%; /* Light grey background */
-    --secondary-foreground: 210 100% 20%;
+    --secondary: 218 28% 15%;
+    --secondary-foreground: 193 100% 90%;
 
-    --muted: 210 40% 96%; /* Light grey #F5F5F5 */
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 218 28% 12%;
+    --muted-foreground: 193 50% 70%;
 
-    --accent: 202 98% 50%; /* #42A5F5 - Accent blue */
-    --accent-foreground: 0 0% 100%;
+    --accent: 191 100% 50%; /* #00F6FF - Neon Cyan */
+    --accent-foreground: 218 40% 6%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 193 100% 90%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 215 64% 36%;
+    --border: 218 28% 15%;
+    --input: 218 28% 12%;
+    --ring: 187 100% 50%;
 
-    --success: 122 39% 49%; /* #43A047 - Green accent */
-    --success-foreground: 0 0% 100%;
+    --success: 150 100% 50%; /* #00FF9C - Neon Green */
+    --success-foreground: 218 40% 6%;
 
-    --warning: 24 95% 63%; /* #FF7043 - Orange accent */
-    --warning-foreground: 0 0% 100%;
+    --warning: 20 100% 58%; /* #FF7E29 - Neon Orange */
+    --warning-foreground: 218 40% 6%;
 
-    --header: 215 100% 25%; /* #0D47A1 - Dark blue header */
-    --header-foreground: 0 0% 100%;
+    --header: 218 40% 6%;
+    --header-foreground: 187 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Sidebar colors for light mode */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 215 64% 36%;
-    --sidebar-primary: 215 64% 36%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 202 98% 50%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 215 64% 36%;
+    /* Sidebar colors for neon theme */
+    --sidebar-background: 218 28% 8%;
+    --sidebar-foreground: 193 100% 90%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 218 40% 6%;
+    --sidebar-accent: 191 100% 50%;
+    --sidebar-accent-foreground: 218 40% 6%;
+    --sidebar-border: 218 28% 15%;
+    --sidebar-ring: 187 100% 50%;
   }
 
   .dark {
-    /* Cricket App Dark Mode Colors */
-    --background: 0 0% 7%; /* #121212 - Dark background */
-    --foreground: 210 40% 98%;
-
-    --card: 0 0% 7%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 207 90% 54%; /* #2196F3 - Dark mode primary blue */
-    --primary-foreground: 0 0% 7%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 202 98% 50%; /* #42A5F5 - Accent blue */
-    --accent-foreground: 0 0% 7%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 207 90% 54%;
-
-    --success: 122 39% 49%; /* #43A047 - Green accent */
-    --success-foreground: 0 0% 7%;
-
-    --warning: 24 95% 63%; /* #FF7043 - Orange accent */
-    --warning-foreground: 0 0% 7%;
-
-    --header: 215 100% 25%; /* #0D47A1 - Dark blue header */
-    --header-foreground: 0 0% 100%;
-
-    /* Sidebar colors for dark mode */
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 207 90% 54%;
-    --sidebar-primary-foreground: 0 0% 7%;
-    --sidebar-accent: 202 98% 50%;
-    --sidebar-accent-foreground: 0 0% 7%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 207 90% 54%;
+    /* Same colors for dark mode since we're using a dark theme by default */
+    --background: 218 40% 6%;
+    --foreground: 193 100% 90%;
+    --card: 218 28% 9%;
+    --card-foreground: 193 100% 90%;
+    --popover: 218 28% 9%;
+    --popover-foreground: 193 100% 90%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 218 40% 6%;
+    --secondary: 218 28% 15%;
+    --secondary-foreground: 193 100% 90%;
+    --muted: 218 28% 12%;
+    --muted-foreground: 193 50% 70%;
+    --accent: 191 100% 50%;
+    --accent-foreground: 218 40% 6%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 193 100% 90%;
+    --border: 218 28% 15%;
+    --input: 218 28% 12%;
+    --ring: 187 100% 50%;
+    --success: 150 100% 50%;
+    --success-foreground: 218 40% 6%;
+    --warning: 20 100% 58%;
+    --warning-foreground: 218 40% 6%;
+    --header: 218 40% 6%;
+    --header-foreground: 187 100% 50%;
+    --sidebar-background: 218 28% 8%;
+    --sidebar-foreground: 193 100% 90%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 218 40% 6%;
+    --sidebar-accent: 191 100% 50%;
+    --sidebar-accent-foreground: 218 40% 6%;
+    --sidebar-border: 218 28% 15%;
+    --sidebar-ring: 187 100% 50%;
   }
 }
 
@@ -116,6 +103,21 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Neon glow effects */
+  .neon-glow {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+  }
+
+  .neon-border {
+    box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+  }
+
+  .neon-card {
+    background: hsl(var(--card) / 0.85);
+    border: 1px solid hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
   }
 
   /* Cricket-specific utility classes */

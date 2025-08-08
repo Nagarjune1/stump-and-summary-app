@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   BarChart3,
@@ -15,7 +14,8 @@ import {
   BookOpen,
   Award,
   User,
-  Play
+  Play,
+  PieChart
 } from 'lucide-react';
 
 import {
@@ -35,6 +35,8 @@ const navigationItems = [
   { id: 'dashboard', title: 'Dashboard', url: '/', icon: BarChart3 },
   { id: 'create', title: 'Create Match', url: '/create', icon: Plus },
   { id: 'scoring', title: 'Live Scoring', url: '/scoring', icon: Target },
+  { id: 'scoreboard', title: 'Scoreboard', url: '/scoreboard', icon: Play },
+  { id: 'analytics', title: 'Analytics', url: '/analytics', icon: PieChart },
   { id: 'players', title: 'Players', url: '/players', icon: Users },
   { id: 'teams', title: 'Teams', url: '/teams', icon: User },
   { id: 'tournaments', title: 'Tournaments', url: '/tournaments', icon: Trophy },
@@ -60,14 +62,14 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="cricket-header p-4">
+    <Sidebar className="border-r border-sidebar-border neon-border">
+      <SidebarHeader className="cricket-header p-4 neon-glow">
         <div className="flex items-center gap-2">
-          <Trophy className="w-6 h-6" />
+          <Trophy className="w-6 h-6 text-primary neon-glow" />
           {!isCollapsed && (
             <div>
-              <h2 className="text-lg font-bold">Wickets</h2>
-              <p className="text-sm opacity-90">Cricket Scoring App</p>
+              <h2 className="text-lg font-bold text-primary neon-glow">Wickets</h2>
+              <p className="text-sm text-accent">Cricket Scoring App</p>
             </div>
           )}
         </div>
@@ -75,7 +77,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-accent">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -90,10 +92,10 @@ export function AppSidebar() {
                       asChild
                       isActive={active}
                       className={`
-                        w-full justify-start gap-3 px-3 py-2 rounded-md transition-colors
+                        w-full justify-start gap-3 px-3 py-2 rounded-md transition-all duration-300
                         ${active 
-                          ? 'cricket-primary font-semibold shadow-sm' 
-                          : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                          ? 'cricket-primary font-semibold shadow-lg neon-border neon-glow' 
+                          : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-md'
                         }
                       `}
                     >

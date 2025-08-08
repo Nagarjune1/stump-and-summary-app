@@ -63,7 +63,7 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Cricket-specific colors
+				// Neon theme colors
 				success: {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))'
@@ -98,11 +98,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'neon-pulse': {
+					'0%, 100%': { 
+						textShadow: '0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor',
+						boxShadow: '0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor'
+					},
+					'50%': { 
+						textShadow: '0 0 2px currentColor, 0 0 5px currentColor, 0 0 8px currentColor',
+						boxShadow: '0 0 2px currentColor, 0 0 5px currentColor, 0 0 8px currentColor'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'neon-pulse': 'neon-pulse 2s ease-in-out infinite'
 			}
 		}
 	},

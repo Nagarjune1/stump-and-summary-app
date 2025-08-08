@@ -7,17 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 
 // Import all page components
-import Dashboard from '@/components/Dashboard';
+import LiveDashboard from '@/components/LiveDashboard';
 import LiveScoring from '@/components/LiveScoring';
 import MatchSummary from '@/components/MatchSummary';
 import TournamentManagement from '@/components/TournamentManagement';
 import AdvancedStatistics from '@/components/AdvancedStatistics';
+import AdvancedAnalytics from '@/components/AdvancedAnalytics';
 import Documentation from '@/components/Documentation';
 import EnhancedPlayerManagement from '@/components/EnhancedPlayerManagement';
 import CreateMatch from '@/components/CreateMatch';
 import Teams from '@/components/Teams';
 import VenueManagement from '@/components/VenueManagement';
 import EnhancedExportReport from '@/components/EnhancedExportReport';
+import EnhancedCricketScoreboard from '@/components/EnhancedCricketScoreboard';
 
 const Index = () => {
   const location = useLocation();
@@ -28,6 +30,8 @@ const Index = () => {
       case '/': return 'Dashboard';
       case '/create': return 'Create Match';
       case '/scoring': return 'Live Scoring';
+      case '/scoreboard': return 'Scoreboard';
+      case '/analytics': return 'Analytics';
       case '/players': return 'Players';
       case '/teams': return 'Teams';
       case '/tournaments': return 'Tournaments';
@@ -63,21 +67,48 @@ const Index = () => {
           
           <SidebarInset className="flex-1">
             {/* Header */}
-            <header className="cricket-header h-14 px-4 flex items-center gap-4 border-b border-sidebar-border">
-              <SidebarTrigger className="text-header-foreground hover:bg-header/80" />
+            <header className="cricket-header h-14 px-4 flex items-center gap-4 border-b border-sidebar-border neon-border">
+              <SidebarTrigger className="text-primary hover:bg-header/80 hover:text-primary neon-glow" />
               <div className="flex-1">
-                <h1 className="text-lg font-bold text-header-foreground">
+                <h1 className="text-lg font-bold text-primary neon-glow">
                   {getPageTitle(location.pathname)}
                 </h1>
               </div>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 overflow-auto">
+            <main className="flex-1 overflow-auto">
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<LiveDashboard />} />
                 <Route path="/create" element={<CreateMatch />} />
                 <Route path="/scoring" element={<LiveScoring />} />
+                <Route 
+                  path="/scoreboard" 
+                  element={
+                    <EnhancedCricketScoreboard
+                      matchData={mockMatchData}
+                      score={mockScoreData}
+                      currentBatsmen={[]}
+                      currentBowler={null}
+                      innings1Score={null}
+                      currentInnings={1}
+                      currentOver={0}
+                      currentBall={0}
+                      battingTeam={1}
+                      target={0}
+                      requiredRunRate={0}
+                      currentRunRate={0}
+                      recentBalls={[]}
+                      team1Players={[]}
+                      team2Players={[]}
+                      fallOfWickets={[]}
+                      bowlers={[]}
+                      wickets={[]}
+                      oversData={[]}
+                    />
+                  } 
+                />
+                <Route path="/analytics" element={<AdvancedAnalytics />} />
                 <Route path="/players" element={<EnhancedPlayerManagement />} />
                 <Route path="/teams" element={<Teams />} />
                 <Route path="/tournaments" element={<TournamentManagement />} />
