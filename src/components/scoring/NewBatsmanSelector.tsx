@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Player {
   id: string;
@@ -28,10 +29,10 @@ const NewBatsmanSelector = ({
   const [selectedBatsman, setSelectedBatsman] = useState("");
 
   const handleConfirm = () => {
-    if (!selectedBatsman) {
+    if (!selectedBatsman || selectedBatsman.startsWith('no-players') || selectedBatsman.startsWith('fallback')) {
       toast({
         title: "Error",
-        description: "Please select a batsman",
+        description: "Please select a valid batsman",
         variant: "destructive"
       });
       return;
@@ -69,11 +70,13 @@ const NewBatsmanSelector = ({
               </SelectTrigger>
               <SelectContent>
                 {availablePlayers.length === 0 ? (
-                  <SelectItem value="no-players-available">No players available</SelectItem>
+                  <SelectItem value={ensureValidSelectItemValue('no-players-available', 'no_players')}>
+                    No players available
+                  </SelectItem>
                 ) : (
-                  availablePlayers.map((player) => {
+                  availablePlayers.map((player, index) => {
                     // Ensure we always have a valid, non-empty value
-                    const playerValue = player.id || `fallback_player_${Date.now()}_${Math.random()}`;
+                    const playerValue = ensureValidSelectItemValue(player.id, `player_${index}`);
                     
                     console.log('NewBatsmanSelector: Rendering player option:', { 
                       originalId: player.id,
@@ -82,7 +85,7 @@ const NewBatsmanSelector = ({
                     });
                     
                     return (
-                      <SelectItem key={player.id} value={playerValue}>
+                      <SelectItem key={`player_${index}_${player.id}`} value={playerValue}>
                         {player.name}
                       </SelectItem>
                     );

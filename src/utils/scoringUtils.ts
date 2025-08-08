@@ -1,15 +1,16 @@
 
 // Utility functions for scoring system
-export const ensureValidId = (id: any, fallback: string = ''): string => {
+export const ensureValidId = (id: any, fallback: string = 'default_id'): string => {
   if (id === null || id === undefined || String(id).trim() === '') {
-    return fallback;
+    return fallback || `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
   return String(id).trim();
 };
 
 export const ensureValidSelectValue = (value: any, fallbackPrefix: string = 'item'): string => {
   const cleanValue = ensureValidId(value);
-  if (cleanValue === '') {
+  // NEVER return empty string - always return a valid fallback
+  if (cleanValue === '' || cleanValue === 'default_id') {
     return `${fallbackPrefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
   return cleanValue;

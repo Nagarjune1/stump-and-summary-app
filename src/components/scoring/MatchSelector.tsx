@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Target } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import { ensureValidSelectItemValue } from '@/utils/selectUtils';
 
 interface Match {
   id: string;
@@ -65,6 +66,10 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
   };
 
   const handleMatchSelect = (matchId: string) => {
+    if (!matchId || matchId.startsWith('no-matches') || matchId.startsWith('fallback')) {
+      return;
+    }
+    
     const match = matches.find(m => m.id === matchId);
     if (match) {
       onMatchSelect(match);
@@ -96,14 +101,16 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
           </SelectTrigger>
           <SelectContent>
             {matches.length === 0 ? (
-              <SelectItem value="no-matches-available">No matches available</SelectItem>
+              <SelectItem value={ensureValidSelectItemValue('no-matches-available', 'no_matches')}>
+                No matches available
+              </SelectItem>
             ) : (
-              matches.map((match) => {
+              matches.map((match, index) => {
                 // Ensure we always have a valid, non-empty value
-                const matchValue = match.id || `fallback_${Date.now()}_${Math.random()}`;
+                const matchValue = ensureValidSelectItemValue(match.id, `match_${index}`);
                 
                 return (
-                  <SelectItem key={match.id} value={matchValue}>
+                  <SelectItem key={`match_${index}_${match.id}`} value={matchValue}>
                     {match.team1_name} vs {match.team2_name} - {new Date(match.match_date).toLocaleDateString()}
                   </SelectItem>
                 );

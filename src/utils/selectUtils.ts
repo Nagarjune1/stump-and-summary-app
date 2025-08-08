@@ -21,7 +21,7 @@ export const ensureValidSelectItemValue = (value: any, fallbackPrefix = 'fallbac
     return `${fallbackPrefix}_error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
   
-  // Check for empty strings or invalid values
+  // Check for empty strings or invalid values - NEVER return empty string
   if (stringValue === '' || stringValue === 'null' || stringValue === 'undefined') {
     return `${fallbackPrefix}_empty_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -49,9 +49,9 @@ export const isValidSelectItemValue = (value: any): boolean => {
 export const createSafeSelectOptions = (items: any[], fallbackPrefix = 'item'): any[] => {
   return items
     .filter(item => item && item.id && item.name)
-    .map(item => ({
+    .map((item, index) => ({
       ...item,
-      id: ensureValidSelectItemValue(item.id, `${fallbackPrefix}_${item.name || 'unknown'}`),
+      id: ensureValidSelectItemValue(item.id, `${fallbackPrefix}_${index}_${item.name || 'unknown'}`),
       name: item.name || 'Unknown'
     }));
 };

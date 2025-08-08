@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ensureValidSelectValue, validatePlayer, calculateStrikeRate } from "@/utils/scoringUtils";
+import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 interface Player {
   id: string;
@@ -62,19 +63,19 @@ const PlayerSelection = ({
   const isNonStrikerMissing = !currentBatsmen[strikeBatsmanIndex === 0 ? 1 : 0]?.id;
   const isBowlerMissing = !currentBowler?.id;
 
-  const renderPlayerSelectOptions = (playersList: Player[], fallbackMessage: string) => {
+  const renderPlayerSelectOptions = (playersList: Player[], fallbackMessage: string, fallbackPrefix: string) => {
     if (playersList.length === 0) {
       return (
-        <SelectItem value={ensureValidSelectValue('no-players', 'no_players')}>
+        <SelectItem value={ensureValidSelectItemValue('no-players', fallbackPrefix)}>
           {fallbackMessage}
         </SelectItem>
       );
     }
 
     return playersList.map((player, index) => {
-      const safeValue = ensureValidSelectValue(player.id, `player_${index}`);
+      const safeValue = ensureValidSelectItemValue(player.id, `${fallbackPrefix}_${index}`);
       return (
-        <SelectItem key={player.id} value={safeValue}>
+        <SelectItem key={`${fallbackPrefix}_${index}_${player.id}`} value={safeValue}>
           {player.name}
         </SelectItem>
       );
@@ -114,7 +115,7 @@ const PlayerSelection = ({
               <Select 
                 value={batsman?.id ? ensureValidSelectValue(batsman.id, `batsman_${index}`) : ""} 
                 onValueChange={(value) => {
-                  if (value && !value.startsWith('no_players') && !value.startsWith('no-players')) {
+                  if (value && !value.startsWith('no_players') && !value.startsWith('no-players') && !value.startsWith('fallback')) {
                     onUpdateBatsman(index, 'id', value);
                   }
                 }}
@@ -123,7 +124,7 @@ const PlayerSelection = ({
                   <SelectValue placeholder={`Select batsman ${index + 1}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {renderPlayerSelectOptions(battingTeamPlayers, "No batting team players found")}
+                  {renderPlayerSelectOptions(battingTeamPlayers, "No batting team players found", `batsman_${index}`)}
                 </SelectContent>
               </Select>
               {batsman?.name && (
@@ -145,7 +146,7 @@ const PlayerSelection = ({
           <Select 
             value={currentBowler?.id ? ensureValidSelectValue(currentBowler.id, 'bowler') : ""} 
             onValueChange={(value) => {
-              if (value && !value.startsWith('no_players') && !value.startsWith('no-players')) {
+              if (value && !value.startsWith('no_players') && !value.startsWith('no-players') && !value.startsWith('fallback')) {
                 onUpdateBowler('id', value);
               }
             }}
@@ -154,7 +155,7 @@ const PlayerSelection = ({
               <SelectValue placeholder="Select bowler" />
             </SelectTrigger>
             <SelectContent>
-              {renderPlayerSelectOptions(bowlingTeamPlayers, "No bowling team players found")}
+              {renderPlayerSelectOptions(bowlingTeamPlayers, "No bowling team players found", 'bowler')}
             </SelectContent>
           </Select>
           {currentBowler?.name && (

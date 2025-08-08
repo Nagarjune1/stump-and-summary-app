@@ -39,17 +39,17 @@ const WicketSelector = ({
   console.log('WicketSelector: Valid fielding players:', validFieldingPlayers.length);
 
   const handleConfirm = () => {
-    if (!dismissalType) return;
+    if (!dismissalType || dismissalType.startsWith('fallback')) return;
 
     let dismissalText = dismissalType;
     
-    if (dismissalType === "caught" && fielder) {
+    if (dismissalType === "caught" && fielder && !fielder.startsWith('fallback') && !fielder.startsWith('no_players')) {
       const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
       dismissalText = `caught by ${fielderName}`;
-    } else if (dismissalType === "run_out" && fielder) {
+    } else if (dismissalType === "run_out" && fielder && !fielder.startsWith('fallback') && !fielder.startsWith('no_players')) {
       const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
       dismissalText = `run out by ${fielderName}`;
-    } else if (dismissalType === "stumped" && fielder) {
+    } else if (dismissalType === "stumped" && fielder && !fielder.startsWith('fallback') && !fielder.startsWith('no_players')) {
       const fielderName = fieldingPlayers.find(p => p.id === fielder)?.name || fielder;
       dismissalText = `stumped by ${fielderName}`;
     }
@@ -87,7 +87,7 @@ const WicketSelector = ({
                   
                   return (
                     <SelectItem 
-                      key={`dismissal_${index}`} 
+                      key={`dismissal_${index}_${type.value}`} 
                       value={safeValue}
                     >
                       {type.label}
@@ -110,14 +110,16 @@ const WicketSelector = ({
                 </SelectTrigger>
                 <SelectContent>
                   {validFieldingPlayers.length === 0 ? (
-                    <SelectItem value="no-fielders-available">No fielders available</SelectItem>
+                    <SelectItem value={ensureValidSelectItemValue('no-fielders-available', 'no_fielders')}>
+                      No fielders available
+                    </SelectItem>
                   ) : (
                     validFieldingPlayers.map((player, index) => {
                       const safeId = ensureValidSelectItemValue(player.id, `fielder_${index}`);
                       
                       return (
                         <SelectItem 
-                          key={`fielder_${index}`} 
+                          key={`fielder_${index}_${player.id}`} 
                           value={safeId}
                         >
                           {player.name}
@@ -136,7 +138,7 @@ const WicketSelector = ({
             </Button>
             <Button 
               onClick={handleConfirm} 
-              disabled={!dismissalType || (needsFielder && !fielder)}
+              disabled={!dismissalType || dismissalType.startsWith('fallback') || (needsFielder && (!fielder || fielder.startsWith('fallback') || fielder.startsWith('no_players')))}
               className="flex-1"
             >
               Confirm Wicket
