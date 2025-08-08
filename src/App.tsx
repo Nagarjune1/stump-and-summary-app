@@ -21,7 +21,7 @@ const App = () => (
           <Sonner />
           <HashRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/*" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

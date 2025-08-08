@@ -1,118 +1,114 @@
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Users, Trophy, BarChart3, Settings, Target, Plus } from "lucide-react";
-import Dashboard from "@/components/Dashboard";
-import LiveScoring from "@/components/LiveScoring";
-import MatchSummary from "@/components/MatchSummary";
-import TournamentManagement from "@/components/TournamentManagement";
-import AdvancedStatistics from "@/components/AdvancedStatistics";
-import Documentation from "@/components/Documentation";
-import EnhancedPlayerManagement from "@/components/EnhancedPlayerManagement";
-import CreateMatch from "@/components/CreateMatch";
+import React from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+
+// Import all page components
+import Dashboard from '@/components/Dashboard';
+import LiveScoring from '@/components/LiveScoring';
+import MatchSummary from '@/components/MatchSummary';
+import TournamentManagement from '@/components/TournamentManagement';
+import AdvancedStatistics from '@/components/AdvancedStatistics';
+import Documentation from '@/components/Documentation';
+import EnhancedPlayerManagement from '@/components/EnhancedPlayerManagement';
+import CreateMatch from '@/components/CreateMatch';
+import Teams from '@/components/Teams';
+import VenueManagement from '@/components/VenueManagement';
+import EnhancedExportReport from '@/components/EnhancedExportReport';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [currentMatch, setCurrentMatch] = useState(null);
+  const location = useLocation();
 
-  const handleMatchCreated = (match: any) => {
-    console.log('Match created:', match);
-    setCurrentMatch(match);
-    // Optionally switch to scoring tab after match creation
-    setActiveTab("scoring");
+  // Get page title based on current route
+  const getPageTitle = (pathname: string) => {
+    switch (pathname) {
+      case '/': return 'Dashboard';
+      case '/create': return 'Create Match';
+      case '/scoring': return 'Live Scoring';
+      case '/players': return 'Players';
+      case '/teams': return 'Teams';
+      case '/tournaments': return 'Tournaments';
+      case '/venues': return 'Venues';
+      case '/summary': return 'Match Summary';
+      case '/statistics': return 'Statistics';
+      case '/export': return 'Export Reports';
+      case '/help': return 'Documentation';
+      default: return 'Wickets';
+    }
   };
 
-  const handleMatchStarted = (match: any) => {
-    console.log('Match started:', match);
-    setCurrentMatch(match);
-    setActiveTab("scoring");
+  // Mock data for components that require props
+  const mockMatchData = {
+    team1: { name: 'Team A' },
+    team2: { name: 'Team B' },
+    venue: 'Cricket Stadium',
+    match_date: new Date().toISOString(),
+    format: 'T20'
+  };
+
+  const mockScoreData = {
+    runs: 0,
+    wickets: 0,
+    overs: 0
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto p-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Cricket Scoring System
-          </h1>
-          <p className="text-gray-600">
-            Professional cricket scoring and match management platform
-          </p>
+    <div className="min-h-screen bg-background">
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          
+          <SidebarInset className="flex-1">
+            {/* Header */}
+            <header className="cricket-header h-14 px-4 flex items-center gap-4 border-b border-sidebar-border">
+              <SidebarTrigger className="text-header-foreground hover:bg-header/80" />
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-header-foreground">
+                  {getPageTitle(location.pathname)}
+                </h1>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 p-6 overflow-auto">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/create" element={<CreateMatch />} />
+                <Route path="/scoring" element={<LiveScoring />} />
+                <Route path="/players" element={<EnhancedPlayerManagement />} />
+                <Route path="/teams" element={<Teams />} />
+                <Route path="/tournaments" element={<TournamentManagement />} />
+                <Route path="/venues" element={<VenueManagement />} />
+                <Route path="/summary" element={<MatchSummary />} />
+                <Route path="/statistics" element={<AdvancedStatistics />} />
+                <Route 
+                  path="/export" 
+                  element={
+                    <EnhancedExportReport
+                      matchData={mockMatchData}
+                      scoreData={mockScoreData}
+                      currentBatsmen={[]}
+                      currentBowler={null}
+                      innings1Score={null}
+                      innings2Score={null}
+                      currentInnings={1}
+                      winner={null}
+                      recentBalls={[]}
+                      topPerformers={[]}
+                      fallOfWickets={[]}
+                      bowlingFigures={[]}
+                    />
+                  } 
+                />
+                <Route path="/help" element={<Documentation />} />
+              </Routes>
+            </main>
+          </SidebarInset>
         </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Create</span>
-            </TabsTrigger>
-            <TabsTrigger value="scoring" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Live Score</span>
-            </TabsTrigger>
-            <TabsTrigger value="players" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Players</span>
-            </TabsTrigger>
-            <TabsTrigger value="summary" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Summary</span>
-            </TabsTrigger>
-            <TabsTrigger value="tournaments" className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              <span className="hidden sm:inline">Tournaments</span>
-            </TabsTrigger>
-            <TabsTrigger value="statistics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Statistics</span>
-            </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Help</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard" className="space-y-6">
-            <Dashboard />
-          </TabsContent>
-
-          <TabsContent value="create" className="space-y-6">
-            <CreateMatch 
-              onMatchCreated={handleMatchCreated}
-              onMatchStarted={handleMatchStarted}
-            />
-          </TabsContent>
-
-          <TabsContent value="scoring" className="space-y-6">
-            <LiveScoring />
-          </TabsContent>
-
-          <TabsContent value="players" className="space-y-6">
-            <EnhancedPlayerManagement />
-          </TabsContent>
-
-          <TabsContent value="summary" className="space-y-6">
-            <MatchSummary />
-          </TabsContent>
-
-          <TabsContent value="tournaments" className="space-y-6">
-            <TournamentManagement />
-          </TabsContent>
-
-          <TabsContent value="statistics" className="space-y-6">
-            <AdvancedStatistics />
-          </TabsContent>
-
-          <TabsContent value="help" className="space-y-6">
-            <Documentation />
-          </TabsContent>
-        </Tabs>
-      </div>
+      </SidebarProvider>
     </div>
   );
 };
