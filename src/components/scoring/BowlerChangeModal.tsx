@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { guaranteedNonEmptyValue, validatePlayer } from "@/utils/scoringUtils";
+import { validatePlayer } from "@/utils/scoringUtils";
+import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 import { Users } from "lucide-react";
 
 interface BowlerChangeModalProps {

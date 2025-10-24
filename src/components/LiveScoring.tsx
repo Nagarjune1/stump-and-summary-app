@@ -45,6 +45,9 @@ interface Player {
   fours?: number;
   sixes?: number;
   overs?: number;
+  isOut?: boolean;
+  dismissalType?: string;
+  batted?: boolean;
 }
 
 interface TeamInnings {
