@@ -127,7 +127,7 @@ const LiveDashboard = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-primary neon-glow animate-pulse">Loading dashboard...</div>
+        <div className="text-lg text-primary animate-pulse">Loading dashboard...</div>
       </div>
     );
   }
@@ -136,7 +136,7 @@ const LiveDashboard = () => {
     <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-primary neon-glow mb-2">Live Cricket Dashboard</h1>
+        <h1 className="text-4xl font-bold text-primary mb-2">Live Cricket Dashboard</h1>
         <p className="text-accent text-lg">Real-time match updates and statistics</p>
       </div>
 
@@ -150,7 +150,7 @@ const LiveDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-warning neon-glow">{stats.liveMatches}</div>
+            <div className="text-3xl font-bold text-warning">{stats.liveMatches}</div>
             <p className="text-xs text-muted-foreground mt-1">Currently in progress</p>
           </CardContent>
         </Card>
@@ -163,7 +163,7 @@ const LiveDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-success neon-glow">{stats.completedToday}</div>
+            <div className="text-3xl font-bold text-success">{stats.completedToday}</div>
             <p className="text-xs text-muted-foreground mt-1">Finished matches</p>
           </CardContent>
         </Card>
@@ -176,7 +176,7 @@ const LiveDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary neon-glow">{stats.upcomingToday}</div>
+            <div className="text-3xl font-bold text-primary">{stats.upcomingToday}</div>
             <p className="text-xs text-muted-foreground mt-1">Scheduled matches</p>
           </CardContent>
         </Card>
@@ -189,7 +189,7 @@ const LiveDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground neon-glow">{stats.totalMatches}</div>
+            <div className="text-3xl font-bold text-foreground">{stats.totalMatches}</div>
             <p className="text-xs text-muted-foreground mt-1">All time</p>
           </CardContent>
         </Card>
@@ -197,7 +197,7 @@ const LiveDashboard = () => {
 
       {/* Live Matches Section */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-primary neon-glow mb-6 flex items-center gap-3">
+        <h2 className="text-2xl font-bold text-primary mb-6 flex items-center gap-3">
           <Play className="w-6 h-6 text-warning" />
           Live Matches ({stats.liveMatches})
         </h2>
@@ -211,7 +211,7 @@ const LiveDashboard = () => {
                 <p className="text-muted-foreground">There are currently no matches in progress.</p>
                 <Button 
                   onClick={() => navigate('/create-match')}
-                  className="mt-4 bg-primary hover:bg-primary/90 neon-glow"
+                  className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Create New Match
                 </Button>
@@ -223,7 +223,7 @@ const LiveDashboard = () => {
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
-                      <Badge className="bg-warning/20 text-warning border-warning neon-glow animate-pulse px-3 py-1">
+                      <Badge className="bg-warning/20 text-warning border-warning animate-pulse px-3 py-1">
                         <Activity className="w-3 h-3 mr-1" />
                         LIVE
                       </Badge>
@@ -233,7 +233,7 @@ const LiveDashboard = () => {
                     </div>
                     <Button 
                       onClick={() => handleWatchLive(match.id)}
-                      className="bg-primary hover:bg-primary/90 neon-glow"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       size="sm"
                     >
                       Watch Live
@@ -245,7 +245,7 @@ const LiveDashboard = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-xl text-foreground">{match.team1?.name || 'Team 1'}</span>
                         <div className="text-right">
-                          <div className="text-3xl font-bold text-primary neon-glow">
+                          <div className="text-3xl font-bold text-primary">
                             {match.team1_score || '0/0'}
                           </div>
                           <div className="text-sm text-accent">({match.team1_overs || '0.0'} ov)</div>
@@ -257,7 +257,7 @@ const LiveDashboard = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-xl text-foreground">{match.team2?.name || 'Team 2'}</span>
                         <div className="text-right">
-                          <div className="text-3xl font-bold text-primary neon-glow">
+                          <div className="text-3xl font-bold text-primary">
                             {match.team2_score || '0/0'}
                           </div>
                           <div className="text-sm text-accent">({match.team2_overs || '0.0'} ov)</div>
@@ -286,7 +286,7 @@ const LiveDashboard = () => {
 
       {/* Recent Results */}
       <div>
-        <h2 className="text-2xl font-bold text-primary neon-glow mb-6 flex items-center gap-3">
+        <h2 className="text-2xl font-bold text-primary mb-6 flex items-center gap-3">
           <Trophy className="w-6 h-6 text-success" />
           Recent Results
         </h2>

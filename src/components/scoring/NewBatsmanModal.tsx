@@ -65,7 +65,7 @@ const NewBatsmanModal = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-card border-primary/30">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary neon-glow">
+          <DialogTitle className="flex items-center gap-2 text-primary">
             <UserPlus className="w-5 h-5" />
             Select New Batsman
           </DialogTitle>
@@ -131,7 +131,7 @@ const NewBatsmanModal = ({
           <Button 
             onClick={handleConfirm}
             disabled={!selectedBatsmanId || selectedBatsmanId.startsWith('fallback') || selectedBatsmanId.startsWith('no_batsmen')}
-            className="bg-primary hover:bg-primary/90 neon-glow"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Confirm Batsman
           </Button>

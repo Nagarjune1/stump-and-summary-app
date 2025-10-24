@@ -31,18 +31,8 @@ const ScoringRuleEngine = ({
 }: ScoringRuleEngineProps) => {
   const [hasShownPowerplayEnd, setHasShownPowerplayEnd] = useState(false);
 
-  // Check for over completion and bowler change
-  useEffect(() => {
-    if (currentBall === 0 && currentOver > 0) {
-      // Over just completed
-      toast({
-        title: "Over Completed!",
-        description: `Over ${currentOver} finished. Please select new bowler.`,
-        duration: 3000,
-      });
-      onBowlerChangeRequired();
-    }
-  }, [currentOver, currentBall, onBowlerChangeRequired]);
+  // Bowler change is now handled in handleOverComplete in LiveScoring component
+  // Removed duplicate trigger to prevent double modal showing
 
   // Check for powerplay end
   useEffect(() => {

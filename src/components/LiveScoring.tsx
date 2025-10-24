@@ -287,14 +287,7 @@ const LiveScoring = () => {
     const totalOvers = matchSetup?.overs || 20;
     const currentTeamScore = teamInnings[currentInnings - 1];
     
-    // Check if overs are completed
-    if (currentOver >= totalOvers) {
-      console.log('Innings ended - overs completed:', currentOver, '>=', totalOvers);
-      handleInningsEnd('overs_completed');
-      return true;
-    }
-
-    // Check if all wickets are down
+    // Check if all wickets are down (10 wickets in cricket)
     if (currentTeamScore.totalWickets >= 10) {
       console.log('Innings ended - all out');
       handleInningsEnd('all_out');
@@ -304,11 +297,19 @@ const LiveScoring = () => {
     // Check if target is achieved in 2nd innings
     if (currentInnings === 2 && teamInnings[0]) {
       const target = teamInnings[0].totalRuns + 1;
+      console.log('Checking target:', currentTeamScore.totalRuns, 'vs', target);
       if (currentTeamScore.totalRuns >= target) {
-        console.log('Innings ended - target achieved');
+        console.log('Innings ended - target achieved:', currentTeamScore.totalRuns, '>=', target);
         handleInningsEnd('target_achieved');
         return true;
       }
+    }
+    
+    // Check if overs are completed (checked last to allow target achievement first)
+    if (currentOver >= totalOvers) {
+      console.log('Innings ended - overs completed:', currentOver, '>=', totalOvers);
+      handleInningsEnd('overs_completed');
+      return true;
     }
 
     return false;
@@ -776,7 +777,7 @@ const LiveScoring = () => {
                 
                 {matchEnded && (
                   <div className="text-center py-8 bg-card/50 rounded-lg border border-primary/30">
-                    <h2 className="text-3xl font-bold text-success neon-glow mb-4">Match Ended</h2>
+                    <h2 className="text-3xl font-bold text-success mb-4">Match Ended</h2>
                     <div className="space-y-2 text-foreground">
                       <p className="text-lg">
                         <strong>{teamInnings[0]?.teamName}:</strong> {teamInnings[0]?.totalRuns}/{teamInnings[0]?.totalWickets} 
@@ -846,7 +847,7 @@ const LiveScoring = () => {
     <div className="min-h-screen bg-background">
       <Card className="m-4 neon-card border-primary/30">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-3xl font-bold text-primary neon-glow">Live Cricket Scoring</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Live Cricket Scoring</CardTitle>
           <div className="flex items-center space-x-2">
             <Badge variant="secondary" className="border-primary/30 text-accent">
               <Clock className="mr-2 h-4 w-4" />

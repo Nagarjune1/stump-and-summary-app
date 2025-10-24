@@ -57,7 +57,7 @@ const BowlerChangeModal = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-card border-primary/30">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary neon-glow">
+          <DialogTitle className="flex items-center gap-2 text-primary">
             <Users className="w-5 h-5" />
             Select New Bowler - Over {currentOver + 1}
           </DialogTitle>
@@ -113,7 +113,7 @@ const BowlerChangeModal = ({
           <Button 
             onClick={handleConfirm}
             disabled={!selectedBowlerId || selectedBowlerId.startsWith('fallback') || selectedBowlerId.startsWith('no_bowlers')}
-            className="bg-primary hover:bg-primary/90 neon-glow"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Confirm Bowler
           </Button>
