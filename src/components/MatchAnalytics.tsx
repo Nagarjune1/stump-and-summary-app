@@ -8,29 +8,21 @@ const MatchAnalytics = ({
   matchData, 
   innings1Score, 
   innings2Score, 
-  currentBatsmen, 
-  currentBowler 
+  currentBatsmen = [], 
+  currentBowler = null 
 }) => {
-  // Sample data for demonstration - in real app this would come from ball-by-ball data
-  const runRateData = [
-    { over: 1, runRate: 6.0, requiredRate: 8.5 },
-    { over: 2, runRate: 7.5, requiredRate: 8.2 },
-    { over: 3, runRate: 8.0, requiredRate: 8.0 },
-    { over: 4, runRate: 6.5, requiredRate: 8.3 },
-    { over: 5, runRate: 9.0, requiredRate: 7.8 },
-  ];
-
-  const wormData = [
-    { over: 1, runs: 6 },
-    { over: 2, runs: 21 },
-    { over: 3, runs: 35 },
-    { over: 4, runs: 48 },
-    { over: 5, runs: 65 },
-  ];
-
-  const currentRunRate = innings2Score?.overs > 0 ? (innings2Score.runs / innings2Score.overs).toFixed(2) : '0.00';
-  const requiredRunRate = innings1Score ? 
-    ((innings1Score.runs + 1 - (innings2Score?.runs || 0)) / (20 - (innings2Score?.overs || 0))).toFixed(2) : '0.00';
+  // Calculate actual run rates
+  const totalOvers1 = innings1Score ? innings1Score.overs + (innings1Score.balls || 0) / 6 : 0;
+  const totalOvers2 = innings2Score ? innings2Score.overs + (innings2Score.balls || 0) / 6 : 0;
+  
+  const currentRunRate = totalOvers2 > 0 ? (innings2Score.runs / totalOvers2).toFixed(2) : '0.00';
+  const requiredRunRate = innings1Score && innings2Score ? 
+    ((innings1Score.runs + 1 - innings2Score.runs) / (20 - totalOvers2)).toFixed(2) : '0.00';
+  
+  const totalBoundaries = (currentBatsmen[0]?.fours || 0) + (currentBatsmen[1]?.fours || 0) + 
+                          (currentBatsmen[0]?.sixes || 0) + (currentBatsmen[1]?.sixes || 0);
+  const partnershipRuns = (currentBatsmen[0]?.runs || 0) + (currentBatsmen[1]?.runs || 0);
+  const partnershipBalls = (currentBatsmen[0]?.balls || 0) + (currentBatsmen[1]?.balls || 0);
 
   return (
     <div className="space-y-6">
@@ -71,6 +63,7 @@ const MatchAnalytics = ({
             <div className="text-2xl font-bold">
               {(currentBatsmen[0]?.fours || 0) + (currentBatsmen[1]?.fours || 0)}×4, {(currentBatsmen[0]?.sixes || 0) + (currentBatsmen[1]?.sixes || 0)}×6
             </div>
+            <div className="text-sm text-muted-foreground">Total: {totalBoundaries}</div>
           </CardContent>
         </Card>
 
@@ -83,51 +76,41 @@ const MatchAnalytics = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {((currentBatsmen[0]?.runs || 0) + (currentBatsmen[1]?.runs || 0))} ({((currentBatsmen[0]?.balls || 0) + (currentBatsmen[1]?.balls || 0))})
+              {partnershipRuns} ({partnershipBalls})
+            </div>
+            <div className="text-sm text-muted-foreground">
+              SR: {partnershipBalls > 0 ? ((partnershipRuns / partnershipBalls) * 100).toFixed(1) : '0.0'}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Run Rate Comparison */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Run Rate Comparison</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={runRateData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="over" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="runRate" stroke="#8884d8" name="Current RR" />
-                <Line type="monotone" dataKey="requiredRate" stroke="#82ca9d" name="Required RR" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Score Progression */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Score Progression</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={wormData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="over" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="runs" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Current Match Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Match Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Target</p>
+              <p className="text-2xl font-bold">{innings1Score ? innings1Score.runs + 1 : 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Needed</p>
+              <p className="text-2xl font-bold">{innings1Score && innings2Score ? Math.max(0, innings1Score.runs + 1 - innings2Score.runs) : 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Balls Left</p>
+              <p className="text-2xl font-bold">{innings2Score ? (20 * 6) - (innings2Score.overs * 6 + (innings2Score.balls || 0)) : 120}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Run Rate Gap</p>
+              <p className="text-2xl font-bold">{(parseFloat(requiredRunRate) - parseFloat(currentRunRate)).toFixed(2)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Player Performance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -138,16 +121,16 @@ const MatchAnalytics = ({
           <CardContent className="space-y-3">
             {currentBatsmen && currentBatsmen.length > 0 ? (
               currentBatsmen.map((batsman, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg border">
                   <div>
                     <p className="font-semibold">{batsman.name} {index === 0 ? '*' : ''}</p>
-                    <p className="text-sm text-gray-600">
-                      {batsman.runs || 0} ({batsman.balls || 0}b) • SR: {batsman.balls > 0 ? ((batsman.runs / batsman.balls) * 100).toFixed(1) : '0.0'}
+                    <p className="text-sm text-muted-foreground">
+                      {batsman.runs || 0} ({batsman.balls || 0}) • SR: {batsman.balls > 0 ? (((batsman.runs || 0) / batsman.balls) * 100).toFixed(1) : '0.0'}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex gap-1">
                     <Badge variant="outline">{batsman.fours || 0}×4</Badge>
-                    <Badge variant="outline" className="ml-1">{batsman.sixes || 0}×6</Badge>
+                    <Badge variant="outline">{batsman.sixes || 0}×6</Badge>
                   </div>
                 </div>
               ))
@@ -163,15 +146,29 @@ const MatchAnalytics = ({
           </CardHeader>
           <CardContent>
             {currentBowler ? (
-              <div className="p-3 bg-gray-50 rounded">
+              <div className="p-3 bg-muted/50 rounded-lg border">
                 <p className="font-semibold">{currentBowler.name}</p>
-                <p className="text-sm text-gray-600">
-                  {currentBowler.overs || 0}-{currentBowler.runs || 0}-{currentBowler.wickets || 0} • 
-                  Econ: {currentBowler.overs > 0 ? (currentBowler.runs / currentBowler.overs).toFixed(2) : '0.00'}
-                </p>
+                <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Overs:</span>
+                    <p className="font-medium">{(currentBowler.overs || 0).toFixed(1)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Runs:</span>
+                    <p className="font-medium">{currentBowler.runs || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Wickets:</span>
+                    <p className="font-medium">{currentBowler.wickets || 0}</p>
+                  </div>
+                </div>
+                <div className="text-sm mt-2">
+                  <span className="text-muted-foreground">Economy:</span> 
+                  <span className="font-medium ml-1">{currentBowler.overs > 0 ? (currentBowler.runs / currentBowler.overs).toFixed(2) : '0.00'}</span>
+                </div>
               </div>
             ) : (
-              <p className="text-gray-500">No bowler selected</p>
+              <p className="text-muted-foreground">No bowler selected</p>
             )}
           </CardContent>
         </Card>

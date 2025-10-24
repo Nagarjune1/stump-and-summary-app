@@ -121,7 +121,7 @@ const AdvancedAnalytics = () => {
         .select(`
           *,
           player:players(name, team_id),
-          match:matches(team1_id, team2_id, winner_team_id)
+          match:matches(team1_id, team2_id, result)
         `)
         .in('match_id', matches?.map(m => m.id) || []);
 
@@ -148,7 +148,13 @@ const AdvancedAnalytics = () => {
       m.team1_id === teamId || m.team2_id === teamId
     );
 
-    const wins = teamMatches.filter(m => m.winner_team_id === teamId).length;
+    // Count wins by parsing result text
+    const teamName = teams.find(t => t.id === teamId)?.name || '';
+    const wins = teamMatches.filter(m => {
+      if (!m.result) return false;
+      return m.result.toLowerCase().includes(teamName.toLowerCase()) && 
+             (m.result.toLowerCase().includes('won') || m.result.toLowerCase().includes('win'));
+    }).length;
     const totalMatches = teamMatches.length;
     
     // Calculate team scores - parse the score strings
@@ -240,7 +246,9 @@ const AdvancedAnalytics = () => {
       }
       const venueData = venueMap.get(venue);
       venueData.matches += 1;
-      if (match.winner_team_id === teamId) {
+      // Check if team won by parsing result
+      if (match.result && match.result.toLowerCase().includes(teamName.toLowerCase()) && 
+          (match.result.toLowerCase().includes('won') || match.result.toLowerCase().includes('win'))) {
         venueData.wins += 1;
       }
     });
@@ -266,7 +274,9 @@ const AdvancedAnalytics = () => {
       
       const monthData = monthlyMap.get(monthKey);
       monthData.matches += 1;
-      if (match.winner_team_id === teamId) {
+      // Check if team won by parsing result
+      if (match.result && match.result.toLowerCase().includes(teamName.toLowerCase()) && 
+          (match.result.toLowerCase().includes('won') || match.result.toLowerCase().includes('win'))) {
         monthData.wins += 1;
       }
       
@@ -291,9 +301,14 @@ const AdvancedAnalytics = () => {
       .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
       .slice(0, 10);
     
-    const recentForm = recentMatches.map(match => 
-      match.winner_team_id === teamId ? 'W' : 'L'
-    );
+    const recentForm = recentMatches.map(match => {
+      if (!match.result) return 'N';
+      if (match.result.toLowerCase().includes(teamName.toLowerCase()) && 
+          (match.result.toLowerCase().includes('won') || match.result.toLowerCase().includes('win'))) {
+        return 'W';
+      }
+      return 'L';
+    });
 
     return {
       totalMatches,
