@@ -26,6 +26,7 @@ const LiveDashboard = () => {
     upcomingToday: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const LiveDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch live matches with team details
       const { data: liveData, error: liveError } = await supabase
@@ -115,6 +117,7 @@ const LiveDashboard = () => {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setError('Failed to load dashboard data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -126,8 +129,29 @@ const LiveDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex flex-col justify-center items-center h-64 space-y-4">
         <div className="text-lg text-primary animate-pulse">Loading dashboard...</div>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setLoading(false);
+            setError('Skipped loading');
+          }}
+          className="text-sm"
+        >
+          Skip Loading
+        </Button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-64 space-y-4">
+        <div className="text-lg text-destructive">{error}</div>
+        <Button onClick={fetchDashboardData}>
+          Retry
+        </Button>
       </div>
     );
   }
