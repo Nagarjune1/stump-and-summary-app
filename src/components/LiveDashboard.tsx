@@ -129,18 +129,8 @@ const LiveDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 space-y-4">
+      <div className="flex justify-center items-center h-64">
         <div className="text-lg text-primary animate-pulse">Loading dashboard...</div>
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            setLoading(false);
-            setError('Skipped loading');
-          }}
-          className="text-sm"
-        >
-          Skip Loading
-        </Button>
       </div>
     );
   }

@@ -47,14 +47,14 @@
 
     --radius: 0.75rem;
 
-    /* Shadow definitions - minimal glow */
+    /* Shadow definitions - ultra minimal glow */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 4px hsl(var(--primary) / 0.08);
-    --shadow-glow-strong: 0 0 6px hsl(var(--primary) / 0.12);
+    --shadow-glow: 0 0 2px hsl(var(--primary) / 0.04);
+    --shadow-glow-strong: 0 0 3px hsl(var(--primary) / 0.06);
 
     /* Sidebar colors for neon theme */
     --sidebar-background: 218 28% 6%;
@@ -115,35 +115,27 @@
     min-height: 100vh;
   }
 
-  /* Reduced neon glow effects for better readability */
+  /* Ultra minimal neon effects */
   .neon-glow {
-    text-shadow: 
-      0 0 3px currentColor, 
-      0 0 6px currentColor;
+    text-shadow: 0 0 2px currentColor;
   }
 
   .neon-border {
-    box-shadow: 
-      0 0 3px hsl(var(--primary) / 0.3), 
-      0 0 6px hsl(var(--primary) / 0.2);
-    border: 1px solid hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.08);
+    border: 1px solid hsl(var(--primary) / 0.2);
   }
 
   .neon-card {
     background: hsl(var(--card) / 0.95);
-    border: 1px solid hsl(var(--primary) / 0.2);
-    box-shadow: 
-      0 0 5px hsl(var(--primary) / 0.05),
-      0 4px 15px hsl(var(--background) / 0.3);
+    border: 1px solid hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.03);
     backdrop-filter: blur(8px);
     transition: all 0.3s ease;
   }
 
   .neon-card:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    box-shadow: 
-      0 0 8px hsl(var(--primary) / 0.1),
-      0 6px 20px hsl(var(--background) / 0.4);
+    border-color: hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 3px hsl(var(--primary) / 0.05);
   }
 
   /* Enhanced contrast for better readability */
@@ -159,41 +151,36 @@
 
   .cricket-success {
     @apply bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))];
-    box-shadow: 0 0 5px hsl(var(--success) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--success) / 0.08);
   }
 
   .cricket-warning {
     @apply bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))];
-    box-shadow: 0 0 5px hsl(var(--warning) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--warning) / 0.08);
   }
 
   .cricket-primary {
     @apply bg-primary text-primary-foreground;
-    box-shadow: 0 0 5px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.08);
   }
 
   .cricket-accent {
     @apply bg-accent text-accent-foreground;
-    box-shadow: 0 0 5px hsl(var(--accent) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--accent) / 0.08);
   }
 
-  /* Reduced button glow styles */
+  /* Minimal button glow styles */
   .btn-neon {
     @apply relative overflow-hidden;
     background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
-    border: 1px solid hsl(var(--primary) / 0.5);
-    box-shadow: 
-      0 0 5px hsl(var(--primary) / 0.2),
-      inset 0 0 5px hsl(var(--primary) / 0.05);
+    border: 1px solid hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.08);
     transition: all 0.3s ease;
   }
 
   .btn-neon:hover {
     transform: translateY(-1px);
-    box-shadow: 
-      0 0 8px hsl(var(--primary) / 0.3),
-      0 5px 15px hsl(var(--primary) / 0.15),
-      inset 0 0 8px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 3px hsl(var(--primary) / 0.12);
   }
 
   /* Enhanced table styling */
@@ -225,7 +212,7 @@
 
   .neon-input:focus {
     border-color: hsl(var(--primary));
-    box-shadow: 0 0 5px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.08);
   }
 
   .neon-select {
@@ -235,7 +222,7 @@
 
   .neon-select:focus {
     border-color: hsl(var(--primary));
-    box-shadow: 0 0 5px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 2px hsl(var(--primary) / 0.08);
   }
 
   /* Enhanced scroll styling */
@@ -264,11 +251,11 @@
   @keyframes loading-pulse {
     0%, 100% {
       opacity: 1;
-      text-shadow: 0 0 3px currentColor;
+      text-shadow: 0 0 1px currentColor;
     }
     50% {
       opacity: 0.7;
-      text-shadow: 0 0 2px currentColor;
+      text-shadow: none;
     }
   }
 }

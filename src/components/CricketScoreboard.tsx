@@ -101,7 +101,7 @@ const CricketScoreboard = ({
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="flex justify-center items-center h-64">
-          <div className="text-lg text-primary neon-glow animate-pulse">Loading scoreboards...</div>
+          <div className="text-lg text-primary animate-pulse">Loading scoreboards...</div>
         </div>
       </div>
     );
@@ -112,17 +112,17 @@ const CricketScoreboard = ({
     return (
       <div className="min-h-screen bg-background p-6 space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary neon-glow mb-2">Live Cricket Scoreboards</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">Live Cricket Scoreboards</h1>
           <p className="text-accent">Real-time match scoreboards and statistics</p>
         </div>
 
         <div className="space-y-6">
           {liveMatches.map((match) => (
-            <Card key={match.id} className="neon-card border-warning/50 shadow-lg shadow-warning/20">
+            <Card key={match.id} className="border-warning/50">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <Badge className="bg-warning/20 text-warning border-warning neon-glow animate-pulse">
+                    <Badge className="bg-warning/20 text-warning border-warning animate-pulse">
                       <Play className="w-3 h-3 mr-1" />
                       LIVE
                     </Badge>
@@ -132,7 +132,7 @@ const CricketScoreboard = ({
                   </div>
                   <Button 
                     onClick={() => handleWatchLive(match.id)}
-                    className="bg-primary hover:bg-primary/90 neon-glow"
+                    className="bg-primary hover:bg-primary/90"
                     size="sm"
                   >
                     <Eye className="w-4 h-4 mr-1" />
@@ -152,7 +152,7 @@ const CricketScoreboard = ({
                         <p className="text-sm text-accent">Innings 1</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-primary neon-glow">
+                        <div className="text-2xl font-bold text-primary">
                           {match.team1_score || '0/0'}
                         </div>
                         <div className="text-sm text-accent">({match.team1_overs || '0.0'} ov)</div>
@@ -167,7 +167,7 @@ const CricketScoreboard = ({
                         <p className="text-sm text-accent">Innings 2</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-primary neon-glow">
+                        <div className="text-2xl font-bold text-primary">
                           {match.team2_score || '0/0'}
                         </div>
                         <div className="text-sm text-accent">({match.team2_overs || '0.0'} ov)</div>
@@ -200,18 +200,18 @@ const CricketScoreboard = ({
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary neon-glow mb-2">Live Cricket Scoreboards</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">Live Cricket Scoreboards</h1>
           <p className="text-accent">Real-time match scoreboards and statistics</p>
         </div>
         
-        <Card className="neon-card">
+        <Card>
           <CardContent className="p-8 text-center">
             <Play className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold text-primary mb-2">No Live Matches</h3>
             <p className="text-muted-foreground mb-4">There are currently no live matches to display.</p>
             <Button 
               onClick={() => navigate('/create-match')}
-              className="bg-primary hover:bg-primary/90 neon-glow"
+              className="bg-primary hover:bg-primary/90"
             >
               Create New Match
             </Button>
@@ -225,11 +225,11 @@ const CricketScoreboard = ({
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Match Header */}
-      <Card className="neon-card border-primary/30">
+      <Card className="border-primary/30">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-2xl text-primary neon-glow">
+              <CardTitle className="text-2xl text-primary">
                 {matchData?.team1?.name} vs {matchData?.team2?.name}
               </CardTitle>
               <p className="text-sm text-accent">
@@ -243,10 +243,10 @@ const CricketScoreboard = ({
 
       {/* Target Info */}
       {currentInnings === 2 && target > 0 && (
-        <Card className="neon-card border-warning/30 bg-warning/5">
+        <Card className="border-warning/30 bg-warning/5">
           <CardContent className="pt-4">
             <div className="text-center">
-              <p className="text-lg font-semibold text-foreground neon-glow">
+              <p className="text-lg font-semibold text-foreground">
                 {battingTeamName} need {runsNeeded} runs in {ballsRemaining} balls
               </p>
               <div className="flex justify-center gap-6 mt-2 text-sm text-accent">
@@ -260,11 +260,11 @@ const CricketScoreboard = ({
       )}
 
       {/* Current Innings Score */}
-      <Card className="neon-card border-success/30">
+      <Card className="border-success/30">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <span className="text-foreground">{battingTeamName} Innings</span>
-            <span className="text-3xl font-bold text-primary neon-glow">
+            <span className="text-3xl font-bold text-primary">
               {score?.runs}-{score?.wickets} ({formatOvers(currentOver, currentBall)} Ov)
             </span>
           </CardTitle>
@@ -355,12 +355,12 @@ const CricketScoreboard = ({
       </Card>
 
       {/* Full Batting Card */}
-      <Card className="neon-card border-primary/30">
+      <Card className="border-primary/30">
         <CardHeader>
           <CardTitle className="text-foreground">{battingTeamName} Batting</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table className="neon-table">
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Batsman</TableHead>
@@ -400,12 +400,12 @@ const CricketScoreboard = ({
       </Card>
 
       {/* Full Bowling Card */}
-      <Card className="neon-card border-primary/30">
+      <Card className="border-primary/30">
         <CardHeader>
           <CardTitle className="text-foreground">{bowlingTeamName} Bowling</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table className="neon-table">
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Bowler</TableHead>
