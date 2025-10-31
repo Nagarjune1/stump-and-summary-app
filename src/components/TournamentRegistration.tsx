@@ -21,6 +21,9 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
   const [showFixtureDialog, setShowFixtureDialog] = useState(false);
   const [selectedTournamentForFixture, setSelectedTournamentForFixture] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fixtureType, setFixtureType] = useState('all'); // 'all', 'groups'
+  const [numberOfGroups, setNumberOfGroups] = useState(2);
+  const [teamGroups, setTeamGroups] = useState({});
 
   useEffect(() => {
     fetchTeams();
@@ -162,50 +165,35 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
         return;
       }
 
-      // Generate round-robin fixtures
       const fixtures = [];
       const teams = registeredTeams.map(rt => rt.team);
-      
-      for (let i = 0; i < teams.length; i++) {
-        for (let j = i + 1; j < teams.length; j++) {
-          // Create match
-          const matchData = {
-            team1_id: teams[i].id,
-            team2_id: teams[j].id,
-            format: 'T20',
-            match_date: new Date().toISOString().split('T')[0], // Today's date
-            venue: 'TBD',
-            status: 'upcoming',
-            tournament: selectedTournamentForFixture?.name || 'Tournament'
-          };
 
-          const { data: match, error: matchError } = await supabase
-            .from('matches')
-            .insert([matchData])
-            .select()
-            .single();
-
-          if (matchError) throw matchError;
-
-          // Link match to tournament
-          const tournamentMatchData = {
-            tournament_id: tournamentId,
-            match_id: match.id,
-            round_name: 'League Stage',
-            match_number: fixtures.length + 1
-          };
-
-          const { error: tournamentMatchError } = await supabase
-            .from('tournament_matches')
-            .insert([tournamentMatchData]);
-
-          if (tournamentMatchError) throw tournamentMatchError;
-
-          fixtures.push({
-            team1: teams[i].name,
-            team2: teams[j].name,
-            matchNumber: fixtures.length + 1
-          });
+      if (fixtureType === 'all') {
+        // Generate round-robin fixtures for all teams
+        for (let i = 0; i < teams.length; i++) {
+          for (let j = i + 1; j < teams.length; j++) {
+            await createMatch(teams[i], teams[j], tournamentId, 'League Stage', fixtures.length + 1, fixtures);
+          }
+        }
+      } else {
+        // Generate fixtures with groups
+        const groups = distributeTeamsIntoGroups(teams, numberOfGroups);
+        
+        // Within-group matches
+        for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+          const groupTeams = groups[groupIndex];
+          for (let i = 0; i < groupTeams.length; i++) {
+            for (let j = i + 1; j < groupTeams.length; j++) {
+              await createMatch(
+                groupTeams[i], 
+                groupTeams[j], 
+                tournamentId, 
+                `Group ${String.fromCharCode(65 + groupIndex)}`, 
+                fixtures.length + 1,
+                fixtures
+              );
+            }
+          }
         }
       }
 
@@ -214,6 +202,8 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
         description: `Generated ${fixtures.length} fixtures successfully!`,
       });
       setShowFixtureDialog(false);
+      setFixtureType('all');
+      setNumberOfGroups(2);
       
     } catch (error) {
       console.error('Error generating fixtures:', error);
@@ -225,6 +215,53 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const createMatch = async (team1, team2, tournamentId, roundName, matchNumber, fixtures) => {
+    const matchData = {
+      team1_id: team1.id,
+      team2_id: team2.id,
+      format: 'T20',
+      match_date: new Date().toISOString().split('T')[0],
+      venue: 'TBD',
+      status: 'upcoming',
+      tournament: selectedTournamentForFixture?.name || 'Tournament'
+    };
+
+    const { data: match, error: matchError } = await supabase
+      .from('matches')
+      .insert([matchData])
+      .select()
+      .single();
+
+    if (matchError) throw matchError;
+
+    const tournamentMatchData = {
+      tournament_id: tournamentId,
+      match_id: match.id,
+      round_name: roundName,
+      match_number: matchNumber
+    };
+
+    const { error: tournamentMatchError } = await supabase
+      .from('tournament_matches')
+      .insert([tournamentMatchData]);
+
+    if (tournamentMatchError) throw tournamentMatchError;
+
+    fixtures.push({
+      team1: team1.name,
+      team2: team2.name,
+      matchNumber
+    });
+  };
+
+  const distributeTeamsIntoGroups = (teams, numGroups) => {
+    const groups = Array.from({ length: numGroups }, () => []);
+    teams.forEach((team, index) => {
+      groups[index % numGroups].push(team);
+    });
+    return groups;
   };
 
   const getPaymentStatusColor = (status) => {
@@ -435,25 +472,64 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
       {/* Generate Fixtures Dialog */}
       <Dialog open={showFixtureDialog} onOpenChange={setShowFixtureDialog}>
-        <DialogContent className="neon-card">
+        <DialogContent className="neon-card max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-primary neon-glow">Generate Tournament Fixtures</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-accent">
-              This will generate fixtures for all paid teams in <strong>{selectedTournamentForFixture?.name}</strong>.
-              Each team will play against every other team once (Round Robin format).
+              Configure fixture generation for <strong>{selectedTournamentForFixture?.name}</strong>
             </p>
             
             <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
               <p className="text-sm text-primary">
                 <strong>{getRegisteredTeamsCount(selectedTournamentForFixture?.id || '')}</strong> teams 
-                are registered and paid. This will generate{' '}
-                <strong>
-                  {Math.floor(getRegisteredTeamsCount(selectedTournamentForFixture?.id || '') * 
-                    (getRegisteredTeamsCount(selectedTournamentForFixture?.id || '') - 1) / 2)}
-                </strong> matches.
+                are registered and paid.
               </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="fixtureType" className="text-foreground">Fixture Format</Label>
+                <Select value={fixtureType} onValueChange={setFixtureType}>
+                  <SelectTrigger className="bg-input border-border text-foreground">
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent className="neon-card">
+                    <SelectItem value="all">All Teams (Round Robin)</SelectItem>
+                    <SelectItem value="groups">Group Stage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {fixtureType === 'groups' && (
+                <div>
+                  <Label htmlFor="numberOfGroups" className="text-foreground">Number of Groups</Label>
+                  <Select value={String(numberOfGroups)} onValueChange={(val) => setNumberOfGroups(Number(val))}>
+                    <SelectTrigger className="bg-input border-border text-foreground">
+                      <SelectValue placeholder="Select groups" />
+                    </SelectTrigger>
+                    <SelectContent className="neon-card">
+                      <SelectItem value="2">2 Groups</SelectItem>
+                      <SelectItem value="3">3 Groups</SelectItem>
+                      <SelectItem value="4">4 Groups</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Teams will be evenly distributed across groups
+                  </p>
+                </div>
+              )}
+
+              <div className="p-3 bg-success/10 rounded-lg border border-success/30">
+                <p className="text-sm text-success">
+                  {fixtureType === 'all' 
+                    ? `Will generate ${Math.floor(getRegisteredTeamsCount(selectedTournamentForFixture?.id || '') * 
+                        (getRegisteredTeamsCount(selectedTournamentForFixture?.id || '') - 1) / 2)} matches (all teams play each other)`
+                    : `Will generate group stage matches with ${numberOfGroups} groups`
+                  }
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2">
