@@ -137,17 +137,31 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     try {
       setLoading(true);
 
-      const matchData = {
+      const { matchSchema } = await import('@/lib/validationSchemas');
+      
+      const validated = matchSchema.parse({
         team1_id: formData.team1_id,
         team2_id: formData.team2_id,
         venue: formData.venue,
         match_date: formData.match_date,
-        match_time: formData.match_time || null,
+        match_time: formData.match_time || '',
         overs: formData.overs,
         format: formData.format,
-        tournament: formData.tournament || null,
-        description: formData.description || null,
-        status: 'upcoming',
+        tournament: formData.tournament || '',
+        description: formData.description || ''
+      });
+
+      const matchData = {
+        team1_id: validated.team1_id,
+        team2_id: validated.team2_id,
+        venue: validated.venue,
+        match_date: validated.match_date,
+        format: validated.format,
+        match_time: validated.match_time || null,
+        overs: validated.overs,
+        tournament: validated.tournament || null,
+        description: validated.description || null,
+        status: 'upcoming' as const,
         wide_runs: formData.wide_runs,
         noball_runs: formData.noball_runs
       };

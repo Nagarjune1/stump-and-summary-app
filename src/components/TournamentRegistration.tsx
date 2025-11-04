@@ -74,13 +74,15 @@ const TournamentRegistration = ({ tournaments, onUpdate }) => {
 
     setLoading(true);
     try {
+      const registrationData = {
+        tournament_id: selectedTournament,
+        team_id: selectedTeam,
+        payment_status: 'pending' as const
+      };
+
       const { error } = await supabase
         .from('tournament_teams')
-        .insert({
-          tournament_id: selectedTournament,
-          team_id: selectedTeam,
-          payment_status: 'pending'
-        });
+        .insert([registrationData]);
 
       if (error) {
         if (error.code === '23505') {

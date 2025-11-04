@@ -490,7 +490,6 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
-          role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -499,7 +498,6 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
-          role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -508,7 +506,6 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          role?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -740,6 +737,7 @@ export type Database = {
           ball_type: string
           category: string
           created_at: string
+          created_by: string | null
           description: string | null
           end_date: string | null
           id: string
@@ -762,6 +760,7 @@ export type Database = {
           ball_type: string
           category: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
@@ -784,6 +783,7 @@ export type Database = {
           ball_type?: string
           category?: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
@@ -810,7 +810,38 @@ export type Database = {
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tournaments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_public"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       venues: {
         Row: {
@@ -865,13 +896,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      venues_public: {
+        Row: {
+          capacity: number | null
+          city: string | null
+          created_at: string | null
+          facilities: string[] | null
+          id: string | null
+          location: string | null
+          name: string | null
+          photos: string[] | null
+          pitch_type: string | null
+          rating: number | null
+          total_matches: number | null
+        }
+        Insert: {
+          capacity?: number | null
+          city?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          photos?: string[] | null
+          pitch_type?: string | null
+          rating?: number | null
+          total_matches?: number | null
+        }
+        Update: {
+          capacity?: number | null
+          city?: string | null
+          created_at?: string | null
+          facilities?: string[] | null
+          id?: string | null
+          location?: string | null
+          name?: string | null
+          photos?: string[] | null
+          pitch_type?: string | null
+          rating?: number | null
+          total_matches?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -998,6 +1076,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

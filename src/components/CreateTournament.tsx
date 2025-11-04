@@ -60,29 +60,28 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.ball_type || !formData.tournament_style || 
-        !formData.category || !formData.start_date || !formData.organizer_name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
     
     try {
-      const tournamentData = {
+      const { tournamentSchema } = await import('@/lib/validationSchemas');
+      
+      const validated = tournamentSchema.parse({
         ...formData,
         registration_fee: parseFloat(formData.registration_fee) || 0,
         prize_money: parseFloat(formData.prize_money) || 0,
         max_teams: parseInt(formData.max_teams) || 16,
         venue_id: formData.venue_id || null,
         status: 'upcoming'
-      };
+      });
 
-      await onSubmit(tournamentData);
-    } catch (error) {
+      await onSubmit(validated);
+    } catch (error: any) {
       console.error('Error creating tournament:', error);
-      toast.error('Failed to create tournament');
+      if (error.errors) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error('Failed to create tournament');
+      }
     } finally {
       setLoading(false);
     }
