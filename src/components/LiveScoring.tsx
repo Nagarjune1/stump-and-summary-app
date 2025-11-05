@@ -19,6 +19,7 @@ import WicketSelector from "./WicketSelector";
 import { validatePlayer, formatOvers } from "@/utils/scoringUtils";
 import { useRealtimeMatch } from "@/hooks/useRealtimeMatch";
 import { useRealtimePresence } from "@/hooks/useRealtimePresence";
+import { notificationService } from "@/services/notificationService";
 
 interface Match {
   id: string;
@@ -112,6 +113,12 @@ const LiveScoring = () => {
   const [showNewBatsmanModal, setShowNewBatsmanModal] = useState(false);
   const [showWicketModal, setShowWicketModal] = useState(false);
   const [wicketDetails, setWicketDetails] = useState(null);
+  const [recentWickets, setRecentWickets] = useState<any[]>([]);
+
+  // Initialize notification service
+  useEffect(() => {
+    notificationService.initialize().catch(console.error);
+  }, []);
 
   // Realtime subscription for match updates
   useRealtimeMatch(selectedMatch?.id || null, (update) => {
@@ -346,6 +353,8 @@ const LiveScoring = () => {
     console.log(`Scoring ${runs} runs`);
     
     const updatedBatsmen = [...currentBatsmen];
+    const previousScore = { ...updatedBatsmen[strikeBatsmanIndex] };
+    
     updatedBatsmen[strikeBatsmanIndex].runs += runs;
     updatedBatsmen[strikeBatsmanIndex].balls += 1;
     
@@ -356,6 +365,24 @@ const LiveScoring = () => {
     }
     
     setCurrentBatsmen(updatedBatsmen);
+
+    // Check for milestones and send notifications
+    const milestone = notificationService.detectMilestone(
+      updatedBatsmen[strikeBatsmanIndex],
+      selectedMatch?.id || '',
+      previousScore
+    );
+    
+    if (milestone) {
+      const settings = JSON.parse(localStorage.getItem('notification_settings') || '{}');
+      const shouldNotify = 
+        (milestone.type === 'century' && settings.century !== false) ||
+        (milestone.type === 'half_century' && settings.halfCentury !== false);
+      
+      if (shouldNotify) {
+        notificationService.sendLocalNotification(milestone);
+      }
+    }
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
@@ -419,9 +446,45 @@ const LiveScoring = () => {
 
     // Update bowler stats
     if (currentBowler) {
+      const previousBowlerStats = { ...currentBowler };
       const updatedBowler = { ...currentBowler };
       updatedBowler.wickets = (updatedBowler.wickets || 0) + 1;
       setCurrentBowler(updatedBowler);
+      
+      // Track wicket for hat-trick detection
+      const wicketData = {
+        bowler_id: currentBowler.id,
+        bowler_name: currentBowler.name,
+        over_number: currentOver,
+        ball_number: currentBallInOver,
+        match_id: selectedMatch?.id,
+      };
+      
+      const updatedRecentWickets = [...recentWickets, wicketData].slice(-5);
+      setRecentWickets(updatedRecentWickets);
+      
+      // Check for hat-trick
+      const hatTrick = notificationService.detectHatTrick(updatedRecentWickets);
+      if (hatTrick) {
+        const settings = JSON.parse(localStorage.getItem('notification_settings') || '{}');
+        if (settings.hatTrick !== false) {
+          notificationService.sendLocalNotification(hatTrick);
+        }
+      }
+      
+      // Check for 5-wicket milestone
+      const fiveWicketMilestone = notificationService.detectMilestone(
+        updatedBowler,
+        selectedMatch?.id || '',
+        previousBowlerStats
+      );
+      
+      if (fiveWicketMilestone) {
+        const settings = JSON.parse(localStorage.getItem('notification_settings') || '{}');
+        if (settings.fiveWickets !== false) {
+          notificationService.sendLocalNotification(fiveWicketMilestone);
+        }
+      }
     }
 
     setCurrentBallInOver(prev => {
@@ -590,6 +653,26 @@ const LiveScoring = () => {
     } else {
       // Match completed
       setMatchEnded(true);
+      
+      // Send match result notification
+      const winningTeam = teamInnings[1].totalRuns > teamInnings[0].totalRuns
+        ? teamInnings[1].teamName
+        : teamInnings[0].teamName;
+      
+      const margin = teamInnings[1].totalRuns > teamInnings[0].totalRuns
+        ? `by ${10 - teamInnings[1].totalWickets} wickets`
+        : `by ${teamInnings[0].totalRuns - teamInnings[1].totalRuns} runs`;
+      
+      const settings = JSON.parse(localStorage.getItem('notification_settings') || '{}');
+      if (settings.matchResult !== false) {
+        notificationService.sendLocalNotification({
+          type: 'match_result',
+          player: winningTeam,
+          details: `${winningTeam} wins ${margin}!`,
+          matchId: selectedMatch?.id || '',
+        });
+      }
+      
       toast({
         title: "Match Complete!",
         description: "Both innings completed. Match ended.",

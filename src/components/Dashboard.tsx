@@ -14,7 +14,8 @@ import {
   BookOpen,
   MapPin,
   Users,
-  Award
+  Award,
+  Bell
 } from 'lucide-react';
 import LiveScoring from './LiveScoring';
 import CreateMatch from './CreateMatch';
@@ -26,6 +27,7 @@ import VenueManagement from './VenueManagement';
 import TournamentManagement from './TournamentManagement';
 import Teams from "./Teams";
 import PlayerProfiles from "./PlayerProfiles";
+import NotificationSettings from "./NotificationSettings";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('live-scoring');
@@ -117,6 +119,8 @@ const Dashboard = () => {
             bowlingFigures={[]}
           />
         );
+      case 'notifications':
+        return <NotificationSettings />;
       case 'documentation':
         return <Documentation />;
       default:
@@ -141,6 +145,7 @@ const Dashboard = () => {
     { id: 'players', label: 'Players', icon: User },
     { id: 'venues', label: 'Venues', icon: MapPin },
     { id: 'export', label: 'Export', icon: Download },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'documentation', label: 'Documentation', icon: BookOpen },
   ];
 
