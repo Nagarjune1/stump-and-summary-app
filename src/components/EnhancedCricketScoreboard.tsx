@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +10,9 @@ import TopPerformers from "./TopPerformers";
 import FallOfWickets from "./FallOfWickets";
 import LiveCommentary from "./LiveCommentary";
 import RunRateChart from "./RunRateChart";
+import { useRealtimeMatch } from "@/hooks/useRealtimeMatch";
+import { useRealtimePresence } from "@/hooks/useRealtimePresence";
+import { toast } from "@/hooks/use-toast";
 
 const EnhancedCricketScoreboard = ({ 
   matchData, 
@@ -40,6 +42,29 @@ const EnhancedCricketScoreboard = ({
     commentary: false
   });
 
+  // Realtime subscription for live score updates
+  useRealtimeMatch(matchData?.id || null, (update) => {
+    console.log('Scoreboard realtime update:', update);
+    if (update.type === 'ball' || update.type === 'stats') {
+      toast({
+        title: "Live Update",
+        description: "Score updated in real-time",
+        duration: 2000,
+      });
+    }
+  });
+
+  // Show active viewers/scorers
+  const { presenceUsers } = useRealtimePresence(
+    matchData?.id || null,
+    matchData ? {
+      user_id: 'viewer_' + Math.random(),
+      user_name: 'Viewer',
+      role: 'viewer',
+      online_at: new Date().toISOString()
+    } : null
+  );
+
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -57,6 +82,24 @@ const EnhancedCricketScoreboard = ({
         matchData={matchData} 
         tossInfo={tossInfo}
       />
+
+      {/* Active Users Indicator */}
+      {presenceUsers.length > 0 && (
+        <Card className="border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                <span className="relative flex h-2 w-2 mr-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                {presenceUsers.length} {presenceUsers.length === 1 ? 'viewer' : 'viewers'} watching
+              </Badge>
+              <span className="text-xs text-muted-foreground">Live updates enabled</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Mobile Tabs */}
       <div className="block md:hidden">

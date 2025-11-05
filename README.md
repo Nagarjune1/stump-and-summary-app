@@ -20,6 +20,14 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 - Strike rotation management
 - Over completion tracking
 
+### Real-Time Updates (NEW in v1.3.1)
+- Live score synchronization across all devices
+- Real-time presence tracking (see who's watching)
+- Instant notifications for score updates
+- Multi-device simultaneous scoring support
+- WebSocket-based instant updates
+- Connection status monitoring
+
 ### Advanced Analytics (v1.2.0)
 - Interactive performance dashboards with charts
 - Player comparison tools across matches
@@ -112,10 +120,12 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 ### Backend & Database
 - **Supabase** (^2.50.2) - Backend as a Service
   - PostgreSQL database
-  - Real-time subscriptions
+  - Real-time subscriptions with WebSockets
+  - Live presence tracking
   - Authentication
   - Row Level Security (RLS)
   - Storage for player photos
+  - REPLICA IDENTITY FULL for real-time updates
 
 ### State Management & Data Fetching
 - **TanStack React Query** (^5.56.2) - Server state management
@@ -163,7 +173,9 @@ A comprehensive cricket live scoring application built with React, TypeScript, a
 
 ### Key Features
 - Row Level Security (RLS) policies
-- Real-time data synchronization
+- Real-time data synchronization with Supabase
+- Real-time presence tracking
+- WebSocket connections for instant updates
 - Foreign key relationships
 - Optimized queries for performance
 
@@ -219,6 +231,8 @@ npm run dev
 3. Handle wickets with dismissal details
 4. Manage extras and strike rotation
 5. Complete overs and change bowlers
+6. See live updates across all connected devices
+7. Monitor active viewers in real-time
 
 ### Multi-Language Support (NEW)
 1. Select language from settings
@@ -296,6 +310,26 @@ npm run dev
 - [ ] Performance optimization at scale
 
 ## 📦 Release Notes
+
+### v1.3.1 (January 6, 2025) - Real-Time Updates
+**New Features:**
+- Real-time score synchronization across all connected devices
+- Live presence tracking to see active viewers/scorers
+- WebSocket-based instant updates for scores and stats
+- Connection status monitoring with visual indicators
+- Multi-device simultaneous scoring support
+
+**Technical Improvements:**
+- Enabled REPLICA IDENTITY FULL on match tables
+- Added realtime publication for matches, ball_by_ball, match_stats, and partnerships
+- Custom React hooks for realtime subscriptions (useRealtimeMatch, useRealtimePresence)
+- Real-time indicator component with animated status badges
+
+**Use Cases:**
+- Multiple scorers can work simultaneously on the same match
+- Viewers see instant updates without refreshing
+- Track who's watching the match in real-time
+- Improved collaboration for tournament organizers
 
 ### v1.3.0 (January 6, 2025) - Multi-Language & Social Integration
 **New Features:**

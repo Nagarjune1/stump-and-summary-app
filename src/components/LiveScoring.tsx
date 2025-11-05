@@ -17,6 +17,8 @@ import BowlerChangeModal from "./scoring/BowlerChangeModal";
 import NewBatsmanModal from "./scoring/NewBatsmanModal";
 import WicketSelector from "./WicketSelector";
 import { validatePlayer, formatOvers } from "@/utils/scoringUtils";
+import { useRealtimeMatch } from "@/hooks/useRealtimeMatch";
+import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 
 interface Match {
   id: string;
@@ -110,6 +112,26 @@ const LiveScoring = () => {
   const [showNewBatsmanModal, setShowNewBatsmanModal] = useState(false);
   const [showWicketModal, setShowWicketModal] = useState(false);
   const [wicketDetails, setWicketDetails] = useState(null);
+
+  // Realtime subscription for match updates
+  useRealtimeMatch(selectedMatch?.id || null, (update) => {
+    console.log('Realtime update received:', update);
+    toast({
+      title: "Live Update",
+      description: `Match updated: ${update.type}`,
+    });
+  });
+
+  // Realtime presence tracking
+  const { presenceUsers } = useRealtimePresence(
+    selectedMatch?.id || null,
+    selectedMatch ? {
+      user_id: 'current_user',
+      user_name: 'Scorer',
+      role: 'scorer',
+      online_at: new Date().toISOString()
+    } : null
+  );
 
   useEffect(() => {
     if (selectedMatch) {
