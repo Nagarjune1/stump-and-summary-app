@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 // Import all page components
 import LiveDashboard from '@/components/LiveDashboard';
@@ -23,6 +24,21 @@ import EnhancedCricketScoreboard from '@/components/EnhancedCricketScoreboard';
 
 const Index = () => {
   const location = useLocation();
+  const { user, loading, signOut } = useAuth();
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-primary">Loading...</div>
+      </div>
+    );
+  }
+
+  // Redirect to auth if not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // Get page title based on current route
   const getPageTitle = (pathname: string) => {
@@ -73,6 +89,19 @@ const Index = () => {
                 <h1 className="text-lg font-bold text-primary neon-glow">
                   {getPageTitle(location.pathname)}
                 </h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">
+                  {user?.email}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={signOut}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             </header>
 
