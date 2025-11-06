@@ -132,27 +132,34 @@ export type Database = {
           created_at: string | null
           granted_by: string | null
           id: string
-          match_id: string | null
+          match_id: string
           permission_type: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           granted_by?: string | null
           id?: string
-          match_id?: string | null
+          match_id: string
           permission_type?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           granted_by?: string | null
           id?: string
-          match_id?: string | null
+          match_id?: string
           permission_type?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_match_permissions_match"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_permissions_match_id_fkey"
             columns: ["match_id"]

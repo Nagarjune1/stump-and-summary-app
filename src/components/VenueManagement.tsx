@@ -34,7 +34,6 @@ const VenueManagement = () => {
       setVenues(data || []);
       setFilteredVenues(data || []);
     } catch (error) {
-      console.error('Error fetching venues:', error);
       toast.error('Failed to load venues');
     } finally {
       setLoading(false);

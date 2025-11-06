@@ -61,7 +61,6 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
       if (error) throw error;
       setTeams(data || []);
     } catch (error) {
-      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -83,7 +82,6 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
       if (error) throw error;
       setPlayers(data || []);
     } catch (error) {
-      console.error('Error fetching players:', error);
       toast({
         title: "Error",
         description: "Failed to fetch players",
@@ -157,7 +155,6 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
         fetchPlayers();
       }
     } catch (error) {
-      console.error('Error adding player:', error);
       toast({
         title: "Error",
         description: "Failed to add player",

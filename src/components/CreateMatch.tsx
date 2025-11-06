@@ -46,7 +46,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching teams:', error);
         toast({
           title: "Error",
           description: "Failed to fetch teams",
@@ -55,10 +54,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         return;
       }
       
-      console.log('Fetched teams:', data);
       setTeams(data || []);
     } catch (error) {
-      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -75,7 +72,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching venues:', error);
         toast({
           title: "Error",
           description: "Failed to fetch venues",
@@ -84,10 +80,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         return;
       }
       
-      console.log('Fetched venues:', data);
       setVenues(data || []);
     } catch (error) {
-      console.error('Error fetching venues:', error);
       toast({
         title: "Error",
         description: "Failed to fetch venues",
@@ -166,8 +160,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         noball_runs: formData.noball_runs
       };
 
-      console.log('Creating match with data:', matchData);
-
       const { data, error } = await supabase
         .from('matches')
         .insert([matchData])
@@ -175,11 +167,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         .single();
 
       if (error) {
-        console.error('Error creating match:', error);
         throw error;
       }
-
-      console.log('Match created successfully:', data);
 
       toast({
         title: "Success",
@@ -207,7 +196,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
       });
 
     } catch (error) {
-      console.error('Error creating match:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create match",
@@ -219,7 +207,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
   };
 
   const handleInputChange = (field, value) => {
-    console.log(`Updating ${field} to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value

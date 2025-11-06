@@ -66,7 +66,6 @@ const Teams = () => {
       
       setTeams(teamsWithCount);
     } catch (error) {
-      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -119,7 +118,6 @@ const Teams = () => {
       setIsAddDialogOpen(false);
       fetchTeams();
     } catch (error) {
-      console.error('Error adding team:', error);
       toast({
         title: "Error",
         description: "Failed to add team",
@@ -158,7 +156,6 @@ const Teams = () => {
       setIsEditDialogOpen(false);
       fetchTeams();
     } catch (error) {
-      console.error('Error updating team:', error);
       toast({
         title: "Error",
         description: "Failed to update team",
@@ -195,7 +192,6 @@ const Teams = () => {
 
       fetchTeams();
     } catch (error) {
-      console.error('Error deleting team:', error);
       toast({
         title: "Error",
         description: "Failed to delete team",

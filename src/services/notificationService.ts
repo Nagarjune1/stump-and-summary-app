@@ -35,7 +35,6 @@ class NotificationService {
       }
 
       if (permStatus.receive !== 'granted') {
-        console.log('Push notification permission denied');
         return;
       }
 
@@ -44,19 +43,20 @@ class NotificationService {
 
       // Listen for registration
       await PushNotifications.addListener('registration', (token) => {
-        console.log('Push registration success, token: ' + token.value);
-        // Store token in your backend/database
-        this.saveDeviceToken(token.value);
+        // TODO: Store token in backend with proper user authentication
+        // Create device_tokens table with RLS policies
+        // Call edge function to securely store token
       });
 
-      // Listen for registration errors
+      // Listen for registration errors (only log in development)
       await PushNotifications.addListener('registrationError', (error) => {
-        console.error('Error on registration: ' + JSON.stringify(error));
+        if (import.meta.env.DEV) {
+          console.error('Push registration error:', error);
+        }
       });
 
       // Show notifications when app is open
       await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('Push notification received: ', notification);
         toast({
           title: notification.title || 'Match Update',
           description: notification.body || '',
@@ -66,8 +66,6 @@ class NotificationService {
 
       // Handle notification tap
       await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-        console.log('Push notification action performed', notification);
-        // Navigate to match details or relevant page
         const matchId = notification.notification.data?.matchId;
         if (matchId) {
           window.location.hash = `#/scoring?match=${matchId}`;
@@ -75,7 +73,9 @@ class NotificationService {
       });
 
     } catch (error) {
-      console.error('Error initializing native push notifications:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error initializing native push notifications:', error);
+      }
     }
   }
 
@@ -83,7 +83,6 @@ class NotificationService {
     try {
       // Check if browser supports notifications
       if (!('Notification' in window)) {
-        console.log('This browser does not support notifications');
         return;
       }
 
@@ -91,28 +90,13 @@ class NotificationService {
       if (Notification.permission === 'default') {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-          console.log('Notification permission denied');
           return;
         }
       }
-
-      console.log('Web notifications initialized');
     } catch (error) {
-      console.error('Error initializing web notifications:', error);
-    }
-  }
-
-  private async saveDeviceToken(token: string) {
-    try {
-      // Store the device token in your database
-      // You can associate it with the current user
-      const userId = localStorage.getItem('user_id') || 'anonymous';
-      localStorage.setItem('push_token', token);
-      
-      console.log('Device token saved:', token);
-      // TODO: Send to backend to store in database
-    } catch (error) {
-      console.error('Error saving device token:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error initializing web notifications:', error);
+      }
     }
   }
 
