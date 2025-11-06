@@ -954,6 +954,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_has_match_permission: {
+        Args: {
+          _match_id: string
+          _permission_types: string[]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
