@@ -19,7 +19,7 @@ import EnhancedPlayerManagement from '@/components/EnhancedPlayerManagement';
 import CreateMatch from '@/components/CreateMatch';
 import Teams from '@/components/Teams';
 import VenueManagement from '@/components/VenueManagement';
-import EnhancedExportReport from '@/components/EnhancedExportReport';
+import ExportReportWithSelector from '@/components/ExportReportWithSelector';
 import EnhancedCricketScoreboard from '@/components/EnhancedCricketScoreboard';
 
 const Index = () => {
@@ -146,22 +146,7 @@ const Index = () => {
                 <Route path="/statistics" element={<AdvancedStatistics />} />
                 <Route 
                   path="/export" 
-                  element={
-                    <EnhancedExportReport
-                      matchData={mockMatchData}
-                      scoreData={mockScoreData}
-                      currentBatsmen={[]}
-                      currentBowler={null}
-                      innings1Score={null}
-                      innings2Score={null}
-                      currentInnings={1}
-                      winner={null}
-                      recentBalls={[]}
-                      topPerformers={[]}
-                      fallOfWickets={[]}
-                      bowlingFigures={[]}
-                    />
-                  } 
+                  element={<ExportReportWithSelector />} 
                 />
                 <Route path="/help" element={<Documentation />} />
               </Routes>

@@ -3,10 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Play, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { guaranteedNonEmptyValue } from '@/utils/selectUtils';
 
 const CricketScoreboard = ({ 
   matchData, 
@@ -27,6 +29,8 @@ const CricketScoreboard = ({
   fallOfWickets = []
 }) => {
   const [liveMatches, setLiveMatches] = useState([]);
+  const [selectedMatchId, setSelectedMatchId] = useState("");
+  const [selectedMatchData, setSelectedMatchData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -65,10 +69,28 @@ const CricketScoreboard = ({
 
       if (error) throw error;
       setLiveMatches(matches || []);
+      
+      // Auto-select first match if available
+      if (matches && matches.length > 0 && !selectedMatchId) {
+        setSelectedMatchId(matches[0].id);
+        setSelectedMatchData(matches[0]);
+      }
     } catch (error) {
       console.error('Error fetching live matches:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMatchSelect = (matchId) => {
+    if (!matchId || matchId.startsWith('no-matches')) {
+      return;
+    }
+    
+    const match = liveMatches.find(m => m.id === matchId);
+    if (match) {
+      setSelectedMatchId(matchId);
+      setSelectedMatchData(match);
     }
   };
 
@@ -116,9 +138,34 @@ const CricketScoreboard = ({
           <p className="text-accent">Real-time match scoreboards and statistics</p>
         </div>
 
-        <div className="space-y-6">
-          {liveMatches.map((match) => (
-            <Card key={match.id} className="border-warning/50">
+        {/* Match Selector */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Live Match</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedMatchId} onValueChange={handleMatchSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a live match" />
+              </SelectTrigger>
+              <SelectContent>
+                {liveMatches.map((match, index) => {
+                  const matchValue = guaranteedNonEmptyValue(match.id, `match_${index}`);
+                  return (
+                    <SelectItem key={`match_${index}_${match.id}`} value={matchValue}>
+                      {match.team1?.name} vs {match.team2?.name} - {match.venue}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Display selected match details */}
+        {selectedMatchData && (
+          <div className="space-y-6">
+            <Card className="border-warning/50">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
@@ -127,11 +174,11 @@ const CricketScoreboard = ({
                       LIVE
                     </Badge>
                     <CardTitle className="text-xl text-foreground">
-                      {match.team1?.name} vs {match.team2?.name}
+                      {selectedMatchData.team1?.name} vs {selectedMatchData.team2?.name}
                     </CardTitle>
                   </div>
                   <Button 
-                    onClick={() => handleWatchLive(match.id)}
+                    onClick={() => handleWatchLive(selectedMatchData.id)}
                     className="bg-primary hover:bg-primary/90"
                     size="sm"
                   >
@@ -140,7 +187,7 @@ const CricketScoreboard = ({
                   </Button>
                 </div>
                 <p className="text-sm text-accent">
-                  {match.format} • {match.venue} • {match.overs} overs
+                  {selectedMatchData.format} • {selectedMatchData.venue} • {selectedMatchData.overs} overs
                 </p>
               </CardHeader>
               <CardContent>
@@ -148,14 +195,14 @@ const CricketScoreboard = ({
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-4 bg-card/50 rounded-lg border border-primary/20">
                       <div>
-                        <h3 className="font-bold text-lg text-foreground">{match.team1?.name}</h3>
+                        <h3 className="font-bold text-lg text-foreground">{selectedMatchData.team1?.name}</h3>
                         <p className="text-sm text-accent">Innings 1</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary">
-                          {match.team1_score || '0/0'}
+                          {selectedMatchData.team1_score || '0/0'}
                         </div>
-                        <div className="text-sm text-accent">({match.team1_overs || '0.0'} ov)</div>
+                        <div className="text-sm text-accent">({selectedMatchData.team1_overs || '0.0'} ov)</div>
                       </div>
                     </div>
                   </div>
@@ -163,14 +210,14 @@ const CricketScoreboard = ({
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-4 bg-card/50 rounded-lg border border-primary/20">
                       <div>
-                        <h3 className="font-bold text-lg text-foreground">{match.team2?.name}</h3>
+                        <h3 className="font-bold text-lg text-foreground">{selectedMatchData.team2?.name}</h3>
                         <p className="text-sm text-accent">Innings 2</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary">
-                          {match.team2_score || '0/0'}
+                          {selectedMatchData.team2_score || '0/0'}
                         </div>
-                        <div className="text-sm text-accent">({match.team2_overs || '0.0'} ov)</div>
+                        <div className="text-sm text-accent">({selectedMatchData.team2_overs || '0.0'} ov)</div>
                       </div>
                     </div>
                   </div>
@@ -178,19 +225,19 @@ const CricketScoreboard = ({
 
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex justify-between items-center text-sm text-accent">
-                    <span>Tournament: {match.tournament || 'Friendly Match'}</span>
+                    <span>Tournament: {selectedMatchData.tournament || 'Friendly Match'}</span>
                     <span>Status: Live</span>
                   </div>
-                  {match.result && (
+                  {selectedMatchData.result && (
                     <div className="mt-2 text-sm font-medium text-success">
-                      Result: {match.result}
+                      Result: {selectedMatchData.result}
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     );
   }
