@@ -30,6 +30,14 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
 
   const fetchMatches = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('User not authenticated');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('matches')
         .select(`
@@ -37,7 +45,8 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
           team1:teams!team1_id(name),
           team2:teams!team2_id(name)
         `)
-        .eq('status', 'upcoming')
+        .eq('created_by', user.id)
+        .in('status', ['upcoming', 'live'])
         .order('match_date');
 
       if (error) throw error;
