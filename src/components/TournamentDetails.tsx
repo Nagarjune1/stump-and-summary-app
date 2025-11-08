@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, Calendar, MapPin, Trophy, DollarSign, Star, Edit, Settings } from "lucide-react";
+import { ArrowLeft, Users, Calendar, MapPin, Trophy, DollarSign, Star, Edit, Settings, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -88,6 +88,27 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
     } catch (error) {
       console.error('Error updating tournament status:', error);
       toast.error('Failed to update tournament status');
+    }
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!confirm('Are you sure you want to delete this tournament? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tournaments')
+        .delete()
+        .eq('id', tournament.id);
+
+      if (error) throw error;
+
+      toast.success('Tournament deleted successfully');
+      onBack();
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      toast.error('Failed to delete tournament');
     }
   };
 
@@ -488,6 +509,21 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
                     Cancel Tournament
                   </Button>
                 </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-2 text-red-600">Danger Zone</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Once you delete a tournament, there is no going back. Please be certain.
+                </p>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteTournament}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Tournament
+                </Button>
               </div>
             </CardContent>
           </Card>

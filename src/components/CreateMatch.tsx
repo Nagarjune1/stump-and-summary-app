@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ interface CreateMatchProps {
 const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
   const [teams, setTeams] = useState([]);
   const [venues, setVenues] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -30,12 +32,14 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     tournament: "",
     description: "",
     wide_runs: 1,
-    noball_runs: 1
+    noball_runs: 1,
+    scorers: [] as string[]
   });
 
   useEffect(() => {
     fetchTeams();
     fetchVenues();
+    fetchProfiles();
   }, []);
 
   const fetchTeams = async () => {
@@ -85,6 +89,32 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
       toast({
         title: "Error",
         description: "Failed to fetch venues",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name');
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch users",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setProfiles(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
         variant: "destructive"
       });
     }
@@ -170,6 +200,29 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         throw error;
       }
 
+      // Assign scorers
+      if (formData.scorers.length > 0) {
+        const scorerPermissions = formData.scorers.map(scorerId => ({
+          match_id: data.id,
+          user_id: scorerId,
+          permission_type: 'scorer',
+          granted_by: data.created_by
+        }));
+
+        const { error: scorerError } = await supabase
+          .from('match_permissions')
+          .insert(scorerPermissions);
+
+        if (scorerError) {
+          console.error('Error assigning scorers:', scorerError);
+          toast({
+            title: "Warning",
+            description: "Match created but failed to assign scorers",
+            variant: "destructive"
+          });
+        }
+      }
+
       toast({
         title: "Success",
         description: "Match created successfully!",
@@ -192,7 +245,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         tournament: "",
         description: "",
         wide_runs: 1,
-        noball_runs: 1
+        noball_runs: 1,
+        scorers: []
       });
 
     } catch (error) {
@@ -385,6 +439,52 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
               placeholder="Enter match description"
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="scorers">Assign Scorers (Optional)</Label>
+            <Select 
+              value={formData.scorers[formData.scorers.length - 1] || ""} 
+              onValueChange={(value) => {
+                if (value && !formData.scorers.includes(value)) {
+                  handleInputChange('scorers', [...formData.scorers, value]);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select users to assign as scorers" />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles.map((profile) => (
+                  <SelectItem 
+                    key={profile.id} 
+                    value={profile.id}
+                    disabled={formData.scorers.includes(profile.id)}
+                  >
+                    {profile.full_name || profile.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {formData.scorers.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.scorers.map((scorerId) => {
+                  const scorer = profiles.find(p => p.id === scorerId);
+                  return (
+                    <Badge key={scorerId} variant="secondary" className="flex items-center gap-1">
+                      {scorer?.full_name || scorer?.email}
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('scorers', formData.scorers.filter(id => id !== scorerId))}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <Button 
