@@ -20,7 +20,7 @@ import CreateMatch from '@/components/CreateMatch';
 import Teams from '@/components/Teams';
 import VenueManagement from '@/components/VenueManagement';
 import ExportReportWithSelector from '@/components/ExportReportWithSelector';
-import EnhancedCricketScoreboard from '@/components/EnhancedCricketScoreboard';
+import ScoreboardWithSelector from '@/components/ScoreboardWithSelector';
 
 const Index = () => {
   const location = useLocation();
@@ -111,32 +111,7 @@ const Index = () => {
                 <Route path="/" element={<LiveDashboard />} />
                 <Route path="/create" element={<CreateMatch />} />
                 <Route path="/scoring" element={<LiveScoring />} />
-                <Route 
-                  path="/scoreboard" 
-                  element={
-                    <EnhancedCricketScoreboard
-                      matchData={mockMatchData}
-                      score={mockScoreData}
-                      currentBatsmen={[]}
-                      currentBowler={null}
-                      innings1Score={null}
-                      currentInnings={1}
-                      currentOver={0}
-                      currentBall={0}
-                      battingTeam={1}
-                      target={0}
-                      requiredRunRate={0}
-                      currentRunRate={0}
-                      recentBalls={[]}
-                      team1Players={[]}
-                      team2Players={[]}
-                      fallOfWickets={[]}
-                      bowlers={[]}
-                      wickets={[]}
-                      oversData={[]}
-                    />
-                  } 
-                />
+                <Route path="/scoreboard" element={<ScoreboardWithSelector />} />
                 <Route path="/analytics" element={<AdvancedAnalytics />} />
                 <Route path="/players" element={<EnhancedPlayerManagement />} />
                 <Route path="/teams" element={<Teams />} />

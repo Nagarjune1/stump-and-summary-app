@@ -1,66 +1,39 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { guaranteedNonEmptyValue } from '@/utils/selectUtils';
-import EnhancedExportReport from "./EnhancedExportReport";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import MatchSelectorForExport from './scoring/MatchSelectorForExport';
+import EnhancedExportReport from './EnhancedExportReport';
 
 const ExportReportWithSelector = () => {
-  const [completedMatches, setCompletedMatches] = useState([]);
-  const [selectedMatchId, setSelectedMatchId] = useState("");
-  const [selectedMatchData, setSelectedMatchData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [matchData, setMatchData] = useState(null);
+  const [exportData, setExportData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchCompletedMatches();
-  }, []);
-
-  const fetchCompletedMatches = async () => {
-    try {
-      const { data: matches, error } = await supabase
-        .from('matches')
-        .select(`
-          *,
-          team1:teams!matches_team1_id_fkey(name),
-          team2:teams!matches_team2_id_fkey(name)
-        `)
-        .eq('status', 'completed')
-        .order('match_date', { ascending: false });
-
-      if (error) throw error;
-      setCompletedMatches(matches || []);
-      
-      // Auto-select first match if available
-      if (matches && matches.length > 0) {
-        setSelectedMatchId(matches[0].id);
-        fetchMatchDetails(matches[0].id);
-      }
-    } catch (error) {
-      console.error('Error fetching completed matches:', error);
-    } finally {
-      setLoading(false);
+    if (selectedMatch) {
+      fetchMatchData(selectedMatch.id);
     }
-  };
+  }, [selectedMatch]);
 
-  const fetchMatchDetails = async (matchId) => {
+  const fetchMatchData = async (matchId: string) => {
     try {
       setLoading(true);
-      
-      // Fetch match data
-      const { data: matchData, error: matchError } = await supabase
+
+      // Fetch match details
+      const { data: match, error: matchError } = await supabase
         .from('matches')
         .select(`
           *,
-          team1:teams!matches_team1_id_fkey(name),
-          team2:teams!matches_team2_id_fkey(name)
+          team1:teams!team1_id(name),
+          team2:teams!team2_id(name)
         `)
         .eq('id', matchId)
         .single();
 
       if (matchError) throw matchError;
 
-      // Fetch ball-by-ball data
-      const { data: ballData, error: ballError } = await supabase
+      // Fetch ball by ball data
+      const { data: balls, error: ballsError } = await supabase
         .from('ball_by_ball')
         .select('*')
         .eq('match_id', matchId)
@@ -68,143 +41,141 @@ const ExportReportWithSelector = () => {
         .order('over_number')
         .order('ball_number');
 
-      if (ballError) throw ballError;
+      if (ballsError) throw ballsError;
 
       // Fetch match stats
-      const { data: statsData, error: statsError } = await supabase
+      const { data: stats, error: statsError } = await supabase
         .from('match_stats')
-        .select('*')
+        .select(`
+          *,
+          player:players(name)
+        `)
         .eq('match_id', matchId);
 
       if (statsError) throw statsError;
 
-      // Process data for export
-      const processedData = {
-        matchData,
-        scoreData: {
-          runs: matchData.team2_score ? parseInt(matchData.team2_score.split('/')[0]) : 0,
-          wickets: matchData.team2_score ? parseInt(matchData.team2_score.split('/')[1]) : 0,
-          overs: matchData.team2_overs || 0
-        },
-        innings1Score: {
-          runs: matchData.team1_score ? parseInt(matchData.team1_score.split('/')[0]) : 0,
-          wickets: matchData.team1_score ? parseInt(matchData.team1_score.split('/')[1]) : 0,
-          overs: matchData.team1_overs || 0
-        },
-        innings2Score: {
-          runs: matchData.team2_score ? parseInt(matchData.team2_score.split('/')[0]) : 0,
-          wickets: matchData.team2_score ? parseInt(matchData.team2_score.split('/')[1]) : 0,
-          overs: matchData.team2_overs || 0
-        },
-        recentBalls: ballData?.slice(-10).map(ball => 
-          ball.is_wicket ? 'W' : ball.runs.toString()
-        ) || [],
-        topPerformers: statsData?.sort((a, b) => b.runs_scored - a.runs_scored).slice(0, 5) || [],
-        fallOfWickets: ballData?.filter(ball => ball.is_wicket).map((ball, index) => ({
-          wicket: index + 1,
-          score: ball.runs,
-          over: `${ball.over_number}.${ball.ball_number}`
-        })) || [],
-        bowlingFigures: statsData?.filter(stat => stat.wickets_taken > 0) || [],
-        currentBatsmen: [],
-        currentBowler: null,
-        currentInnings: 2,
-        winner: matchData.result
+      // Calculate score data from ball by ball
+      const innings1Balls = balls?.filter(b => b.innings === 1) || [];
+      const innings2Balls = balls?.filter(b => b.innings === 2) || [];
+
+      const calculateScore = (balls: any[]) => {
+        const runs = balls.reduce((sum, ball) => sum + (ball.runs || 0) + (ball.extras || 0), 0);
+        const wickets = balls.filter(b => b.is_wicket).length;
+        const totalBalls = balls.length;
+        const overs = Math.floor(totalBalls / 6);
+        const ballsInOver = totalBalls % 6;
+        
+        return {
+          runs,
+          wickets,
+          overs: `${overs}.${ballsInOver}`
+        };
       };
 
-      setSelectedMatchData(processedData);
+      const innings1Score = calculateScore(innings1Balls);
+      const innings2Score = innings2Balls.length > 0 ? calculateScore(innings2Balls) : null;
+
+      // Get top performers
+      const battingStats = stats?.filter(s => s.balls_faced > 0) || [];
+      const bowlingStats = stats?.filter(s => s.overs_bowled > 0) || [];
+
+      const topPerformers = [
+        ...battingStats
+          .sort((a, b) => (b.runs_scored || 0) - (a.runs_scored || 0))
+          .slice(0, 2)
+          .map(s => ({
+            name: s.player?.name || 'Unknown',
+            runs: s.runs_scored || 0,
+            wickets: 0,
+            type: 'batting'
+          })),
+        ...bowlingStats
+          .sort((a, b) => (b.wickets_taken || 0) - (a.wickets_taken || 0))
+          .slice(0, 1)
+          .map(s => ({
+            name: s.player?.name || 'Unknown',
+            runs: 0,
+            wickets: s.wickets_taken || 0,
+            type: 'bowling'
+          }))
+      ];
+
+      setMatchData(match);
+      setExportData({
+        scoreData: innings2Score || innings1Score,
+        innings1Score,
+        innings2Score,
+        currentBatsmen: battingStats.slice(0, 2).map((s: any) => ({
+          name: s.player?.name || 'Unknown',
+          runs: s.runs_scored || 0,
+          balls: s.balls_faced || 0,
+          fours: s.fours || 0,
+          sixes: s.sixes || 0
+        })),
+        currentBowler: bowlingStats.length > 0 ? {
+          name: bowlingStats[0].player?.name || 'Unknown',
+          overs: bowlingStats[0].overs_bowled || 0,
+          runs: bowlingStats[0].runs_conceded || 0,
+          wickets: bowlingStats[0].wickets_taken || 0
+        } : null,
+        currentInnings: innings2Balls.length > 0 ? 2 : 1,
+        winner: match.result || null,
+        recentBalls: balls?.slice(-10).map(b => 
+          b.is_wicket ? 'W' : 
+          b.runs === 4 ? '4' : 
+          b.runs === 6 ? '6' : 
+          String(b.runs || 0)
+        ) || [],
+        topPerformers,
+        fallOfWickets: balls?.filter(b => b.is_wicket).map((b: any, idx: number) => ({
+          wicket: idx + 1,
+          score: balls.slice(0, balls.indexOf(b) + 1)
+            .reduce((sum, ball) => sum + (ball.runs || 0) + (ball.extras || 0), 0),
+          over: `${b.over_number}.${b.ball_number}`,
+          player: b.batsman_id
+        })) || [],
+        bowlingFigures: bowlingStats.map((s: any) => ({
+          name: s.player?.name || 'Unknown',
+          overs: s.overs_bowled || 0,
+          runs: s.runs_conceded || 0,
+          wickets: s.wickets_taken || 0,
+          economy: s.economy_rate || 0
+        }))
+      });
     } catch (error) {
-      console.error('Error fetching match details:', error);
+      console.error('Error fetching match data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMatchSelect = (matchId) => {
-    if (!matchId || matchId.startsWith('no-matches')) {
-      return;
-    }
-    
-    setSelectedMatchId(matchId);
-    fetchMatchDetails(matchId);
+  const handleMatchSelect = (match: any) => {
+    setSelectedMatch(match);
   };
 
-  if (loading && !selectedMatchData) {
+  if (!selectedMatch) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-lg text-primary animate-pulse">Loading matches...</div>
-        </div>
+      <div className="p-6">
+        <MatchSelectorForExport onMatchSelect={handleMatchSelect} />
       </div>
     );
   }
 
-  if (completedMatches.length === 0) {
+  if (loading || !exportData) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Export Match Reports</h1>
-          <p className="text-accent">Generate and export completed match reports</p>
-        </div>
-        
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h3 className="text-xl font-semibold text-primary mb-2">No Completed Matches</h3>
-            <p className="text-muted-foreground">There are no completed matches to export.</p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-primary">Loading match data...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">Export Match Reports</h1>
-        <p className="text-accent">Generate and export completed match reports</p>
-      </div>
-
-      {/* Match Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Match to Export</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedMatchId} onValueChange={handleMatchSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a completed match" />
-            </SelectTrigger>
-            <SelectContent>
-              {completedMatches.map((match, index) => {
-                const matchValue = guaranteedNonEmptyValue(match.id, `match_${index}`);
-                return (
-                  <SelectItem key={`match_${index}_${match.id}`} value={matchValue}>
-                    {match.team1?.name} vs {match.team2?.name} - {new Date(match.match_date).toLocaleDateString()}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* Export Report Component */}
-      {selectedMatchData && (
-        <EnhancedExportReport
-          matchData={selectedMatchData.matchData}
-          scoreData={selectedMatchData.scoreData}
-          currentBatsmen={selectedMatchData.currentBatsmen}
-          currentBowler={selectedMatchData.currentBowler}
-          innings1Score={selectedMatchData.innings1Score}
-          innings2Score={selectedMatchData.innings2Score}
-          currentInnings={selectedMatchData.currentInnings}
-          winner={selectedMatchData.winner}
-          recentBalls={selectedMatchData.recentBalls}
-          topPerformers={selectedMatchData.topPerformers}
-          fallOfWickets={selectedMatchData.fallOfWickets}
-          bowlingFigures={selectedMatchData.bowlingFigures}
-        />
-      )}
+    <div className="p-6 space-y-6">
+      <MatchSelectorForExport onMatchSelect={handleMatchSelect} />
+      <EnhancedExportReport 
+        matchData={matchData}
+        {...exportData}
+      />
     </div>
   );
 };
