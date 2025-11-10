@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Target, Users, Award, Calendar, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import MatchScorerManagement from "@/components/MatchScorerManagement";
 
 interface Match {
   id: string;
@@ -27,10 +28,46 @@ const MatchSummary = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     fetchMatches();
+    fetchCurrentUser();
   }, []);
+
+  useEffect(() => {
+    if (selectedMatch && currentUserId) {
+      checkOwnership();
+    }
+  }, [selectedMatch, currentUserId]);
+
+  const fetchCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+  };
+
+  const checkOwnership = async () => {
+    if (!selectedMatch || !currentUserId) {
+      setIsOwner(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('match_permissions')
+        .select('permission_type')
+        .eq('match_id', selectedMatch.id)
+        .eq('user_id', currentUserId)
+        .eq('permission_type', 'owner')
+        .maybeSingle();
+
+      setIsOwner(!!data);
+    } catch (error) {
+      console.error('Error checking ownership:', error);
+      setIsOwner(false);
+    }
+  };
 
   const fetchMatches = async () => {
     try {
@@ -166,9 +203,10 @@ const MatchSummary = () => {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="summary" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="summary">Summary</TabsTrigger>
                     <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="permissions">Permissions</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="summary" className="space-y-4">
@@ -270,6 +308,13 @@ const MatchSummary = () => {
                         </CardContent>
                       </Card>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="permissions" className="space-y-4">
+                    <MatchScorerManagement 
+                      matchId={selectedMatch.id} 
+                      isOwner={isOwner}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>
