@@ -5,16 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { X, UserPlus, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface Profile {
   id: string;
+  profile_id: string;
   full_name: string | null;
   email: string | null;
 }
@@ -33,15 +29,28 @@ interface MatchScorerManagementProps {
 
 const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps) => {
   const [scorers, setScorers] = useState<Scorer[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     fetchScorers();
-    fetchProfiles();
   }, [matchId]);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        searchProfiles();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
 
   const fetchScorers = async () => {
     try {
@@ -62,7 +71,7 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
         const userIds = data.map(d => d.user_id);
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, email')
+          .select('id, profile_id, full_name, email')
           .in('id', userIds);
 
         if (profilesError) throw profilesError;
@@ -72,7 +81,7 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
           const profile = profilesData?.find(p => p.id === permission.user_id);
           return {
             ...permission,
-            profiles: profile || { id: permission.user_id, full_name: null, email: null }
+            profiles: profile || { id: permission.user_id, profile_id: '', full_name: null, email: null }
           };
         });
 
@@ -88,33 +97,32 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
     }
   };
 
-  const fetchProfiles = async () => {
+  const searchProfiles = async () => {
     try {
+      setSearching(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
-        .order('full_name');
+        .select('id, profile_id, full_name, email')
+        .ilike('profile_id', `%${searchQuery}%`)
+        .limit(5);
 
       if (error) throw error;
-      setProfiles(data || []);
+      
+      // Filter out users who already have permissions
+      const filtered = (data || []).filter(
+        profile => !scorers.some(scorer => scorer.user_id === profile.id)
+      );
+      
+      setSearchResults(filtered);
     } catch (error) {
-      console.error('Error fetching profiles:', error);
+      console.error('Error searching profiles:', error);
+      toast.error('Failed to search profiles');
+    } finally {
+      setSearching(false);
     }
   };
 
-  const handleAddScorer = async () => {
-    if (!selectedUserId) {
-      toast.error('Please select a user');
-      return;
-    }
-
-    // Check if user already has permission
-    const existingScorer = scorers.find(s => s.user_id === selectedUserId);
-    if (existingScorer) {
-      toast.error('This user already has access to this match');
-      return;
-    }
-
+  const handleAddScorer = async (profile: Profile) => {
     setAdding(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -123,7 +131,7 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
         .from('match_permissions')
         .insert({
           match_id: matchId,
-          user_id: selectedUserId,
+          user_id: profile.id,
           permission_type: 'scorer',
           granted_by: user?.id
         });
@@ -131,7 +139,9 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
       if (error) throw error;
 
       toast.success('Scorer added successfully');
-      setSelectedUserId("");
+      setSearchQuery("");
+      setSearchResults([]);
+      setSelectedProfile(null);
       fetchScorers();
     } catch (error) {
       console.error('Error adding scorer:', error);
@@ -177,11 +187,6 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
     );
   }
 
-  // Filter out users who already have permissions
-  const availableProfiles = profiles.filter(
-    profile => !scorers.some(scorer => scorer.user_id === profile.id)
-  );
-
   return (
     <Card>
       <CardHeader>
@@ -191,34 +196,49 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Add Scorer Section */}
-        <div className="flex gap-2">
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select a user to add as scorer" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableProfiles.length === 0 ? (
-                <div className="p-2 text-sm text-muted-foreground">
-                  No available users
+        {/* Search Scorer Section */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by Profile ID (e.g., ABC123)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          {searching && (
+            <div className="text-sm text-muted-foreground">Searching...</div>
+          )}
+          
+          {searchResults.length > 0 && (
+            <div className="border rounded-lg divide-y bg-card">
+              {searchResults.map((profile) => (
+                <div
+                  key={profile.id}
+                  className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium">{profile.full_name || profile.email || 'Unknown User'}</p>
+                    <p className="text-sm text-muted-foreground">ID: {profile.profile_id}</p>
+                  </div>
+                  <Button
+                    onClick={() => handleAddScorer(profile)}
+                    disabled={adding}
+                    size="sm"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add
+                  </Button>
                 </div>
-              ) : (
-                availableProfiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.full_name || profile.email || 'Unknown User'}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={handleAddScorer}
-            disabled={adding || !selectedUserId}
-            size="sm"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add
-          </Button>
+              ))}
+            </div>
+          )}
+          
+          {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+            <div className="text-sm text-muted-foreground">No profiles found</div>
+          )}
         </div>
 
         {/* Current Scorers List */}

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureValidSelectItemValue } from "@/utils/selectUtils";
+import { Search, UserPlus } from "lucide-react";
 
 interface CreateMatchProps {
   onMatchCreated?: (match: any) => void;
@@ -18,7 +19,9 @@ interface CreateMatchProps {
 const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
   const [teams, setTeams] = useState([]);
   const [venues, setVenues] = useState([]);
-  const [profiles, setProfiles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -33,14 +36,25 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     description: "",
     wide_runs: 1,
     noball_runs: 1,
-    scorers: [] as string[]
+    scorers: [] as any[]
   });
 
   useEffect(() => {
     fetchTeams();
     fetchVenues();
-    fetchProfiles();
   }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        searchProfiles();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
 
   const fetchTeams = async () => {
     try {
@@ -94,29 +108,32 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     }
   };
 
-  const fetchProfiles = async () => {
+  const searchProfiles = async () => {
     try {
+      setSearching(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
-        .order('full_name');
+        .select('id, profile_id, full_name, email')
+        .ilike('profile_id', `%${searchQuery}%`)
+        .limit(5);
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch users",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
       
-      setProfiles(data || []);
+      // Filter out users who already are scorers
+      const filtered = (data || []).filter(
+        profile => !formData.scorers.some((scorer: any) => scorer.id === profile.id)
+      );
+      
+      setSearchResults(filtered);
     } catch (error) {
+      console.error('Error searching profiles:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch users",
+        description: "Failed to search profiles",
         variant: "destructive"
       });
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -202,9 +219,9 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
 
       // Assign scorers
       if (formData.scorers.length > 0) {
-        const scorerPermissions = formData.scorers.map(scorerId => ({
+        const scorerPermissions = formData.scorers.map((scorer: any) => ({
           match_id: data.id,
-          user_id: scorerId,
+          user_id: scorer.id,
           permission_type: 'scorer',
           granted_by: data.created_by
         }));
@@ -443,48 +460,72 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
 
           <div>
             <Label htmlFor="scorers">Assign Scorers (Optional)</Label>
-            <Select 
-              value={formData.scorers[formData.scorers.length - 1] || ""} 
-              onValueChange={(value) => {
-                if (value && !formData.scorers.includes(value)) {
-                  handleInputChange('scorers', [...formData.scorers, value]);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select users to assign as scorers" />
-              </SelectTrigger>
-              <SelectContent>
-                {profiles.map((profile) => (
-                  <SelectItem 
-                    key={profile.id} 
-                    value={profile.id}
-                    disabled={formData.scorers.includes(profile.id)}
-                  >
-                    {profile.full_name || profile.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formData.scorers.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.scorers.map((scorerId) => {
-                  const scorer = profiles.find(p => p.id === scorerId);
-                  return (
-                    <Badge key={scorerId} variant="secondary" className="flex items-center gap-1">
-                      {scorer?.full_name || scorer?.email}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Profile ID (e.g., ABC123)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {searching && (
+                <div className="text-sm text-muted-foreground">Searching...</div>
+              )}
+              
+              {searchResults.length > 0 && (
+                <div className="border rounded-lg divide-y bg-card">
+                  {searchResults.map((profile: any) => (
+                    <div
+                      key={profile.id}
+                      className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium">{profile.full_name || profile.email || 'Unknown User'}</p>
+                        <p className="text-sm text-muted-foreground">ID: {profile.profile_id}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          if (!formData.scorers.some((s: any) => s.id === profile.id)) {
+                            handleInputChange('scorers', [...formData.scorers, profile]);
+                            setSearchQuery("");
+                            setSearchResults([]);
+                          }
+                        }}
+                        size="sm"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+                <div className="text-sm text-muted-foreground">No profiles found</div>
+              )}
+              
+              {formData.scorers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.scorers.map((scorer: any) => (
+                    <Badge key={scorer.id} variant="secondary" className="flex items-center gap-1">
+                      {scorer.full_name || scorer.email}
                       <button
                         type="button"
-                        onClick={() => handleInputChange('scorers', formData.scorers.filter(id => id !== scorerId))}
+                        onClick={() => handleInputChange('scorers', formData.scorers.filter((s: any) => s.id !== scorer.id))}
                         className="ml-1 hover:text-destructive"
                       >
                         ×
                       </button>
                     </Badge>
-                  );
-                })}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <Button 

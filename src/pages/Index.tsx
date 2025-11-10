@@ -21,6 +21,7 @@ import Teams from '@/components/Teams';
 import VenueManagement from '@/components/VenueManagement';
 import ExportReportWithSelector from '@/components/ExportReportWithSelector';
 import ScoreboardWithSelector from '@/components/ScoreboardWithSelector';
+import ProfilePage from '@/pages/ProfilePage';
 
 const Index = () => {
   const location = useLocation();
@@ -114,6 +115,7 @@ const Index = () => {
                 <Route path="/scoreboard" element={<ScoreboardWithSelector />} />
                 <Route path="/analytics" element={<AdvancedAnalytics />} />
                 <Route path="/players" element={<EnhancedPlayerManagement />} />
+                <Route path="/profile/:profileId" element={<ProfilePage />} />
                 <Route path="/teams" element={<Teams />} />
                 <Route path="/tournaments" element={<TournamentManagement />} />
                 <Route path="/venues" element={<VenueManagement />} />
