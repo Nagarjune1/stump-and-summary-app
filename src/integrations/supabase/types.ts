@@ -497,6 +497,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          profile_id: string
           updated_at: string | null
         }
         Insert: {
@@ -505,6 +506,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          profile_id: string
           updated_at?: string | null
         }
         Update: {
@@ -513,6 +515,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          profile_id?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -947,6 +950,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_profile_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
