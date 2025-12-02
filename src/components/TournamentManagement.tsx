@@ -91,7 +91,7 @@ const TournamentManagement = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center p-8">Loading tournaments...</div>;
+    return <div className="flex justify-center p-8 text-foreground">Loading tournaments...</div>;
   }
 
   if (showCreateForm) {
@@ -114,15 +114,15 @@ const TournamentManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tournament Management</h1>
-          <p className="text-gray-600">Create and manage cricket tournaments</p>
+          <h1 className="text-3xl font-bold text-foreground">Tournament Management</h1>
+          <p className="text-muted-foreground">Create and manage cricket tournaments</p>
         </div>
         <Button 
           onClick={() => setShowCreateForm(true)}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-success hover:bg-success/90 text-success-foreground"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Tournament
@@ -139,11 +139,11 @@ const TournamentManagement = () => {
 
         <TabsContent value="overview" className="space-y-4">
           {tournaments.length === 0 ? (
-            <Card>
+            <Card className="neon-card">
               <CardContent className="text-center py-12">
-                <Trophy className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Tournaments Yet</h3>
-                <p className="text-gray-600">Create your first tournament to get started</p>
+                <Trophy className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Tournaments Yet</h3>
+                <p className="text-muted-foreground">Create your first tournament to get started</p>
               </CardContent>
             </Card>
           ) : (
@@ -151,13 +151,13 @@ const TournamentManagement = () => {
               {tournaments.map((tournament) => (
                 <Card 
                   key={tournament.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  className="neon-card cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => setSelectedTournament(tournament)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <CardTitle className="text-lg mb-2">{tournament.name}</CardTitle>
+                        <CardTitle className="text-lg mb-2 text-foreground">{tournament.name}</CardTitle>
                         <Badge className={`${getStatusColor(tournament.status)} text-white text-xs`}>
                           {tournament.status.replace('_', ' ').toUpperCase()}
                         </Badge>
@@ -172,28 +172,28 @@ const TournamentManagement = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(tournament.start_date).toLocaleDateString()}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
                       <span>{tournament.venue?.name || 'Venue TBD'}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
                       <span>{tournament.tournament_teams?.length || 0}/{tournament.max_teams} Teams</span>
                     </div>
 
                     <div className="flex justify-between items-center pt-2">
-                      <div className="text-sm">
+                      <div className="text-sm text-foreground">
                         <span className="font-medium">{getCategoryLabel(tournament.category)}</span>
-                        <span className="text-gray-500 ml-2">• {tournament.ball_type}</span>
+                        <span className="text-muted-foreground ml-2">• {tournament.ball_type}</span>
                       </div>
                       {tournament.prize_money > 0 && (
-                        <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                        <div className="flex items-center gap-1 text-success text-sm font-medium">
                           <DollarSign className="w-3 h-3" />
                           ₹{tournament.prize_money.toLocaleString()}
                         </div>
@@ -201,7 +201,7 @@ const TournamentManagement = () => {
                     </div>
 
                     {tournament.tournament_sponsors?.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Star className="w-3 h-3" />
                         {tournament.tournament_sponsors.length} Sponsors
                       </div>
@@ -222,33 +222,33 @@ const TournamentManagement = () => {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Tournament Analytics</CardTitle>
+              <CardTitle className="text-foreground">Tournament Analytics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{tournaments.length}</div>
-                  <div className="text-sm text-gray-600">Total Tournaments</div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-primary">{tournaments.length}</div>
+                  <div className="text-sm text-muted-foreground">Total Tournaments</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-success">
                     {tournaments.filter(t => t.status === 'in_progress').length}
                   </div>
-                  <div className="text-sm text-gray-600">Active</div>
+                  <div className="text-sm text-muted-foreground">Active</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-warning">
                     {tournaments.filter(t => t.status === 'registration_open').length}
                   </div>
-                  <div className="text-sm text-gray-600">Registering</div>
+                  <div className="text-sm text-muted-foreground">Registering</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-600">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold text-muted-foreground">
                     {tournaments.filter(t => t.status === 'completed').length}
                   </div>
-                  <div className="text-sm text-gray-600">Completed</div>
+                  <div className="text-sm text-muted-foreground">Completed</div>
                 </div>
               </div>
             </CardContent>

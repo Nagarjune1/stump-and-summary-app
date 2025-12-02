@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Plus,
@@ -15,7 +14,8 @@ import {
   Award,
   User,
   Play,
-  PieChart
+  PieChart,
+  UserCircle
 } from 'lucide-react';
 
 import {
@@ -30,6 +30,8 @@ import {
   SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 const navigationItems = [
   { id: 'dashboard', title: 'Dashboard', url: '/', icon: BarChart3 },
@@ -50,7 +52,26 @@ const navigationItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profileId, setProfileId] = useState<string | null>(null);
   const currentPath = location.pathname;
+
+  useEffect(() => {
+    const fetchProfileId = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('profile_id')
+          .eq('id', user.id)
+          .single();
+        if (data?.profile_id) {
+          setProfileId(data.profile_id);
+        }
+      }
+    };
+    fetchProfileId();
+  }, [user]);
 
   const isActive = (url: string) => {
     if (url === '/') {
@@ -60,6 +81,12 @@ export function AppSidebar() {
   };
 
   const isCollapsed = state === 'collapsed';
+
+  const handleProfileClick = () => {
+    if (profileId) {
+      navigate(`/profile/${profileId}`);
+    }
+  };
 
   return (
     <Sidebar className="border-r border-sidebar-border neon-border">
@@ -110,6 +137,34 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* My Profile Section */}
+        {profileId && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/70 text-accent">
+              Account
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={handleProfileClick}
+                    className={`
+                      w-full justify-start gap-3 px-3 py-2 rounded-md transition-all duration-300
+                      ${currentPath.startsWith('/profile') 
+                        ? 'cricket-primary font-semibold shadow-lg neon-border neon-glow' 
+                        : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <UserCircle className="w-4 h-4 shrink-0" />
+                    {!isCollapsed && <span>My Profile</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

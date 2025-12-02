@@ -267,54 +267,54 @@ const ProfilePage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+      <Button variant="ghost" onClick={() => navigate(-1)} className="text-foreground">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Button>
 
       {/* Player Overview */}
-      <Card>
+      <Card className="neon-card">
         <CardContent className="p-6">
           <div className="flex items-center gap-6">
             <Avatar className="w-24 h-24">
               <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback className="text-2xl">
+              <AvatarFallback className="text-2xl bg-primary/20 text-primary">
                 {profile.full_name?.charAt(0) || profile.email?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{profile.full_name || "Unknown Player"}</h1>
+              <h1 className="text-3xl font-bold mb-2 text-foreground">{profile.full_name || "Unknown Player"}</h1>
               <p className="text-muted-foreground mb-4">
                 All Rounder | Right Hand Bat | Right Arm Leg Break
               </p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Profile ID:</span>
-                <code className="px-2 py-1 bg-muted rounded text-sm font-mono">{profile.profile_id}</code>
+                <span className="text-sm font-medium text-foreground">Profile ID:</span>
+                <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-primary">{profile.profile_id}</code>
               </div>
             </div>
           </div>
 
           {/* Career Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
             <div>
-              <h3 className="font-semibold mb-2">Batting</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 text-primary">Batting</h3>
+              <div className="space-y-1 text-sm text-foreground">
                 <p>Total Runs: <span className="font-medium">{playerStats?.totalRuns || 0}</span></p>
                 <p>Average: <span className="font-medium">{playerStats?.battingAverage || 0}</span></p>
                 <p>High Score: <span className="font-medium">{playerStats?.highScore || "0"}</span></p>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">Bowling</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 text-primary">Bowling</h3>
+              <div className="space-y-1 text-sm text-foreground">
                 <p>Total Wickets: <span className="font-medium">{playerStats?.totalWickets || 0}</span></p>
                 <p>Average: <span className="font-medium">{playerStats?.bowlingAverage || 0}</span></p>
                 <p>Best Bowling: <span className="font-medium">{playerStats?.bestBowling || "0/0"}</span></p>
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">Fielding</h3>
-              <div className="space-y-1 text-sm">
+              <h3 className="font-semibold mb-2 text-primary">Fielding</h3>
+              <div className="space-y-1 text-sm text-foreground">
                 <p>Catches: <span className="font-medium">{playerStats?.catches || 0}</span></p>
                 <p>Stumpings: <span className="font-medium">{playerStats?.stumpings || 0}</span></p>
                 <p>Run Outs: <span className="font-medium">{playerStats?.runouts || 0}</span></p>
@@ -325,9 +325,9 @@ const ProfilePage = () => {
       </Card>
 
       {/* Yearly Overview */}
-      <Card>
+      <Card className="neon-card">
         <CardHeader>
-          <CardTitle>Yearly Overview</CardTitle>
+          <CardTitle className="text-foreground">Yearly Overview</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="batting">
