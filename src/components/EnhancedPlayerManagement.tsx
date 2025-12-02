@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Search, Filter, Camera, TrendingUp } from "lucide-react";
+import { Users, Search, Filter, Camera, TrendingUp, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ensureValidSelectItemValue } from "@/utils/selectUtils";
 
 const EnhancedPlayerManagement = () => {
+  const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
@@ -21,6 +22,7 @@ const EnhancedPlayerManagement = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerStatsDialog, setPlayerStatsDialog] = useState(false);
   const [photoUploadDialog, setPhotoUploadDialog] = useState(false);
+  const [playerProfileId, setPlayerProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPlayersAndTeams();
@@ -72,9 +74,27 @@ const EnhancedPlayerManagement = () => {
     setFilteredPlayers(filtered);
   };
 
-  const handlePlayerClick = (player) => {
+  const handlePlayerClick = async (player) => {
     setSelectedPlayer(player);
+    setPlayerProfileId(null);
     setPlayerStatsDialog(true);
+    
+    // Try to find a matching profile by name
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('profile_id')
+      .ilike('full_name', player.name)
+      .maybeSingle();
+    
+    if (profileData?.profile_id) {
+      setPlayerProfileId(profileData.profile_id);
+    }
+  };
+
+  const handleViewProfile = () => {
+    if (playerProfileId) {
+      navigate(`/profile/${playerProfileId}`);
+    }
   };
 
   const handlePhotoUpload = async (event) => {
@@ -233,14 +253,26 @@ const EnhancedPlayerManagement = () => {
                   <p className="text-lg font-semibold">{selectedPlayer.team?.name}</p>
                   <Badge>{selectedPlayer.role}</Badge>
                 </div>
-                <Button
-                  onClick={() => setPhotoUploadDialog(true)}
-                  variant="outline"
-                  size="sm"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Update Photo
-                </Button>
+                <div className="flex gap-2">
+                  {playerProfileId && (
+                    <Button
+                      onClick={handleViewProfile}
+                      variant="default"
+                      size="sm"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Profile
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setPhotoUploadDialog(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Update Photo
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
