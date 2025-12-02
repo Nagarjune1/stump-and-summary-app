@@ -88,7 +88,7 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center gap-4 mb-6">
         <Button
           variant="outline"
@@ -99,8 +99,8 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
           Back
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Create New Tournament</h1>
-          <p className="text-gray-600">Set up your cricket tournament with all the details</p>
+          <h1 className="text-2xl font-bold text-foreground">Create New Tournament</h1>
+          <p className="text-muted-foreground">Set up your cricket tournament with all the details</p>
         </div>
       </div>
 
@@ -344,7 +344,7 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
+          <Button type="submit" disabled={loading} className="bg-success hover:bg-success/90 text-success-foreground">
             {loading ? 'Creating...' : 'Create Tournament'}
           </Button>
         </div>

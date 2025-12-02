@@ -105,6 +105,7 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
       if (error) throw error;
 
       toast.success('Tournament deleted successfully');
+      onUpdate(); // Refresh the tournaments list
       onBack();
     } catch (error) {
       console.error('Error deleting tournament:', error);
@@ -136,11 +137,11 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
   };
 
   if (loading) {
-    return <div className="flex justify-center p-8">Loading tournament details...</div>;
+    return <div className="flex justify-center p-8 text-foreground">Loading tournament details...</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -149,12 +150,12 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{tournament.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{tournament.name}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge className={`${getStatusColor(tournament.status)} text-white`}>
                 {tournament.status.replace('_', ' ').toUpperCase()}
               </Badge>
-              <span className="text-gray-600">{getCategoryLabel(tournament.category)}</span>
+              <span className="text-muted-foreground">{getCategoryLabel(tournament.category)}</span>
             </div>
           </div>
         </div>
@@ -173,51 +174,51 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="neon-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-primary" />
               <div>
-                <div className="text-2xl font-bold">{teams.length}</div>
-                <div className="text-sm text-gray-600">Registered Teams</div>
+                <div className="text-2xl font-bold text-foreground">{teams.length}</div>
+                <div className="text-sm text-muted-foreground">Registered Teams</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="neon-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-600" />
+              <Trophy className="w-5 h-5 text-warning" />
               <div>
-                <div className="text-2xl font-bold">{matches.length}</div>
-                <div className="text-sm text-gray-600">Matches Scheduled</div>
+                <div className="text-2xl font-bold text-foreground">{matches.length}</div>
+                <div className="text-sm text-muted-foreground">Matches Scheduled</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="neon-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-purple-600" />
+              <Star className="w-5 h-5 text-accent" />
               <div>
-                <div className="text-2xl font-bold">{sponsors.length}</div>
-                <div className="text-sm text-gray-600">Sponsors</div>
+                <div className="text-2xl font-bold text-foreground">{sponsors.length}</div>
+                <div className="text-sm text-muted-foreground">Sponsors</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="neon-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
+              <DollarSign className="w-5 h-5 text-success" />
               <div>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-foreground">
                   ₹{tournament.prize_money?.toLocaleString() || 0}
                 </div>
-                <div className="text-sm text-gray-600">Prize Money</div>
+                <div className="text-sm text-muted-foreground">Prize Money</div>
               </div>
             </div>
           </CardContent>
@@ -237,23 +238,23 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="neon-card">
               <CardHeader>
-                <CardTitle>Tournament Information</CardTitle>
+                <CardTitle className="text-foreground">Tournament Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 text-foreground">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>Start Date: {new Date(tournament.start_date).toLocaleDateString()}</span>
                 </div>
                 {tournament.end_date && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span>End Date: {new Date(tournament.end_date).toLocaleDateString()}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
                   <span>{tournament.venue?.name || 'Venue TBD'}</span>
                 </div>
                 <div>
@@ -268,11 +269,11 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="neon-card">
               <CardHeader>
-                <CardTitle>Organizer Details</CardTitle>
+                <CardTitle className="text-foreground">Organizer Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 text-foreground">
                 <div>
                   <span className="font-medium">Name:</span> {tournament.organizer_name}
                 </div>
@@ -291,52 +292,52 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
           </div>
 
           {tournament.description && (
-            <Card>
+            <Card className="neon-card">
               <CardHeader>
-                <CardTitle>Description</CardTitle>
+                <CardTitle className="text-foreground">Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700">{tournament.description}</p>
+                <p className="text-foreground">{tournament.description}</p>
               </CardContent>
             </Card>
           )}
 
           {tournament.rules && (
-            <Card>
+            <Card className="neon-card">
               <CardHeader>
-                <CardTitle>Tournament Rules</CardTitle>
+                <CardTitle className="text-foreground">Tournament Rules</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="text-gray-700 whitespace-pre-wrap">{tournament.rules}</pre>
+                <pre className="text-foreground whitespace-pre-wrap">{tournament.rules}</pre>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
         <TabsContent value="teams">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Registered Teams ({teams.length}/{tournament.max_teams})</CardTitle>
+              <CardTitle className="text-foreground">Registered Teams ({teams.length}/{tournament.max_teams})</CardTitle>
             </CardHeader>
             <CardContent>
               {teams.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No teams registered yet</p>
+                <p className="text-muted-foreground text-center py-8">No teams registered yet</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {teams.map((registration) => (
-                    <Card key={registration.id} className="border">
+                    <Card key={registration.id} className="border border-border">
                       <CardContent className="p-4">
-                        <h3 className="font-semibold">{registration.team.name}</h3>
+                        <h3 className="font-semibold text-foreground">{registration.team.name}</h3>
                         {registration.team.city && (
-                          <p className="text-sm text-gray-600">{registration.team.city}</p>
+                          <p className="text-sm text-muted-foreground">{registration.team.city}</p>
                         )}
                         <div className="flex justify-between items-center mt-2">
                           <Badge 
-                            className={`${registration.payment_status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'} text-white text-xs`}
+                            className={`${registration.payment_status === 'paid' ? 'bg-success' : 'bg-warning'} text-white text-xs`}
                           >
                             {registration.payment_status.toUpperCase()}
                           </Badge>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(registration.registration_date).toLocaleDateString()}
                           </span>
                         </div>
@@ -350,29 +351,29 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
         </TabsContent>
 
         <TabsContent value="matches">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Tournament Matches</CardTitle>
+              <CardTitle className="text-foreground">Tournament Matches</CardTitle>
             </CardHeader>
             <CardContent>
               {matches.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No matches scheduled yet</p>
+                <p className="text-muted-foreground text-center py-8">No matches scheduled yet</p>
               ) : (
                 <div className="space-y-4">
                   {matches.map((match) => (
-                    <Card key={match.id} className="border">
+                    <Card key={match.id} className="border border-border">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-center">
                           <div>
-                            <h3 className="font-semibold">
+                            <h3 className="font-semibold text-foreground">
                               {match.match.team1?.name} vs {match.match.team2?.name}
                             </h3>
-                            <p className="text-sm text-gray-600">{match.round_name}</p>
+                            <p className="text-sm text-muted-foreground">{match.round_name}</p>
                           </div>
                           <div className="text-right">
                             <Badge variant="outline">Match #{match.match_number}</Badge>
                             {match.scheduled_date && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-sm text-muted-foreground mt-1">
                                 {new Date(match.scheduled_date).toLocaleDateString()}
                               </p>
                             )}
@@ -388,17 +389,17 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
         </TabsContent>
 
         <TabsContent value="sponsors">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Tournament Sponsors</CardTitle>
+              <CardTitle className="text-foreground">Tournament Sponsors</CardTitle>
             </CardHeader>
             <CardContent>
               {sponsors.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No sponsors added yet</p>
+                <p className="text-muted-foreground text-center py-8">No sponsors added yet</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sponsors.map((sponsor) => (
-                    <Card key={sponsor.id} className="border">
+                    <Card key={sponsor.id} className="border border-border">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">
                           {sponsor.sponsor_logo_url && (
@@ -409,14 +410,14 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
                             />
                           )}
                           <div className="flex-1">
-                            <h3 className="font-semibold">{sponsor.sponsor_name}</h3>
+                            <h3 className="font-semibold text-foreground">{sponsor.sponsor_name}</h3>
                             {sponsor.sponsor_type && (
                               <Badge variant="outline" className="text-xs mt-1">
                                 {sponsor.sponsor_type.toUpperCase()}
                               </Badge>
                             )}
                             {sponsor.sponsor_amount && (
-                              <p className="text-sm text-green-600 font-medium mt-1">
+                              <p className="text-sm text-success font-medium mt-1">
                                 ₹{sponsor.sponsor_amount.toLocaleString()}
                               </p>
                             )}
@@ -432,32 +433,32 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
         </TabsContent>
 
         <TabsContent value="officials">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Tournament Officials</CardTitle>
+              <CardTitle className="text-foreground">Tournament Officials</CardTitle>
             </CardHeader>
             <CardContent>
               {officials.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No officials assigned yet</p>
+                <p className="text-muted-foreground text-center py-8">No officials assigned yet</p>
               ) : (
                 <div className="space-y-3">
                   {officials.map((official) => (
-                    <Card key={official.id} className="border">
+                    <Card key={official.id} className="border border-border">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-center">
                           <div>
-                            <h3 className="font-semibold">{official.official_name}</h3>
+                            <h3 className="font-semibold text-foreground">{official.official_name}</h3>
                             <Badge variant="outline" className="text-xs mt-1">
                               {official.official_type.toUpperCase()}
                             </Badge>
                           </div>
                           <div className="text-right">
                             {official.rate_per_match && (
-                              <p className="text-sm text-green-600 font-medium">
+                              <p className="text-sm text-success font-medium">
                                 ₹{official.rate_per_match}/match
                               </p>
                             )}
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               {official.matches_assigned || 0} matches assigned
                             </p>
                           </div>
@@ -472,13 +473,13 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
         </TabsContent>
 
         <TabsContent value="settings">
-          <Card>
+          <Card className="neon-card">
             <CardHeader>
-              <CardTitle>Tournament Management</CardTitle>
+              <CardTitle className="text-foreground">Tournament Management</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-semibold mb-2">Status Management</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Status Management</h3>
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     size="sm" 
@@ -511,9 +512,9 @@ const TournamentDetails = ({ tournament, onBack, onUpdate }) => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t">
-                <h3 className="font-semibold mb-2 text-red-600">Danger Zone</h3>
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="pt-4 border-t border-border">
+                <h3 className="font-semibold mb-2 text-destructive">Danger Zone</h3>
+                <p className="text-sm text-muted-foreground mb-3">
                   Once you delete a tournament, there is no going back. Please be certain.
                 </p>
                 <Button 
