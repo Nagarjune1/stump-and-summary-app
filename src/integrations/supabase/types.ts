@@ -438,6 +438,7 @@ export type Database = {
           matches: number | null
           name: string
           photo_url: string | null
+          profile_id: string | null
           role: string
           runs: number | null
           strike_rate: number | null
@@ -456,6 +457,7 @@ export type Database = {
           matches?: number | null
           name: string
           photo_url?: string | null
+          profile_id?: string | null
           role: string
           runs?: number | null
           strike_rate?: number | null
@@ -474,6 +476,7 @@ export type Database = {
           matches?: number | null
           name?: string
           photo_url?: string | null
+          profile_id?: string | null
           role?: string
           runs?: number | null
           strike_rate?: number | null
@@ -481,6 +484,13 @@ export type Database = {
           wickets?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "players_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "players_team_id_fkey"
             columns: ["team_id"]
