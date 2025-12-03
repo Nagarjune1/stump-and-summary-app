@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Save, X, Users, Search } from "lucide-react";
+import { UserPlus, Save, X, Users, Search, Edit2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,11 +28,14 @@ interface Player {
 
 const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("all");
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [newTeamId, setNewTeamId] = useState("");
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     role: "",
@@ -165,6 +168,52 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
     }
   };
 
+  const handlePlayerClick = (player: Player) => {
+    setSelectedPlayer(player);
+    setNewTeamId(player.team_id || "");
+    setIsEditOpen(true);
+  };
+
+  const handleChangeTeam = async () => {
+    if (!selectedPlayer || !newTeamId) {
+      toast({
+        title: "Error",
+        description: "Please select a team",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({ team_id: newTeamId })
+        .eq('id', selectedPlayer.id);
+
+      if (error) throw error;
+
+      const newTeamName = teams.find(t => t.id === newTeamId)?.name;
+      toast({
+        title: "Team Updated!",
+        description: `${selectedPlayer.name} has been moved to ${newTeamName}`,
+      });
+
+      setIsEditOpen(false);
+      setSelectedPlayer(null);
+      setNewTeamId("");
+      fetchPlayers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update player's team",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     setNewPlayer({
       name: "",
@@ -176,22 +225,28 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
     setIsOpen(false);
   };
 
+  const handleEditCancel = () => {
+    setSelectedPlayer(null);
+    setNewTeamId("");
+    setIsEditOpen(false);
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Batsman': return 'bg-blue-100 text-blue-800';
-      case 'Bowler': return 'bg-red-100 text-red-800';
-      case 'All-rounder': return 'bg-green-100 text-green-800';
-      case 'Wicket-keeper': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Batsman': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'Bowler': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'All-rounder': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Wicket-keeper': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <Card>
+    <Card className="neon-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Users className="w-5 h-5 text-primary" />
             Player Management
           </CardTitle>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -320,7 +375,7 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
         <div className="flex gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search players..."
                 value={searchTerm}
@@ -349,20 +404,24 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
         {/* Players List */}
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {filteredPlayers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {players.length === 0 ? "No players found. Add some players to get started!" : "No players match your search."}
             </div>
           ) : (
             filteredPlayers.map((player) => (
-              <div key={player.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div 
+                key={player.id} 
+                className="flex items-center justify-between p-3 bg-card/50 border border-border/50 rounded-lg hover:border-primary/50 transition-colors cursor-pointer group"
+                onClick={() => handlePlayerClick(player)}
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h4 className="font-medium">{player.name}</h4>
+                    <h4 className="font-medium text-foreground">{player.name}</h4>
                     <Badge className={getRoleColor(player.role)}>
                       {player.role}
                     </Badge>
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="text-sm text-muted-foreground mt-1">
                     <span>{player.teams?.name}</span>
                     {player.batting_style && (
                       <span className="ml-3">• {player.batting_style}</span>
@@ -372,16 +431,76 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }) => {
                     )}
                   </div>
                 </div>
+                <Edit2 className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             ))
           )}
         </div>
 
         {players.length > 0 && (
-          <div className="text-sm text-gray-500 text-center pt-2">
+          <div className="text-sm text-muted-foreground text-center pt-2">
             Showing {filteredPlayers.length} of {players.length} players
           </div>
         )}
+
+        {/* Edit Player Team Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change Player Team</DialogTitle>
+            </DialogHeader>
+            {selectedPlayer && (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-semibold text-foreground">{selectedPlayer.name}</h4>
+                    <Badge className={getRoleColor(selectedPlayer.role)}>
+                      {selectedPlayer.role}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Current Team: <span className="text-foreground font-medium">{selectedPlayer.teams?.name || 'No Team'}</span>
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="newTeam">Assign to Team</Label>
+                  <Select 
+                    onValueChange={setNewTeamId}
+                    value={newTeamId}
+                    disabled={loading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select new team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={handleEditCancel} disabled={loading}>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleChangeTeam} 
+                    className="bg-primary hover:bg-primary/90"
+                    disabled={loading || newTeamId === selectedPlayer.team_id}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {loading ? 'Updating...' : 'Change Team'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
