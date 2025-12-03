@@ -950,7 +950,9 @@ export type Database = {
       }
     }
     Functions: {
-      generate_profile_id: { Args: never; Returns: string }
+      generate_profile_id:
+        | { Args: never; Returns: string }
+        | { Args: { _full_name?: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
