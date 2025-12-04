@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ArrowLeft, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface Player {
   id: string;
@@ -19,6 +20,7 @@ interface Player {
   batting_style?: string;
   bowling_style?: string;
   photo_url?: string;
+  profile_id?: string;
   runs?: number;
   wickets?: number;
   matches?: number;
@@ -42,6 +44,7 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const { isAdmin } = useIsAdmin();
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -150,14 +153,21 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
     }
 
     try {
+      const updateData: Record<string, unknown> = {
+        name: editingPlayer.name.trim(),
+        role: editingPlayer.role,
+        batting_style: editingPlayer.batting_style || null,
+        bowling_style: editingPlayer.bowling_style || null
+      };
+
+      // Only admins can update profile_id
+      if (isAdmin) {
+        updateData.profile_id = editingPlayer.profile_id?.trim() || null;
+      }
+
       const { error } = await supabase
         .from('players')
-        .update({
-          name: editingPlayer.name.trim(),
-          role: editingPlayer.role,
-          batting_style: editingPlayer.batting_style || null,
-          bowling_style: editingPlayer.bowling_style || null
-        })
+        .update(updateData)
         .eq('id', editingPlayer.id);
 
       if (error) throw error;
@@ -376,9 +386,16 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-lg text-primary neon-glow">{player.name}</h3>
-                      <Badge variant="outline" className="text-accent border-accent">
-                        {player.role}
-                      </Badge>
+                      <div className="flex gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-accent border-accent">
+                          {player.role}
+                        </Badge>
+                        {player.profile_id && (
+                          <Badge variant="secondary" className="text-xs">
+                            ID: {player.profile_id}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -504,6 +521,30 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Profile ID - Admin Only */}
+              {isAdmin && (
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-warning" />
+                    <Label className="text-warning font-semibold">Admin Only</Label>
+                  </div>
+                  <div>
+                    <Label htmlFor="editProfileId" className="text-foreground">Profile ID</Label>
+                    <Input
+                      id="editProfileId"
+                      value={editingPlayer.profile_id || ""}
+                      onChange={(e) => setEditingPlayer({...editingPlayer, profile_id: e.target.value})}
+                      placeholder="Enter profile ID (e.g., JOHN1234)"
+                      className="bg-input border-border text-foreground"
+                      maxLength={8}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Link this player to a user profile by entering their Profile ID
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button 
