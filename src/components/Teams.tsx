@@ -1,16 +1,15 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, Edit, Trash2, Users, MapPin } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import TeamPlayers from "./TeamPlayers";
+import TeamCard from "./TeamCard";
 
 interface Team {
   id: string;
@@ -328,65 +327,13 @@ const Teams = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTeams.map((team) => (
-            <Card key={team.id} className="neon-card hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-primary/20 text-primary font-bold neon-glow">
-                        {team.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg text-primary neon-glow">{team.name}</h3>
-                      {team.city && (
-                        <div className="flex items-center gap-1 text-sm text-accent">
-                          <MapPin className="w-3 h-3" />
-                          {team.city}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(team)}
-                      className="text-accent hover:bg-accent/10"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTeam(team)}
-                      className="text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div 
-                    className="flex justify-between items-center cursor-pointer hover:bg-muted/10 p-2 rounded transition-colors"
-                    onClick={() => handleTeamPlayersClick(team)}
-                  >
-                    <span className="text-muted-foreground">Players:</span>
-                    <Badge variant="outline" className="text-primary border-primary hover:bg-primary/10">
-                      <Users className="w-3 h-3 mr-1" />
-                      {team.playerCount || 0}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span>Created:</span>
-                    <span>{new Date(team.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TeamCard
+              key={team.id}
+              team={team}
+              onEdit={openEditDialog}
+              onDelete={handleDeleteTeam}
+              onViewPlayers={handleTeamPlayersClick}
+            />
           ))}
         </div>
       )}
