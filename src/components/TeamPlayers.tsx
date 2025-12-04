@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, Edit, Trash2, ArrowLeft, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsTeamAdmin } from "@/hooks/useIsTeamAdmin";
 
 interface Player {
   id: string;
@@ -44,7 +44,7 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const { isAdmin } = useIsAdmin();
+  const { isTeamAdmin } = useIsTeamAdmin(team.id);
   
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -160,8 +160,8 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
         bowling_style: editingPlayer.bowling_style || null
       };
 
-      // Only admins can update profile_id
-      if (isAdmin) {
+      // Only team admins can update profile_id
+      if (isTeamAdmin) {
         updateData.profile_id = editingPlayer.profile_id?.trim() || null;
       }
 
@@ -399,24 +399,26 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
                     </div>
                   </div>
                   
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(player)}
-                      className="text-accent hover:bg-accent/10"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeletePlayer(player)}
-                      className="text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {isTeamAdmin && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(player)}
+                        className="text-accent hover:bg-accent/10"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePlayer(player)}
+                        className="text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -522,12 +524,12 @@ const TeamPlayers = ({ team, onBack }: TeamPlayersProps) => {
                 </Select>
               </div>
 
-              {/* Profile ID - Admin Only */}
-              {isAdmin && (
+              {/* Profile ID - Team Admin Only */}
+              {isTeamAdmin && (
                 <div className="border-t border-border pt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Shield className="w-4 h-4 text-warning" />
-                    <Label className="text-warning font-semibold">Admin Only</Label>
+                    <Label className="text-warning font-semibold">Team Admin Only</Label>
                   </div>
                   <div>
                     <Label htmlFor="editProfileId" className="text-foreground">Profile ID</Label>

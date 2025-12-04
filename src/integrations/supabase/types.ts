@@ -568,22 +568,60 @@ export type Database = {
           },
         ]
       }
+      team_permissions: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          permission_type: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_type?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_type?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_permissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           city: string | null
           created_at: string
+          created_by: string | null
           id: string
           name: string
         }
         Insert: {
           city?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           name: string
         }
         Update: {
           city?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
         }
@@ -982,6 +1020,14 @@ export type Database = {
         Args: {
           _match_id: string
           _permission_types: string[]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      user_has_team_permission: {
+        Args: {
+          _permission_types: string[]
+          _team_id: string
           _user_id: string
         }
         Returns: boolean
