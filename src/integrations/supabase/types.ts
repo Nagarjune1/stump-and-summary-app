@@ -970,6 +970,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_profiles_for_scorer: {
+        Args: { search_term: string }
+        Returns: {
+          display_name: string
+          id: string
+          profile_id: string
+        }[]
+      }
       user_has_match_permission: {
         Args: {
           _match_id: string
