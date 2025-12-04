@@ -90,7 +90,6 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
         setScorers([]);
       }
     } catch (error) {
-      console.error('Error fetching scorers:', error);
       toast.error('Failed to load scorers');
     } finally {
       setLoading(false);
@@ -101,21 +100,23 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
     try {
       setSearching(true);
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, profile_id, full_name, email')
-        .ilike('profile_id', `%${searchQuery}%`)
-        .limit(5);
+        .rpc('search_profiles_for_scorer', { search_term: searchQuery });
 
       if (error) throw error;
       
       // Filter out users who already have permissions
       const filtered = (data || []).filter(
-        profile => !scorers.some(scorer => scorer.user_id === profile.id)
+        (profile: any) => !scorers.some(scorer => scorer.user_id === profile.id)
       );
       
-      setSearchResults(filtered);
+      // Map to expected format
+      setSearchResults(filtered.map((p: any) => ({
+        id: p.id,
+        profile_id: p.profile_id,
+        full_name: p.display_name,
+        email: null
+      })));
     } catch (error) {
-      console.error('Error searching profiles:', error);
       toast.error('Failed to search profiles');
     } finally {
       setSearching(false);
@@ -144,7 +145,6 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
       setSelectedProfile(null);
       fetchScorers();
     } catch (error) {
-      console.error('Error adding scorer:', error);
       toast.error('Failed to add scorer');
     } finally {
       setAdding(false);
@@ -168,7 +168,6 @@ const MatchScorerManagement = ({ matchId, isOwner }: MatchScorerManagementProps)
       toast.success('Scorer removed successfully');
       fetchScorers();
     } catch (error) {
-      console.error('Error removing scorer:', error);
       toast.error('Failed to remove scorer');
     }
   };

@@ -112,21 +112,23 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     try {
       setSearching(true);
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, profile_id, full_name, email')
-        .ilike('profile_id', `%${searchQuery}%`)
-        .limit(5);
+        .rpc('search_profiles_for_scorer', { search_term: searchQuery });
 
       if (error) throw error;
       
       // Filter out users who already are scorers
       const filtered = (data || []).filter(
-        profile => !formData.scorers.some((scorer: any) => scorer.id === profile.id)
+        (profile: any) => !formData.scorers.some((scorer: any) => scorer.id === profile.id)
       );
       
-      setSearchResults(filtered);
+      // Map to expected format
+      setSearchResults(filtered.map((p: any) => ({
+        id: p.id,
+        profile_id: p.profile_id,
+        full_name: p.display_name,
+        email: null
+      })));
     } catch (error) {
-      console.error('Error searching profiles:', error);
       toast({
         title: "Error",
         description: "Failed to search profiles",
@@ -301,7 +303,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                 <SelectContent>
                   {teams.map((team, index) => {
                     const safeTeamId = ensureValidSelectItemValue(team.id, `team1_${index}`);
-                    console.log('Rendering Team 1 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
                     return (
                       <SelectItem key={`team1_${index}`} value={safeTeamId}>
                         {team.name}
@@ -321,7 +322,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                 <SelectContent>
                   {teams.map((team, index) => {
                     const safeTeamId = ensureValidSelectItemValue(team.id, `team2_${index}`);
-                    console.log('Rendering Team 2 option:', { originalId: team.id, safeId: safeTeamId, name: team.name });
                     return (
                       <SelectItem key={`team2_${index}`} value={safeTeamId}>
                         {team.name}
@@ -342,7 +342,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
               <SelectContent>
                 {venues.map((venue, index) => {
                   const safeVenueName = ensureValidSelectItemValue(venue.name, `venue_${index}`);
-                  console.log('Rendering venue option:', { originalName: venue.name, safeName: safeVenueName });
                   return (
                     <SelectItem key={`venue_${index}`} value={safeVenueName}>
                       {venue.name} - {venue.location}
