@@ -561,8 +561,8 @@ const LiveScoring = () => {
     updatedTeamInnings[currentInnings - 1].overs += 1;
     setTeamInnings(updatedTeamInnings);
 
+    // Increment completed overs (currentBallInOver is reset to 0 by the caller)
     setCurrentOver(prev => prev + 1);
-    setCurrentBallInOver(0);
     
     // Switch strike at end of over
     switchStrike();
