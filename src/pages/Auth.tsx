@@ -9,6 +9,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthProvider';
 import { Trophy, Mail, Lock, User } from 'lucide-react';
+import { z } from 'zod';
+
+// Password validation schema
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -43,6 +51,14 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate password strength
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      setError(passwordValidation.error.errors[0].message);
+      setLoading(false);
+      return;
+    }
 
     const { error } = await signUp(email, password, fullName);
     
@@ -164,12 +180,12 @@ const Auth = () => {
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="Create a password"
+                        placeholder="Create a password (8+ chars, uppercase, lowercase, number)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                     </div>
                   </div>

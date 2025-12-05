@@ -70,7 +70,6 @@ const AdvancedAnalytics = () => {
       if (error) throw error;
       setTeams(data || []);
     } catch (error) {
-      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -132,7 +131,6 @@ const AdvancedAnalytics = () => {
       setAnalyticsData(analytics);
 
     } catch (error) {
-      console.error('Error fetching analytics data:', error);
       toast({
         title: "Error",
         description: "Failed to fetch analytics data",

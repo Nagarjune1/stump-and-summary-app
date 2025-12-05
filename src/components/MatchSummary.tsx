@@ -64,7 +64,6 @@ const MatchSummary = () => {
 
       setIsOwner(!!data);
     } catch (error) {
-      console.error('Error checking ownership:', error);
       setIsOwner(false);
     }
   };
@@ -82,7 +81,6 @@ const MatchSummary = () => {
         .order('match_date', { ascending: false });
       
       if (error) {
-        console.error('Error fetching matches:', error);
         return;
       }
       
@@ -91,7 +89,7 @@ const MatchSummary = () => {
         setSelectedMatch(data[0]);
       }
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      // Error handled silently - matches will show empty state
     } finally {
       setLoading(false);
     }

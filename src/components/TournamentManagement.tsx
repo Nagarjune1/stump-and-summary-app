@@ -41,7 +41,6 @@ const TournamentManagement = () => {
       if (error) throw error;
       setTournaments(data || []);
     } catch (error) {
-      console.error('Error fetching tournaments:', error);
       toast.error('Failed to load tournaments');
     } finally {
       setLoading(false);
@@ -62,7 +61,6 @@ const TournamentManagement = () => {
       setShowCreateForm(false);
       fetchTournaments();
     } catch (error) {
-      console.error('Error creating tournament:', error);
       toast.error('Failed to create tournament');
     }
   };

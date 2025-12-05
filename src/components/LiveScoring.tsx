@@ -117,12 +117,11 @@ const LiveScoring = () => {
 
   // Initialize notification service
   useEffect(() => {
-    notificationService.initialize().catch(console.error);
+    notificationService.initialize().catch(() => {});
   }, []);
 
   // Realtime subscription for match updates
   useRealtimeMatch(selectedMatch?.id || null, (update) => {
-    console.log('Realtime update received:', update);
     toast({
       title: "Live Update",
       description: `Match updated: ${update.type}`,
@@ -152,16 +151,11 @@ const LiveScoring = () => {
       const validTeam1Players = team1Players.filter(validatePlayer);
       const validTeam2Players = team2Players.filter(validatePlayer);
       setAllPlayers([...validTeam1Players, ...validTeam2Players]);
-      
-      console.log('Valid Team 1 Players:', validTeam1Players.length);
-      console.log('Valid Team 2 Players:', validTeam2Players.length);
     }
   }, [team1Players, team2Players]);
 
   const fetchPlayers = async (teamId: string, teamNumber: number) => {
     try {
-      console.log(`Fetching players for team ${teamNumber} with ID:`, teamId);
-      
       const { data, error } = await supabase
         .from('players')
         .select('*')
@@ -169,7 +163,6 @@ const LiveScoring = () => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching players for team', teamNumber, ':', error);
         toast({
           title: "Error",
           description: `Failed to fetch players for team ${teamNumber}`,
@@ -179,7 +172,6 @@ const LiveScoring = () => {
       }
 
       const validPlayers = (data || []).filter(validatePlayer);
-      console.log(`Fetched ${validPlayers.length} valid players for team ${teamNumber}`);
       
       if (teamNumber === 1) {
         setTeam1Players(validPlayers);
@@ -187,7 +179,6 @@ const LiveScoring = () => {
         setTeam2Players(validPlayers);
       }
     } catch (error) {
-      console.error('Error fetching players for team', teamNumber, ':', error);
       toast({
         title: "Error",
         description: `Failed to fetch players for team ${teamNumber}`,
@@ -197,14 +188,11 @@ const LiveScoring = () => {
   };
 
   const handleMatchSelect = (match: Match) => {
-    console.log('Match selected:', match);
     setSelectedMatch(match);
     setCurrentStep('toss');
   };
 
   const handleTossComplete = (winnerTeamId: string, decision: string) => {
-    console.log('Toss completed:', { winnerTeamId, decision });
-    
     setTossWinnerTeamId(winnerTeamId);
     setTossDecision(decision);
     
@@ -212,15 +200,11 @@ const LiveScoring = () => {
     const tossWinnerTeam = winnerTeamId === selectedMatch?.team1_id ? 1 : 2;
     const battingFirst = (decision === 'bat') ? tossWinnerTeam : (tossWinnerTeam === 1 ? 2 : 1);
     
-    console.log('Toss winner team number:', tossWinnerTeam);
-    console.log('Team batting first:', battingFirst);
-    
     setBattingFirstTeam(battingFirst);
     setCurrentStep('player-selection');
   };
 
   const handlePlayersSelected = (batsmen: Player[], bowler: Player) => {
-    console.log('Players selected:', { batsmen, bowler });
     
     // Validate and set batsmen
     const validBatsmen = batsmen.filter(validatePlayer).map(batsman => ({
@@ -261,7 +245,6 @@ const LiveScoring = () => {
   };
 
   const handleUpdateBatsman = (index: number, field: string, value: string) => {
-    console.log(`Updating batsman ${index}, field ${field} to value:`, value);
     
     if (index < 0 || index >= currentBatsmen.length) return;
     
@@ -294,7 +277,6 @@ const LiveScoring = () => {
   };
 
   const handleUpdateBowler = (field: string, value: string) => {
-    console.log(`Updating bowler, field ${field} to value:`, value);
     
     const selectedPlayer = allPlayers.find(player => player.id === value);
 
@@ -318,7 +300,6 @@ const LiveScoring = () => {
     
     // Check if all wickets are down (10 wickets in cricket)
     if (currentTeamScore.totalWickets >= 10) {
-      console.log('Innings ended - all out');
       handleInningsEnd('all_out');
       return true;
     }
@@ -326,9 +307,7 @@ const LiveScoring = () => {
     // Check if target is achieved in 2nd innings
     if (currentInnings === 2 && teamInnings[0]) {
       const target = teamInnings[0].totalRuns + 1;
-      console.log('Checking target:', currentTeamScore.totalRuns, 'vs', target);
       if (currentTeamScore.totalRuns >= target) {
-        console.log('Innings ended - target achieved:', currentTeamScore.totalRuns, '>=', target);
         handleInningsEnd('target_achieved');
         return true;
       }
@@ -336,7 +315,6 @@ const LiveScoring = () => {
     
     // Check if overs are completed (checked last to allow target achievement first)
     if (currentOver >= totalOvers) {
-      console.log('Innings ended - overs completed:', currentOver, '>=', totalOvers);
       handleInningsEnd('overs_completed');
       return true;
     }
@@ -350,7 +328,6 @@ const LiveScoring = () => {
     }
     
     setIsProcessingScore(true);
-    console.log(`Scoring ${runs} runs`);
     
     const updatedBatsmen = [...currentBatsmen];
     const previousScore = { ...updatedBatsmen[strikeBatsmanIndex] };
@@ -430,7 +407,6 @@ const LiveScoring = () => {
     }
     
     setIsProcessingScore(true);
-    console.log(`Wicket taken: ${dismissalType}`);
 
     const dismissedBatsman = currentBatsmen[strikeBatsmanIndex];
     const updatedBatsmen = [...currentBatsmen];
@@ -534,7 +510,6 @@ const LiveScoring = () => {
     }
     
     setIsProcessingScore(true);
-    console.log(`Extra added: ${extraType} for ${runs} runs`);
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
@@ -550,7 +525,7 @@ const LiveScoring = () => {
 
     // Wide and No-ball don't count as legal deliveries
     if (extraType === 'wides' || extraType === 'noballs') {
-      console.log('Extra ball - no ball count increment');
+      // No ball count increment for wides/noballs
     } else {
       // Byes and leg-byes are legal deliveries
       setCurrentBallInOver(prev => {
@@ -576,8 +551,6 @@ const LiveScoring = () => {
   };
 
   const handleOverComplete = () => {
-    console.log('Over completed - current over:', currentOver);
-
     if (currentBowler) {
       const updatedBowler = { ...currentBowler };
       updatedBowler.overs = (updatedBowler.overs || 0) + 1;
@@ -617,8 +590,6 @@ const LiveScoring = () => {
   };
 
   const handleInningsEnd = (reason: string) => {
-    console.log('Innings ended:', reason, 'Current innings:', currentInnings);
-    
     if (currentInnings === 1) {
       // Start 2nd innings
       setCurrentInnings(2);
@@ -681,11 +652,10 @@ const LiveScoring = () => {
   };
 
   const handlePowerplayEnd = () => {
-    console.log('Powerplay ended');
+    // Powerplay ended - no action needed
   };
 
   const switchStrike = () => {
-    console.log('Switching strike');
     setStrikeBatsmanIndex(prev => (prev === 0 ? 1 : 0));
   };
 
@@ -712,7 +682,6 @@ const LiveScoring = () => {
   };
 
   const handleMatchSetupComplete = (setupData: any) => {
-    console.log('Match setup completed:', setupData);
     setMatchSetup(setupData);
     setCurrentStep('scoring');
     
