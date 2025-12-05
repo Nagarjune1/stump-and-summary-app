@@ -32,7 +32,6 @@ const AdvancedStatistics = () => {
         .order('runs', { ascending: false });
 
       if (playersError) {
-        console.error('Players error:', playersError);
         throw playersError;
       }
 
@@ -68,7 +67,6 @@ const AdvancedStatistics = () => {
         `);
 
       if (teamsError) {
-        console.error('Teams error:', teamsError);
         throw teamsError;
       }
 
@@ -81,7 +79,6 @@ const AdvancedStatistics = () => {
           .eq('status', 'completed');
 
         if (matchError) {
-          console.error('Match error for team:', team.id, matchError);
           return {
             ...team,
             totalMatches: 0,
@@ -123,7 +120,6 @@ const AdvancedStatistics = () => {
       setTeamStats(processedTeamStats);
 
     } catch (error) {
-      console.error('Error fetching advanced statistics:', error);
       toast({
         title: "Error",
         description: "Failed to load advanced statistics",

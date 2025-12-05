@@ -42,7 +42,7 @@ const OfflineScoring = () => {
         setOfflineData(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Error loading offline data:', error);
+      // Silent fail - offline data not available
     }
   };
 
@@ -57,7 +57,6 @@ const OfflineScoring = () => {
         description: "Your scoring data has been saved locally and will sync when online.",
       });
     } catch (error) {
-      console.error('Error saving offline data:', error);
       toast({
         title: "Storage Error",
         description: "Unable to save data offline. Please check device storage.",
@@ -105,7 +104,6 @@ const OfflineScoring = () => {
         description: `${unsyncedData.length} items synchronized successfully.`,
       });
     } catch (error) {
-      console.error('Sync error:', error);
       setSyncStatus('error');
       toast({
         title: "Sync Failed",
@@ -123,8 +121,6 @@ const OfflineScoring = () => {
     // 1. Send the item data to your backend API
     // 2. Handle different types of data (matches, players, scores, etc.)
     // 3. Manage conflicts if data was modified both online and offline
-    
-    console.log('Syncing item:', item);
   };
 
   const clearOfflineData = () => {

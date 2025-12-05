@@ -47,7 +47,7 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
       if (error) throw error;
       setVenues(data || []);
     } catch (error) {
-      console.error('Error fetching venues:', error);
+      // Silent fail - venues will show empty list
     }
   };
 
@@ -76,7 +76,6 @@ const CreateTournament = ({ onSubmit, onCancel }) => {
 
       await onSubmit(validated);
     } catch (error: any) {
-      console.error('Error creating tournament:', error);
       if (error.errors) {
         toast.error(error.errors[0].message);
       } else {

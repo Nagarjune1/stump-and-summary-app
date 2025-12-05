@@ -98,7 +98,6 @@ const PlayerProfiles = () => {
       const validTeams = (data || []).filter(team => team.id && String(team.id).trim() !== '');
       setTeams(validTeams);
     } catch (error) {
-      console.error('Error fetching teams:', error);
       toast({
         title: "Error",
         description: "Failed to fetch teams",
@@ -133,7 +132,6 @@ const PlayerProfiles = () => {
       setPlayers(validPlayers);
       setFilteredPlayers(validPlayers);
     } catch (error) {
-      console.error('Error fetching players:', error);
       toast({
         title: "Error",
         description: "Failed to fetch players",
@@ -196,7 +194,6 @@ const PlayerProfiles = () => {
         description: `${newPlayer.name} added to player database`,
       });
     } catch (error) {
-      console.error('Error adding player:', error);
       toast({
         title: "Error", 
         description: "Failed to add player",

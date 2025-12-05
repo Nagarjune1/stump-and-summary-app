@@ -39,12 +39,6 @@ const ManOfMatchSelector = ({
   
   const allValidPlayers = [...validTeam1Players, ...validTeam2Players];
 
-  console.log('ManOfMatchSelector: Valid players:', {
-    team1Count: validTeam1Players.length,
-    team2Count: validTeam2Players.length,
-    totalCount: allValidPlayers.length
-  });
-
   const handleSaveMom = async () => {
     if (!selectedMom) {
       toast({
@@ -73,7 +67,6 @@ const ManOfMatchSelector = ({
         .eq('id', matchData.id);
 
       if (error) {
-        console.error('Error saving awards:', error);
         throw error;
       }
 
@@ -92,7 +85,6 @@ const ManOfMatchSelector = ({
       
       onClose();
     } catch (error) {
-      console.error('Error saving awards:', error);
       toast({
         title: "Error",
         description: "Failed to save awards",
