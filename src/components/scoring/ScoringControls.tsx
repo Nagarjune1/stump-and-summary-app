@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Play } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { formatOvers } from "@/utils/scoringUtils";
 
 interface ScoringControlsProps {
   onScore: (runs: number) => void;
@@ -45,8 +46,6 @@ const ScoringControls = ({
       return;
     }
     
-    console.log(`Scoring ${runs} runs`);
-    
     if (runs === 4) {
       onBoundary('four');
     } else if (runs === 6) {
@@ -66,7 +65,6 @@ const ScoringControls = ({
       return;
     }
     
-    console.log(`Adding extra: ${extraType}`);
     onExtra(extraType, extraRuns);
   };
 
@@ -80,27 +78,27 @@ const ScoringControls = ({
       return;
     }
     
-    console.log(`Taking wicket: ${wicketType}`);
     onWicket(wicketType);
   };
 
   const isLastOver = currentOver >= totalOvers - 1;
   const isLastBallOfOver = currentBall >= 5;
+  const currentOversDisplay = formatOvers(currentOver, currentBall);
 
   if (!isValidToScore) {
     return (
-      <Card>
+      <Card className="neon-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Play className="w-5 h-5 text-primary" />
             Score Ball
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-            <p className="text-gray-700 font-medium mb-2">Ready to Start Scoring</p>
-            <p className="text-gray-500 text-sm">Please select both batsmen and a bowler to begin</p>
+            <AlertTriangle className="w-16 h-16 text-warning mx-auto mb-4" />
+            <p className="text-foreground font-medium mb-2">Ready to Start Scoring</p>
+            <p className="text-muted-foreground text-sm">Please select both batsmen and a bowler to begin</p>
           </div>
         </CardContent>
       </Card>
@@ -108,21 +106,21 @@ const ScoringControls = ({
   }
 
   return (
-    <Card>
+    <Card className="neon-card">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Play className="w-5 h-5" />
+          <div className="flex items-center gap-2 text-foreground">
+            <Play className="w-5 h-5 text-primary" />
             <span>Score Ball</span>
           </div>
           <div className="flex gap-2">
             {isPowerplay && (
-              <Badge className="bg-blue-600 text-white text-xs">
+              <Badge className="bg-primary text-primary-foreground text-xs">
                 POWERPLAY
               </Badge>
             )}
             {isFreehit && (
-              <Badge className="bg-orange-600 text-white text-xs animate-pulse">
+              <Badge className="bg-warning text-warning-foreground text-xs animate-pulse">
                 FREE HIT
               </Badge>
             )}
@@ -133,8 +131,8 @@ const ScoringControls = ({
             )}
           </div>
         </CardTitle>
-        <div className="text-sm text-gray-600">
-          Over {currentOver + 1}.{currentBall + 1} of {totalOvers} 
+        <div className="text-sm text-muted-foreground">
+          Over {currentOversDisplay} of {totalOvers} 
           {isPowerplay && ` • Powerplay (1-${powerplayOvers})`}
         </div>
       </CardHeader>
@@ -147,9 +145,9 @@ const ScoringControls = ({
               onClick={() => handleRunsClick(runs)}
               variant={runs === 0 ? "outline" : "default"}
               className={`
-                ${runs === 4 ? "bg-green-600 hover:bg-green-700 text-white" : ""}
-                ${runs === 6 ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
-                ${runs === 0 ? "text-gray-600" : ""}
+                ${runs === 4 ? "bg-success hover:bg-success/90 text-success-foreground" : ""}
+                ${runs === 6 ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}
+                ${runs === 0 ? "border-muted-foreground/30" : ""}
               `}
               size="lg"
               disabled={!isValidToScore}
@@ -164,7 +162,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleExtraClick('wides')}
             variant="outline"
-            className="text-orange-600 border-orange-300 hover:bg-orange-50 text-xs"
+            className="text-warning border-warning/30 hover:bg-warning/10 text-xs"
             disabled={!isValidToScore}
           >
             Wide
@@ -172,7 +170,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleExtraClick('noballs')}
             variant="outline"
-            className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
+            className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"
             disabled={!isValidToScore}
           >
             No Ball
@@ -180,7 +178,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleExtraClick('byes')}
             variant="outline"
-            className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs"
+            className="text-primary border-primary/30 hover:bg-primary/10 text-xs"
             disabled={!isValidToScore}
           >
             Bye
@@ -188,7 +186,7 @@ const ScoringControls = ({
           <Button
             onClick={() => handleExtraClick('legbyes')}
             variant="outline"
-            className="text-green-600 border-green-300 hover:bg-green-50 text-xs"
+            className="text-success border-success/30 hover:bg-success/10 text-xs"
             disabled={!isValidToScore}
           >
             Leg Bye
@@ -258,11 +256,11 @@ const ScoringControls = ({
 
         {/* Over Status Indicators */}
         {isLastBallOfOver && isValidToScore && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-center">
-            <p className="text-sm font-medium text-yellow-800">
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-center">
+            <p className="text-sm font-medium text-warning">
               Last ball of over {currentOver + 1}
             </p>
-            <p className="text-xs text-yellow-600 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Bowler may need to be changed after this ball
             </p>
           </div>
@@ -270,8 +268,8 @@ const ScoringControls = ({
 
         {/* Free Hit Info */}
         {isFreehit && isValidToScore && (
-          <div className="bg-orange-50 border border-orange-200 rounded p-3">
-            <p className="text-xs text-orange-800">
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+            <p className="text-xs text-warning">
               <AlertTriangle className="w-3 h-3 inline mr-1" />
               FREE HIT: Batsman cannot be out bowled, caught, LBW, or stumped
             </p>
@@ -279,7 +277,7 @@ const ScoringControls = ({
         )}
 
         {/* Undo Button */}
-        <div className="pt-2 border-t">
+        <div className="pt-2 border-t border-border">
           <Button
             onClick={onUndoLastBall}
             variant="outline"

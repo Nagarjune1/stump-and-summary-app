@@ -33,7 +33,6 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.error('User not authenticated');
         setLoading(false);
         return;
       }
@@ -65,10 +64,9 @@ const MatchSelector = ({ onMatchSelect }: MatchSelectorProps) => {
           match.team2_name
         );
       
-      console.log('MatchSelector: Valid matches after filtering:', transformedMatches.length);
       setMatches(transformedMatches);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }

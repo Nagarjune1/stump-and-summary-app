@@ -74,7 +74,7 @@ const MatchSelectorForScoreboard = ({ onMatchSelect }: MatchSelectorForScoreboar
       
       setMatches(transformedMatches);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
