@@ -50,8 +50,6 @@ const NewBatsmanSelector = ({
     !currentBatsmen.some(batsman => batsman.id === player.id)
   );
 
-  console.log('NewBatsmanSelector: Available players:', availablePlayers.length);
-
   return (
     <div className="space-y-4">
       <Card>
@@ -77,12 +75,6 @@ const NewBatsmanSelector = ({
                   availablePlayers.map((player, index) => {
                     // Ensure we always have a valid, non-empty value
                     const playerValue = guaranteedNonEmptyValue(player.id, `player_${index}`);
-                    
-                    console.log('NewBatsmanSelector: Rendering player option:', { 
-                      originalId: player.id,
-                      value: playerValue,
-                      name: player.name
-                    });
                     
                     return (
                       <SelectItem key={`player_${index}_${player.id}`} value={playerValue}>

@@ -42,10 +42,6 @@ const PlayerSelection = ({
   onUpdateBatsman,
   onUpdateBowler
 }: PlayerSelectionProps) => {
-  console.log('PlayerSelection: Current innings:', currentInnings);
-  console.log('PlayerSelection: Batting team ID:', battingTeamId);
-  console.log('PlayerSelection: Bowling team ID:', bowlingTeamId);
-
   // Filter and validate players
   const battingTeamPlayers = players.filter(player => 
     validatePlayer(player) && player.team_id === battingTeamId
@@ -54,9 +50,6 @@ const PlayerSelection = ({
   const bowlingTeamPlayers = players.filter(player => 
     validatePlayer(player) && player.team_id === bowlingTeamId
   );
-
-  console.log('PlayerSelection: Valid batting team players:', battingTeamPlayers.length);
-  console.log('PlayerSelection: Valid bowling team players:', bowlingTeamPlayers.length);
 
   // Check if mandatory selections are missing
   const isStrikerMissing = !currentBatsmen[strikeBatsmanIndex]?.id;
