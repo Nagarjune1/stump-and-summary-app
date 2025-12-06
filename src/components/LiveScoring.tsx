@@ -115,6 +115,15 @@ const LiveScoring = () => {
   const [wicketDetails, setWicketDetails] = useState(null);
   const [recentWickets, setRecentWickets] = useState<any[]>([]);
   const [currentOverBalls, setCurrentOverBalls] = useState<Array<{ runs: number; isWicket: boolean; isExtra: boolean; extraType?: string }>>([]);
+  const [lastBallAction, setLastBallAction] = useState<{
+    batsmen: Player[];
+    bowler: Player | null;
+    teamInnings: TeamInnings[];
+    currentBallInOver: number;
+    currentOver: number;
+    currentOverBalls: Array<{ runs: number; isWicket: boolean; isExtra: boolean; extraType?: string }>;
+    strikeBatsmanIndex: number;
+  } | null>(null);
 
   // Initialize notification service
   useEffect(() => {
@@ -330,6 +339,17 @@ const LiveScoring = () => {
     
     setIsProcessingScore(true);
     
+    // Save state for undo
+    setLastBallAction({
+      batsmen: currentBatsmen.map(b => ({ ...b })),
+      bowler: currentBowler ? { ...currentBowler } : null,
+      teamInnings: teamInnings.map(t => ({ ...t, extras: { ...t.extras } })),
+      currentBallInOver,
+      currentOver,
+      currentOverBalls: [...currentOverBalls],
+      strikeBatsmanIndex,
+    });
+    
     const updatedBatsmen = [...currentBatsmen];
     const previousScore = { ...updatedBatsmen[strikeBatsmanIndex] };
     
@@ -411,6 +431,17 @@ const LiveScoring = () => {
     }
     
     setIsProcessingScore(true);
+    
+    // Save state for undo
+    setLastBallAction({
+      batsmen: currentBatsmen.map(b => ({ ...b })),
+      bowler: currentBowler ? { ...currentBowler } : null,
+      teamInnings: teamInnings.map(t => ({ ...t, extras: { ...t.extras } })),
+      currentBallInOver,
+      currentOver,
+      currentOverBalls: [...currentOverBalls],
+      strikeBatsmanIndex,
+    });
 
     const dismissedBatsman = currentBatsmen[strikeBatsmanIndex];
     const updatedBatsmen = [...currentBatsmen];
@@ -517,6 +548,19 @@ const LiveScoring = () => {
     }
     
     setIsProcessingScore(true);
+    
+    // Save state for undo (only for legal deliveries - byes/legbyes)
+    if (extraType !== 'wides' && extraType !== 'noballs') {
+      setLastBallAction({
+        batsmen: currentBatsmen.map(b => ({ ...b })),
+        bowler: currentBowler ? { ...currentBowler } : null,
+        teamInnings: teamInnings.map(t => ({ ...t, extras: { ...t.extras } })),
+        currentBallInOver,
+        currentOver,
+        currentOverBalls: [...currentOverBalls],
+        strikeBatsmanIndex,
+      });
+    }
 
     const updatedTeamInnings = [...teamInnings];
     updatedTeamInnings[currentInnings - 1].totalRuns += runs;
@@ -669,6 +713,34 @@ const LiveScoring = () => {
 
   const switchStrike = () => {
     setStrikeBatsmanIndex(prev => (prev === 0 ? 1 : 0));
+  };
+
+  const handleUndoLastBall = () => {
+    if (!lastBallAction) {
+      toast({
+        title: "Cannot Undo",
+        description: "No action to undo",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Restore previous state
+    setCurrentBatsmen(lastBallAction.batsmen);
+    setCurrentBowler(lastBallAction.bowler);
+    setTeamInnings(lastBallAction.teamInnings);
+    setCurrentBallInOver(lastBallAction.currentBallInOver);
+    setCurrentOver(lastBallAction.currentOver);
+    setCurrentOverBalls(lastBallAction.currentOverBalls);
+    setStrikeBatsmanIndex(lastBallAction.strikeBatsmanIndex);
+    
+    // Clear the last action so it can't be undone again
+    setLastBallAction(null);
+    
+    toast({
+      title: "Undo Successful",
+      description: "Last ball has been reverted",
+    });
   };
 
   const validateScoringState = (): boolean => {
@@ -850,8 +922,9 @@ const LiveScoring = () => {
                       onWicket={() => setShowWicketModal(true)}
                       onExtra={handleExtra}
                       onBoundary={handleBoundary}
-                      onUndoLastBall={() => {}}
+                      onUndoLastBall={handleUndoLastBall}
                       isValidToScore={Boolean(currentBatsmen[0]?.id && currentBatsmen[1]?.id && currentBowler?.id)}
+                      canUndo={lastBallAction !== null}
                       currentOver={currentOver}
                       currentBall={currentBallInOver}
                       totalOvers={matchSetup?.overs || 20}

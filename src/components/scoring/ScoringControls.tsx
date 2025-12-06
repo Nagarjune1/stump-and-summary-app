@@ -13,6 +13,7 @@ interface ScoringControlsProps {
   onBoundary: (boundaryType: 'four' | 'six') => void;
   onUndoLastBall: () => void;
   isValidToScore: boolean;
+  canUndo?: boolean;
   currentOver?: number;
   currentBall?: number;
   totalOvers?: number;
@@ -28,6 +29,7 @@ const ScoringControls = ({
   onBoundary,
   onUndoLastBall,
   isValidToScore,
+  canUndo = false,
   currentOver = 0,
   currentBall = 0,
   totalOvers = 20,
@@ -283,7 +285,7 @@ const ScoringControls = ({
             variant="outline"
             size="sm"
             className="w-full"
-            disabled={!isValidToScore}
+            disabled={!canUndo}
           >
             Undo Last Ball
           </Button>
