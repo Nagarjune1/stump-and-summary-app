@@ -243,6 +243,20 @@ const ScoreDisplay = ({
               <div className="text-xs text-muted-foreground mt-1">
                 Ball {currentBallInOver + 1} of 6
               </div>
+              {/* This Over Summary */}
+              {currentOverBalls.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border/30">
+                  <div className="text-xs text-muted-foreground">This Over:</div>
+                  <div className="text-sm font-mono font-bold text-foreground mt-0.5">
+                    {currentOverBalls.map((ball, idx) => {
+                      if (ball.isWicket) return 'W';
+                      if (ball.isExtra && ball.extraType === 'wides') return 'Wd';
+                      if (ball.isExtra && ball.extraType === 'noballs') return 'Nb';
+                      return String(ball.runs);
+                    }).join(' ')}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Batsmen Status */}
