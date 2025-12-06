@@ -178,14 +178,32 @@ const ScoreDisplay = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Over Status */}
+            {/* Over Status with Ball-by-Ball Indicator */}
             <div className="p-3 bg-muted/30 rounded-lg">
               <div className="text-xs text-muted-foreground mb-1">Over</div>
               <div className="text-2xl font-bold text-primary">
                 {getCurrentOversDisplay()}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground mb-2">
                 of {totalOvers} overs
+              </div>
+              {/* Ball-by-Ball Indicator */}
+              <div className="flex items-center gap-1.5 mt-2">
+                {[0, 1, 2, 3, 4, 5].map((ballIndex) => (
+                  <div
+                    key={ballIndex}
+                    className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                      ballIndex < currentBallInOver
+                        ? 'bg-primary border-primary shadow-[0_0_6px_hsl(var(--primary))]'
+                        : ballIndex === currentBallInOver
+                        ? 'border-primary bg-primary/20 animate-pulse'
+                        : 'border-muted-foreground/30 bg-transparent'
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Ball {currentBallInOver + 1} of 6
               </div>
             </div>
             
