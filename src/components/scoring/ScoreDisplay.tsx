@@ -30,6 +30,13 @@ interface Match {
   overs: number;
 }
 
+interface BallData {
+  runs: number;
+  isWicket: boolean;
+  isExtra: boolean;
+  extraType?: string;
+}
+
 interface ScoreDisplayProps {
   teamInnings: TeamInnings[];
   currentInnings: number;
@@ -40,6 +47,7 @@ interface ScoreDisplayProps {
   currentBowler: any;
   strikeBatsmanIndex: number;
   matchSetup: any;
+  currentOverBalls?: BallData[];
 }
 
 const ScoreDisplay = ({
@@ -51,7 +59,8 @@ const ScoreDisplay = ({
   currentBatsmen,
   currentBowler,
   strikeBatsmanIndex,
-  matchSetup
+  matchSetup,
+  currentOverBalls = []
 }: ScoreDisplayProps) => {
   const getCurrentTeamInnings = () => {
     return teamInnings[currentInnings - 1] || {
@@ -187,20 +196,49 @@ const ScoreDisplay = ({
               <div className="text-xs text-muted-foreground mb-2">
                 of {totalOvers} overs
               </div>
-              {/* Ball-by-Ball Indicator */}
+              {/* Ball-by-Ball Indicator with Run Display */}
               <div className="flex items-center gap-1.5 mt-2">
-                {[0, 1, 2, 3, 4, 5].map((ballIndex) => (
-                  <div
-                    key={ballIndex}
-                    className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
-                      ballIndex < currentBallInOver
-                        ? 'bg-primary border-primary shadow-[0_0_6px_hsl(var(--primary))]'
-                        : ballIndex === currentBallInOver
-                        ? 'border-primary bg-primary/20 animate-pulse'
-                        : 'border-muted-foreground/30 bg-transparent'
-                    }`}
-                  />
-                ))}
+                {[0, 1, 2, 3, 4, 5].map((ballIndex) => {
+                  const ballData = currentOverBalls[ballIndex];
+                  const isCompleted = ballIndex < currentBallInOver;
+                  const isCurrent = ballIndex === currentBallInOver;
+                  
+                  // Determine display content and styling
+                  let displayText = '';
+                  let bgClass = 'border-muted-foreground/30 bg-transparent';
+                  
+                  if (ballData) {
+                    if (ballData.isWicket) {
+                      displayText = 'W';
+                      bgClass = 'bg-destructive border-destructive text-destructive-foreground shadow-[0_0_6px_hsl(var(--destructive))]';
+                    } else if (ballData.isExtra) {
+                      displayText = ballData.extraType === 'wides' ? 'Wd' : 
+                                   ballData.extraType === 'noballs' ? 'Nb' : 
+                                   String(ballData.runs);
+                      bgClass = 'bg-warning/80 border-warning text-warning-foreground';
+                    } else if (ballData.runs === 4) {
+                      displayText = '4';
+                      bgClass = 'bg-success border-success text-success-foreground shadow-[0_0_6px_hsl(var(--success))]';
+                    } else if (ballData.runs === 6) {
+                      displayText = '6';
+                      bgClass = 'bg-primary border-primary text-primary-foreground shadow-[0_0_6px_hsl(var(--primary))]';
+                    } else {
+                      displayText = String(ballData.runs);
+                      bgClass = 'bg-muted border-muted-foreground/50 text-foreground';
+                    }
+                  } else if (isCurrent) {
+                    bgClass = 'border-primary bg-primary/20 animate-pulse';
+                  }
+                  
+                  return (
+                    <div
+                      key={ballIndex}
+                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-200 ${bgClass}`}
+                    >
+                      {displayText}
+                    </div>
+                  );
+                })}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 Ball {currentBallInOver + 1} of 6

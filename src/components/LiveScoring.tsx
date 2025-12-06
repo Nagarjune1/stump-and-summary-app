@@ -114,6 +114,7 @@ const LiveScoring = () => {
   const [showWicketModal, setShowWicketModal] = useState(false);
   const [wicketDetails, setWicketDetails] = useState(null);
   const [recentWickets, setRecentWickets] = useState<any[]>([]);
+  const [currentOverBalls, setCurrentOverBalls] = useState<Array<{ runs: number; isWicket: boolean; isExtra: boolean; extraType?: string }>>([]);
 
   // Initialize notification service
   useEffect(() => {
@@ -373,6 +374,9 @@ const LiveScoring = () => {
       setCurrentBowler(updatedBowler);
     }
 
+    // Track ball in current over
+    setCurrentOverBalls(prev => [...prev, { runs, isWicket: false, isExtra: false }]);
+
     setCurrentBallInOver(prev => {
       const newBallInOver = prev + 1;
       const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -463,6 +467,9 @@ const LiveScoring = () => {
       }
     }
 
+    // Track wicket in current over
+    setCurrentOverBalls(prev => [...prev, { runs: 0, isWicket: true, isExtra: false }]);
+
     setCurrentBallInOver(prev => {
       const newBallInOver = prev + 1;
       const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -525,9 +532,11 @@ const LiveScoring = () => {
 
     // Wide and No-ball don't count as legal deliveries
     if (extraType === 'wides' || extraType === 'noballs') {
-      // No ball count increment for wides/noballs
+      // Track extra but don't count as legal delivery (won't show in ball indicator as it's not a legal ball)
     } else {
-      // Byes and leg-byes are legal deliveries
+      // Byes and leg-byes are legal deliveries - track in current over
+      setCurrentOverBalls(prev => [...prev, { runs, isWicket: false, isExtra: true, extraType }]);
+      
       setCurrentBallInOver(prev => {
         const newBallInOver = prev + 1;
         const ballsPerOver = matchSetup?.ballsPerOver || 6;
@@ -563,6 +572,9 @@ const LiveScoring = () => {
 
     // Increment completed overs (currentBallInOver is reset to 0 by the caller)
     setCurrentOver(prev => prev + 1);
+    
+    // Reset current over balls for new over
+    setCurrentOverBalls([]);
     
     // Switch strike at end of over
     switchStrike();
@@ -816,6 +828,7 @@ const LiveScoring = () => {
                   currentBowler={currentBowler}
                   strikeBatsmanIndex={strikeBatsmanIndex}
                   matchSetup={matchSetup}
+                  currentOverBalls={currentOverBalls}
                 />
                 
                 {!matchEnded && (
