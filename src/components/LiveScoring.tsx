@@ -645,7 +645,7 @@ const LiveScoring = () => {
     });
   };
 
-  const handleInningsEnd = (reason: string) => {
+  const handleInningsEnd = async (reason: string) => {
     if (currentInnings === 1) {
       // Start 2nd innings
       setCurrentInnings(2);
@@ -673,6 +673,24 @@ const LiveScoring = () => {
       };
       setTeamInnings(updatedTeamInnings);
       
+      // Update match with 1st innings score
+      if (selectedMatch?.id) {
+        const team1Score = `${teamInnings[0].totalRuns}/${teamInnings[0].totalWickets}`;
+        const team1Overs = `${teamInnings[0].overs}.${teamInnings[0].balls}`;
+        
+        try {
+          await supabase
+            .from('matches')
+            .update({ 
+              team1_score: team1Score,
+              team1_overs: team1Overs
+            })
+            .eq('id', selectedMatch.id);
+        } catch (error) {
+          console.error('Failed to update 1st innings score:', error);
+        }
+      }
+      
       toast({
         title: "1st Innings Complete!",
         description: `${teamInnings[0].teamName} scored ${teamInnings[0].totalRuns}/${teamInnings[0].totalWickets}. Starting 2nd innings.`,
@@ -681,7 +699,7 @@ const LiveScoring = () => {
       // Match completed
       setMatchEnded(true);
       
-      // Send match result notification
+      // Calculate winner and margin
       const winningTeam = teamInnings[1].totalRuns > teamInnings[0].totalRuns
         ? teamInnings[1].teamName
         : teamInnings[0].teamName;
@@ -690,6 +708,29 @@ const LiveScoring = () => {
         ? `by ${10 - teamInnings[1].totalWickets} wickets`
         : `by ${teamInnings[0].totalRuns - teamInnings[1].totalRuns} runs`;
       
+      const resultText = `${winningTeam} won ${margin}`;
+      
+      // Update match status to 'completed' and save final scores
+      if (selectedMatch?.id) {
+        const team2Score = `${teamInnings[1].totalRuns}/${teamInnings[1].totalWickets}`;
+        const team2Overs = `${teamInnings[1].overs}.${teamInnings[1].balls}`;
+        
+        try {
+          await supabase
+            .from('matches')
+            .update({ 
+              status: 'completed',
+              team2_score: team2Score,
+              team2_overs: team2Overs,
+              result: resultText
+            })
+            .eq('id', selectedMatch.id);
+        } catch (error) {
+          console.error('Failed to update match result:', error);
+        }
+      }
+      
+      // Send match result notification
       const settings = JSON.parse(localStorage.getItem('notification_settings') || '{}');
       if (settings.matchResult !== false) {
         notificationService.sendLocalNotification({
@@ -702,7 +743,7 @@ const LiveScoring = () => {
       
       toast({
         title: "Match Complete!",
-        description: "Both innings completed. Match ended.",
+        description: resultText,
       });
     }
   };
@@ -765,13 +806,29 @@ const LiveScoring = () => {
     return true;
   };
 
-  const handleMatchSetupComplete = (setupData: any) => {
+  const handleMatchSetupComplete = async (setupData: any) => {
     setMatchSetup(setupData);
     setCurrentStep('scoring');
     
     setCurrentInnings(1);
     setCurrentOver(0);
     setCurrentBallInOver(0);
+    
+    // Update match status to 'live' in the database
+    if (selectedMatch?.id) {
+      try {
+        await supabase
+          .from('matches')
+          .update({ 
+            status: 'live',
+            toss_winner: tossWinnerTeamId === selectedMatch.team1_id ? selectedMatch.team1_name : selectedMatch.team2_name,
+            toss_decision: tossDecision
+          })
+          .eq('id', selectedMatch.id);
+      } catch (error) {
+        console.error('Failed to update match status:', error);
+      }
+    }
     
     // Initialize team innings based on who bats first
     setTeamInnings([
