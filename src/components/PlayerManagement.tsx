@@ -308,21 +308,29 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }: { currentMatch?: any;
 
     setLoading(true);
     try {
-      let updateData: { team_id: string; profile_id: string | null; name?: string } = { 
+      let updateData: { team_id: string; profile_id: string | null; name?: string; batting_style?: string; bowling_style?: string } = { 
         team_id: newTeamId,
         profile_id: newProfileId || null
       };
 
-      // If a profile_id is set, fetch the profile data and sync name
+      // If a profile_id is set, fetch the profile data and sync name, batting_style, bowling_style
       if (newProfileId) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, batting_style, bowling_style')
           .eq('profile_id', newProfileId)
           .maybeSingle();
 
-        if (!profileError && profileData?.full_name) {
-          updateData.name = profileData.full_name;
+        if (!profileError && profileData) {
+          if (profileData.full_name) {
+            updateData.name = profileData.full_name;
+          }
+          if (profileData.batting_style) {
+            updateData.batting_style = profileData.batting_style;
+          }
+          if (profileData.bowling_style) {
+            updateData.bowling_style = profileData.bowling_style;
+          }
         }
       }
 
