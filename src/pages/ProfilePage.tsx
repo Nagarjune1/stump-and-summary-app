@@ -86,12 +86,12 @@ const ProfilePage = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Fetch player stats (need to link profile to player)
+      // Fetch player stats using profile_id link
       const { data: playerData, error: playerError } = await supabase
         .from("players")
         .select("*")
-        .eq("name", profileData.full_name)
-        .single();
+        .eq("profile_id", profileId)
+        .maybeSingle();
 
       if (!playerError && playerData) {
         // Fetch all match stats for this player

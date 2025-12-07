@@ -308,20 +308,34 @@ const PlayerManagement = ({ currentMatch, onPlayerAdded }: { currentMatch?: any;
 
     setLoading(true);
     try {
+      let updateData: { team_id: string; profile_id: string | null; name?: string } = { 
+        team_id: newTeamId,
+        profile_id: newProfileId || null
+      };
+
+      // If a profile_id is set, fetch the profile data and sync name
+      if (newProfileId) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('profile_id', newProfileId)
+          .maybeSingle();
+
+        if (!profileError && profileData?.full_name) {
+          updateData.name = profileData.full_name;
+        }
+      }
+
       const { error } = await supabase
         .from('players')
-        .update({ 
-          team_id: newTeamId,
-          profile_id: newProfileId || null
-        })
+        .update(updateData)
         .eq('id', selectedPlayer.id);
 
       if (error) throw error;
 
-      const newTeamName = teams.find(t => t.id === newTeamId)?.name;
       toast({
         title: "Player Updated!",
-        description: `${selectedPlayer.name} has been updated`,
+        description: `${updateData.name || selectedPlayer.name} has been updated`,
       });
 
       setIsEditOpen(false);
