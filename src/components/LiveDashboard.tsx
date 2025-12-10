@@ -148,6 +148,36 @@ const LiveDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
+      {/* Prominent Live Match Counter */}
+      {stats.liveMatches > 0 && (
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-warning/20 via-warning/10 to-warning/20 border border-warning/50 p-6 shadow-lg shadow-warning/20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--warning)/0.15),transparent_70%)]" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-warning/30 rounded-full animate-ping" />
+                <div className="relative w-16 h-16 bg-warning/20 rounded-full flex items-center justify-center border-2 border-warning">
+                  <Activity className="w-8 h-8 text-warning" />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-warning">
+                  {stats.liveMatches} {stats.liveMatches === 1 ? 'Match' : 'Matches'} Live Now!
+                </h2>
+                <p className="text-accent">Watch real-time cricket action</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => document.getElementById('live-matches-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-warning hover:bg-warning/90 text-warning-foreground font-semibold"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Watch Now
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-primary mb-2">Live Cricket Dashboard</h1>
@@ -210,7 +240,7 @@ const LiveDashboard = () => {
       </div>
 
       {/* Live Matches Section */}
-      <div className="mb-8">
+      <div id="live-matches-section" className="mb-8 scroll-mt-6">
         <h2 className="text-2xl font-bold text-primary mb-6 flex items-center gap-3">
           <Play className="w-6 h-6 text-warning" />
           Live Matches ({stats.liveMatches})
