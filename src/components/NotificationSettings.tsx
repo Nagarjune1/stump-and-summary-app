@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, Check } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Bell, BellOff, Check, Volume2, VolumeX } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { toast } from '@/hooks/use-toast';
+import { useScoringSound } from '@/hooks/useScoringSound';
 
 const NotificationSettings = () => {
   const [permission, setPermission] = useState<string>('default');
@@ -18,10 +20,19 @@ const NotificationSettings = () => {
     matchResult: true,
     boundaryStorm: false,
   });
+  const [soundSettings, setSoundSettings] = useState({
+    enabled: true,
+    wicket: true,
+    boundary: true,
+    runs: true,
+  });
+  
+  const { playSound } = useScoringSound();
 
   useEffect(() => {
     checkPermission();
     loadSettings();
+    loadSoundSettings();
   }, []);
 
   const checkPermission = () => {
@@ -33,6 +44,13 @@ const NotificationSettings = () => {
     const saved = localStorage.getItem('notification_settings');
     if (saved) {
       setSettings(JSON.parse(saved));
+    }
+  };
+
+  const loadSoundSettings = () => {
+    const saved = localStorage.getItem('sound_settings');
+    if (saved) {
+      setSoundSettings(JSON.parse(saved));
     }
   };
 
@@ -75,6 +93,23 @@ const NotificationSettings = () => {
 
   const updateSetting = (key: keyof typeof settings) => {
     saveSettings({ ...settings, [key]: !settings[key] });
+  };
+
+  const saveSoundSettings = (newSettings: typeof soundSettings) => {
+    setSoundSettings(newSettings);
+    localStorage.setItem('sound_settings', JSON.stringify(newSettings));
+    toast({
+      title: 'Settings Saved',
+      description: 'Sound preferences updated successfully',
+    });
+  };
+
+  const updateSoundSetting = (key: keyof typeof soundSettings) => {
+    saveSoundSettings({ ...soundSettings, [key]: !soundSettings[key] });
+  };
+
+  const handleTestSound = (type: 'wicket' | 'four' | 'six') => {
+    playSound(type);
   };
 
   return (
@@ -219,6 +254,98 @@ const NotificationSettings = () => {
             </Button>
           </>
         )}
+
+        <Separator />
+
+        {/* Sound Settings Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium flex items-center gap-2">
+                {soundSettings.enabled ? (
+                  <Volume2 className="h-4 w-4 text-primary" />
+                ) : (
+                  <VolumeX className="h-4 w-4 text-muted-foreground" />
+                )}
+                Scoring Sounds
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Audio feedback during live scoring
+              </p>
+            </div>
+            <Switch
+              id="soundEnabled"
+              checked={soundSettings.enabled}
+              onCheckedChange={() => updateSoundSetting('enabled')}
+            />
+          </div>
+
+          {soundSettings.enabled && (
+            <div className="space-y-3 pl-6 border-l-2 border-muted">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="wicketSound" className="flex flex-col gap-1">
+                  <span>Wicket Sound</span>
+                  <span className="text-xs text-muted-foreground">
+                    Dramatic sound when a wicket falls
+                  </span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleTestSound('wicket')}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Test
+                  </Button>
+                  <Switch
+                    id="wicketSound"
+                    checked={soundSettings.wicket}
+                    onCheckedChange={() => updateSoundSetting('wicket')}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="boundarySound" className="flex flex-col gap-1">
+                  <span>Boundary Sound</span>
+                  <span className="text-xs text-muted-foreground">
+                    Chime for fours and sixes
+                  </span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleTestSound('six')}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Test
+                  </Button>
+                  <Switch
+                    id="boundarySound"
+                    checked={soundSettings.boundary}
+                    onCheckedChange={() => updateSoundSetting('boundary')}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="runSound" className="flex flex-col gap-1">
+                  <span>Run Sound</span>
+                  <span className="text-xs text-muted-foreground">
+                    Subtle click for regular runs
+                  </span>
+                </Label>
+                <Switch
+                  id="runSound"
+                  checked={soundSettings.runs}
+                  onCheckedChange={() => updateSoundSetting('runs')}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

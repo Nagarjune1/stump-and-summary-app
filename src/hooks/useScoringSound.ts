@@ -2,6 +2,25 @@ import { useCallback, useRef } from 'react';
 
 type SoundType = 'wicket' | 'four' | 'six' | 'run';
 
+interface SoundSettings {
+  enabled: boolean;
+  wicket: boolean;
+  boundary: boolean;
+  runs: boolean;
+}
+
+const getSettings = (): SoundSettings => {
+  try {
+    const saved = localStorage.getItem('sound_settings');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { enabled: true, wicket: true, boundary: true, runs: true };
+};
+
 export const useScoringSound = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -35,16 +54,19 @@ export const useScoringSound = () => {
   }, [getAudioContext]);
 
   const playWicketSound = useCallback(() => {
-    // Dramatic descending tones for wicket
-    const ctx = getAudioContext();
-    const now = ctx.currentTime;
+    const settings = getSettings();
+    if (!settings.enabled || !settings.wicket) return;
     
+    // Dramatic descending tones for wicket
     [800, 600, 400].forEach((freq, i) => {
       setTimeout(() => playTone(freq, 0.3, 'square', 0.4), i * 150);
     });
-  }, [getAudioContext, playTone]);
+  }, [playTone]);
 
   const playFourSound = useCallback(() => {
+    const settings = getSettings();
+    if (!settings.enabled || !settings.boundary) return;
+    
     // Quick ascending chime for boundary four
     [523, 659, 784].forEach((freq, i) => {
       setTimeout(() => playTone(freq, 0.15, 'sine', 0.3), i * 80);
@@ -52,14 +74,19 @@ export const useScoringSound = () => {
   }, [playTone]);
 
   const playSixSound = useCallback(() => {
+    const settings = getSettings();
+    if (!settings.enabled || !settings.boundary) return;
+    
     // Triumphant ascending fanfare for six
-    const ctx = getAudioContext();
     [523, 659, 784, 1047].forEach((freq, i) => {
       setTimeout(() => playTone(freq, 0.2, 'triangle', 0.35), i * 100);
     });
-  }, [getAudioContext, playTone]);
+  }, [playTone]);
 
   const playRunSound = useCallback(() => {
+    const settings = getSettings();
+    if (!settings.enabled || !settings.runs) return;
+    
     // Subtle click for regular runs
     playTone(440, 0.05, 'sine', 0.15);
   }, [playTone]);
