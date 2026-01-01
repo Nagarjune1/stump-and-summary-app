@@ -1,52 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import MatchSelectorForScoreboard from './scoring/MatchSelectorForScoreboard';
 import EnhancedCricketScoreboard from './EnhancedCricketScoreboard';
+import { Badge } from '@/components/ui/badge';
+import { Radio } from 'lucide-react';
 
 const ScoreboardWithSelector = () => {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [matchData, setMatchData] = useState(null);
   const [scoreboardData, setScoreboardData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [isLiveUpdating, setIsLiveUpdating] = useState(false);
 
-  useEffect(() => {
-    if (selectedMatch) {
-      fetchMatchDetails(selectedMatch.id);
-      
-      // Set up real-time subscription
-      const channel = supabase
-        .channel(`scoreboard_${selectedMatch.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'matches',
-            filter: `id=eq.${selectedMatch.id}`
-          },
-          () => fetchMatchDetails(selectedMatch.id)
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'ball_by_ball',
-            filter: `match_id=eq.${selectedMatch.id}`
-          },
-          () => fetchMatchDetails(selectedMatch.id)
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [selectedMatch]);
-
-  const fetchMatchDetails = async (matchId: string) => {
+  const fetchMatchDetails = useCallback(async (matchId: string, isRealtimeUpdate = false) => {
     try {
-      setLoading(true);
+      if (!isRealtimeUpdate) setLoading(true);
+      if (isRealtimeUpdate) {
+        setIsLiveUpdating(true);
+        setTimeout(() => setIsLiveUpdating(false), 1000);
+      }
       
       // Fetch match details
       const { data: match, error: matchError } = await supabase
@@ -166,12 +139,61 @@ const ScoreboardWithSelector = () => {
         wickets: balls?.filter(b => b.is_wicket) || [],
         oversData: []
       });
+      
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error fetching match details:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (selectedMatch) {
+      fetchMatchDetails(selectedMatch.id);
+      
+      // Set up real-time subscription for live updates
+      const channel = supabase
+        .channel(`scoreboard_${selectedMatch.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'matches',
+            filter: `id=eq.${selectedMatch.id}`
+          },
+          () => fetchMatchDetails(selectedMatch.id, true)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'ball_by_ball',
+            filter: `match_id=eq.${selectedMatch.id}`
+          },
+          () => fetchMatchDetails(selectedMatch.id, true)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'match_stats',
+            filter: `match_id=eq.${selectedMatch.id}`
+          },
+          () => fetchMatchDetails(selectedMatch.id, true)
+        )
+        .subscribe((status) => {
+          console.log('Scoreboard realtime status:', status);
+        });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [selectedMatch, fetchMatchDetails]);
 
   const handleMatchSelect = (match: any) => {
     setSelectedMatch(match);
@@ -195,7 +217,28 @@ const ScoreboardWithSelector = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <MatchSelectorForScoreboard onMatchSelect={handleMatchSelect} />
+      {/* Live Update Indicator */}
+      <div className="flex items-center justify-between">
+        <MatchSelectorForScoreboard onMatchSelect={handleMatchSelect} />
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant="outline" 
+            className={`flex items-center gap-2 transition-all ${
+              isLiveUpdating 
+                ? 'bg-warning/20 border-warning text-warning animate-pulse' 
+                : 'bg-accent/20 border-accent text-accent'
+            }`}
+          >
+            <Radio className={`w-3 h-3 ${isLiveUpdating ? 'animate-ping' : ''}`} />
+            {isLiveUpdating ? 'Updating...' : 'Live'}
+          </Badge>
+          {lastUpdate && (
+            <span className="text-xs text-muted-foreground">
+              Updated: {lastUpdate.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+      </div>
       <EnhancedCricketScoreboard
         matchData={matchData}
         {...scoreboardData}
