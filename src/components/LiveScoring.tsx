@@ -20,6 +20,7 @@ import { validatePlayer, formatOvers } from "@/utils/scoringUtils";
 import { useRealtimeMatch } from "@/hooks/useRealtimeMatch";
 import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { notificationService } from "@/services/notificationService";
+import { useScoringSound } from "@/hooks/useScoringSound";
 
 interface Match {
   id: string;
@@ -124,6 +125,9 @@ const LiveScoring = () => {
     currentOverBalls: Array<{ runs: number; isWicket: boolean; isExtra: boolean; extraType?: string }>;
     strikeBatsmanIndex: number;
   } | null>(null);
+
+  // Scoring sounds
+  const { playSound } = useScoringSound();
 
   // Initialize notification service
   useEffect(() => {
@@ -358,8 +362,12 @@ const LiveScoring = () => {
     
     if (runs === 4) {
       updatedBatsmen[strikeBatsmanIndex].fours += 1;
+      playSound('four');
     } else if (runs === 6) {
       updatedBatsmen[strikeBatsmanIndex].sixes += 1;
+      playSound('six');
+    } else if (runs > 0) {
+      playSound('run');
     }
     
     setCurrentBatsmen(updatedBatsmen);
@@ -442,6 +450,9 @@ const LiveScoring = () => {
       currentOverBalls: [...currentOverBalls],
       strikeBatsmanIndex,
     });
+
+    // Play wicket sound
+    playSound('wicket');
 
     const dismissedBatsman = currentBatsmen[strikeBatsmanIndex];
     const updatedBatsmen = [...currentBatsmen];
