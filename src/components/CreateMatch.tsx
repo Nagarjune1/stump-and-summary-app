@@ -180,6 +180,18 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
     try {
       setLoading(true);
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a match",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       const { matchSchema } = await import('@/lib/validationSchemas');
       
       const validated = matchSchema.parse({
@@ -206,7 +218,8 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
         description: validated.description || null,
         status: 'upcoming' as const,
         wide_runs: formData.wide_runs,
-        noball_runs: formData.noball_runs
+        noball_runs: formData.noball_runs,
+        created_by: user.id
       };
 
       const { data, error } = await supabase
@@ -225,7 +238,7 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
           match_id: data.id,
           user_id: scorer.id,
           permission_type: 'scorer',
-          granted_by: data.created_by
+          granted_by: user.id
         }));
 
         const { error: scorerError } = await supabase
