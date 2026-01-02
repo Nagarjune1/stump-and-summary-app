@@ -28,6 +28,7 @@ const EnhancedCricketScoreboard = ({
   requiredRunRate,
   currentRunRate,
   recentBalls = [],
+  ballByBallData = [],
   team1Players = [],
   team2Players = [],
   fallOfWickets = [],
@@ -148,6 +149,7 @@ const EnhancedCricketScoreboard = ({
           <TabsContent value="commentary" className="space-y-4">
             <LiveCommentary 
               recentBalls={recentBalls}
+              ballByBallData={ballByBallData}
               currentOver={currentOver}
               currentBall={currentBall}
               score={score}
@@ -261,6 +263,7 @@ const EnhancedCricketScoreboard = ({
           <div className="space-y-4">
             <LiveCommentary 
               recentBalls={recentBalls}
+              ballByBallData={ballByBallData}
               currentOver={currentOver}
               currentBall={currentBall}
               score={score}

@@ -123,13 +123,31 @@ const ScoreboardWithSelector = () => {
         economy: bowlingStats[0].economy_rate || 0
       } : null;
 
-      // Recent balls
+      // Recent balls (simple format for display)
       const recentBalls = balls?.slice(-10).map(b => 
         b.is_wicket ? 'W' : 
         b.runs === 4 ? '4' : 
         b.runs === 6 ? '6' : 
         String(b.runs || 0)
       ) || [];
+
+      // Full ball-by-ball data for commentary (last 20 balls with player info)
+      const currentBalls = (currentInnings === 2 ? innings2Balls : innings1Balls);
+      const ballByBallData = currentBalls.slice(-20).map((b: any) => ({
+        id: b.id,
+        over_number: b.over_number,
+        ball_number: b.ball_number,
+        runs: b.runs || 0,
+        extras: b.extras || 0,
+        extra_type: b.extra_type,
+        is_wicket: b.is_wicket,
+        wicket_type: b.wicket_type,
+        batsman_name: b.batsman?.name || 'Batsman',
+        bowler_name: b.bowler?.name || 'Bowler',
+        shot_type: b.shot_type,
+        commentary: b.commentary,
+        created_at: b.created_at
+      }));
 
       setMatchData(match);
       setScoreboardData({
@@ -147,6 +165,7 @@ const ScoreboardWithSelector = () => {
           : 0,
         currentRunRate: ((currentScore.runs / (currentScore.overs + currentScore.balls / 6)) * 6).toFixed(2) || '0.00',
         recentBalls,
+        ballByBallData,
         team1Players: battingStats,
         team2Players: bowlingStats,
         fallOfWickets: balls?.filter(b => b.is_wicket).map((b: any, idx: number) => ({
