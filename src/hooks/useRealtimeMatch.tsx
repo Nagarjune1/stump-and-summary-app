@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -9,6 +9,12 @@ export interface RealtimeMatchUpdate {
 
 export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: RealtimeMatchUpdate) => void) => {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const onUpdateRef = useRef(onUpdate);
+
+  // Keep the ref updated with the latest callback
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
 
   useEffect(() => {
     if (!matchId) return;
@@ -28,7 +34,7 @@ export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: Rea
         },
         (payload) => {
           console.log('Match updated:', payload);
-          onUpdate?.({
+          onUpdateRef.current?.({
             type: 'match',
             data: payload.new
           });
@@ -44,7 +50,7 @@ export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: Rea
         },
         (payload) => {
           console.log('New ball:', payload);
-          onUpdate?.({
+          onUpdateRef.current?.({
             type: 'ball',
             data: payload.new
           });
@@ -60,7 +66,7 @@ export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: Rea
         },
         (payload) => {
           console.log('Stats updated:', payload);
-          onUpdate?.({
+          onUpdateRef.current?.({
             type: 'stats',
             data: payload.new
           });
@@ -76,7 +82,7 @@ export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: Rea
         },
         (payload) => {
           console.log('Partnership updated:', payload);
-          onUpdate?.({
+          onUpdateRef.current?.({
             type: 'partnership',
             data: payload.new
           });
@@ -92,7 +98,7 @@ export const useRealtimeMatch = (matchId: string | null, onUpdate?: (update: Rea
       console.log('Cleaning up realtime subscription');
       matchChannel.unsubscribe();
     };
-  }, [matchId, onUpdate]);
+  }, [matchId]); // Only depend on matchId, not onUpdate
 
   return { channel };
 };
