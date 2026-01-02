@@ -34,10 +34,14 @@ const ScoreboardWithSelector = () => {
 
       if (matchError) throw matchError;
 
-      // Fetch ball by ball data
+      // Fetch ball by ball data with player names
       const { data: balls, error: ballsError } = await supabase
         .from('ball_by_ball')
-        .select('*')
+        .select(`
+          *,
+          batsman:players!ball_by_ball_batsman_id_fkey(id, name),
+          bowler:players!ball_by_ball_bowler_id_fkey(id, name)
+        `)
         .eq('match_id', matchId)
         .order('innings')
         .order('over_number')
@@ -45,12 +49,12 @@ const ScoreboardWithSelector = () => {
 
       if (ballsError) throw ballsError;
 
-      // Fetch match stats
+      // Fetch match stats with player names
       const { data: stats, error: statsError } = await supabase
         .from('match_stats')
         .select(`
           *,
-          player:players(name)
+          player:players(id, name, role)
         `)
         .eq('match_id', matchId);
 
@@ -80,8 +84,16 @@ const ScoreboardWithSelector = () => {
       const currentInnings = innings2Balls.length > 0 ? 2 : 1;
       const currentScore = currentInnings === 2 ? innings2 : innings1;
 
-      // Get current batsmen from stats
-      const battingStats = stats?.filter(s => s.innings === currentInnings && s.balls_faced > 0) || [];
+      // Get current batsmen from stats - only those not dismissed
+      const battingStats = stats?.filter(s => 
+        s.innings === currentInnings && 
+        (s.balls_faced || 0) > 0 && 
+        !s.dismissal_type
+      ) || [];
+      
+      // Sort by balls faced descending to get active batsmen
+      battingStats.sort((a: any, b: any) => (b.balls_faced || 0) - (a.balls_faced || 0));
+      
       const currentBatsmen = battingStats.slice(0, 2).map((s: any) => ({
         id: s.player_id,
         name: s.player?.name || 'Unknown',
@@ -89,17 +101,26 @@ const ScoreboardWithSelector = () => {
         balls: s.balls_faced || 0,
         fours: s.fours || 0,
         sixes: s.sixes || 0,
+        strikeRate: s.balls_faced > 0 ? ((s.runs_scored || 0) / s.balls_faced * 100).toFixed(1) : '0.0',
         isOut: !!s.dismissal_type
       }));
 
-      // Get current bowler
-      const bowlingStats = stats?.filter(s => s.innings === currentInnings && s.overs_bowled > 0) || [];
+      // Get current bowler - most recent one with overs
+      const bowlingStats = stats?.filter(s => 
+        s.innings === currentInnings && 
+        (s.overs_bowled || 0) > 0
+      ) || [];
+      
+      // Sort by overs bowled descending
+      bowlingStats.sort((a: any, b: any) => (b.overs_bowled || 0) - (a.overs_bowled || 0));
+      
       const currentBowler = bowlingStats.length > 0 ? {
         id: bowlingStats[0].player_id,
         name: bowlingStats[0].player?.name || 'Unknown',
         overs: bowlingStats[0].overs_bowled || 0,
         runs: bowlingStats[0].runs_conceded || 0,
-        wickets: bowlingStats[0].wickets_taken || 0
+        wickets: bowlingStats[0].wickets_taken || 0,
+        economy: bowlingStats[0].economy_rate || 0
       } : null;
 
       // Recent balls
