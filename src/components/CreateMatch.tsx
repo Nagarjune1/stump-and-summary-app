@@ -390,19 +390,6 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
 
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="overs">Total Overs *</Label>
-              <Input
-                type="number"
-                id="overs"
-                value={formData.overs}
-                onChange={(e) => handleInputChange('overs', parseInt(e.target.value) || 20)}
-                min="1"
-                max="50"
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="format">Format</Label>
               <Select value={formData.format} onValueChange={(value) => handleInputChange('format', value)}>
                 <SelectTrigger>
@@ -416,6 +403,19 @@ const CreateMatch = ({ onMatchCreated, onMatchStarted }: CreateMatchProps) => {
                   <SelectItem value="Custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="overs">Total Overs *</Label>
+              <Input
+                type="number"
+                id="overs"
+                value={formData.overs}
+                onChange={(e) => handleInputChange('overs', parseInt(e.target.value) || 20)}
+                min="1"
+                max="50"
+                required
+              />
             </div>
 
             <div>
