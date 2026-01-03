@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatOvers, calculateStrikeRate, calculateEconomy } from "@/utils/scoringUtils";
-import { Target, Users, Activity } from "lucide-react";
+import { Target, Users, Activity, Handshake } from "lucide-react";
 
 interface TeamInnings {
   teamId: string;
@@ -37,6 +37,13 @@ interface BallData {
   extraType?: string;
 }
 
+interface Partnership {
+  runs: number;
+  balls: number;
+  batsman1Name?: string;
+  batsman2Name?: string;
+}
+
 interface ScoreDisplayProps {
   teamInnings: TeamInnings[];
   currentInnings: number;
@@ -48,6 +55,7 @@ interface ScoreDisplayProps {
   strikeBatsmanIndex: number;
   matchSetup: any;
   currentOverBalls?: BallData[];
+  currentPartnership?: Partnership;
 }
 
 const ScoreDisplay = ({
@@ -60,7 +68,8 @@ const ScoreDisplay = ({
   currentBowler,
   strikeBatsmanIndex,
   matchSetup,
-  currentOverBalls = []
+  currentOverBalls = [],
+  currentPartnership
 }: ScoreDisplayProps) => {
   const getCurrentTeamInnings = () => {
     return teamInnings[currentInnings - 1] || {
@@ -323,6 +332,43 @@ const ScoreDisplay = ({
               )}
             </div>
           </div>
+          
+          {/* Partnership Tracker */}
+          {striker.name && striker.name !== 'Not Selected' && nonStriker.name && nonStriker.name !== 'Not Selected' && (
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg animate-fade-in">
+              <div className="text-sm font-medium text-primary mb-2 flex items-center gap-2">
+                <Handshake className="w-4 h-4" />
+                Current Partnership
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {currentPartnership?.runs ?? ((striker.runs || 0) + (nonStriker.runs || 0))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Runs</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {currentPartnership?.balls ?? ((striker.balls || 0) + (nonStriker.balls || 0))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Balls</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {(() => {
+                      const runs = currentPartnership?.runs ?? ((striker.runs || 0) + (nonStriker.runs || 0));
+                      const balls = currentPartnership?.balls ?? ((striker.balls || 0) + (nonStriker.balls || 0));
+                      return balls > 0 ? ((runs / balls) * 100).toFixed(1) : '0.0';
+                    })()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Strike Rate</div>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-primary/20 text-xs text-muted-foreground text-center">
+                {currentPartnership?.batsman1Name || striker.name} & {currentPartnership?.batsman2Name || nonStriker.name}
+              </div>
+            </div>
+          )}
           
           {/* Detailed batting stats */}
           {striker.name && striker.name !== 'Not Selected' && (
