@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatOvers, calculateStrikeRate, calculateEconomy } from "@/utils/scoringUtils";
-import { Target, Users, Activity, Handshake } from "lucide-react";
+import { Target, Users, Activity, Handshake, Star, Award, Trophy } from "lucide-react";
 
 interface TeamInnings {
   teamId: string;
@@ -277,12 +277,22 @@ const ScoreDisplay = ({
               {striker.name && striker.name !== 'Not Selected' ? (
                 <div className="space-y-3">
                   {/* Striker */}
-                  <div className="p-2 bg-success/10 border border-success/30 rounded">
+                  <div className={`p-2 rounded border ${(striker.runs || 0) >= 100 ? 'bg-yellow-500/20 border-yellow-500/50' : (striker.runs || 0) >= 50 ? 'bg-amber-500/20 border-amber-500/50' : 'bg-success/10 border-success/30'}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-success flex items-center gap-1">
                         {striker.name} <Badge variant="outline" className="text-[10px] px-1 py-0 border-success text-success">*</Badge>
+                        {(striker.runs || 0) >= 100 && (
+                          <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-yellow-500 text-yellow-950 animate-scale-in flex items-center gap-0.5">
+                            <Trophy className="w-3 h-3" /> 100
+                          </Badge>
+                        )}
+                        {(striker.runs || 0) >= 50 && (striker.runs || 0) < 100 && (
+                          <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-amber-500 text-amber-950 animate-scale-in flex items-center gap-0.5">
+                            <Star className="w-3 h-3" /> 50
+                          </Badge>
+                        )}
                       </span>
-                      <span className="text-lg font-bold text-primary">{striker.runs || 0}</span>
+                      <span className={`text-lg font-bold ${(striker.runs || 0) >= 100 ? 'text-yellow-500' : (striker.runs || 0) >= 50 ? 'text-amber-500' : 'text-primary'}`}>{striker.runs || 0}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 text-xs">
                       <div><span className="text-muted-foreground">B:</span> <span className="font-medium text-foreground">{striker.balls || 0}</span></div>
@@ -291,10 +301,22 @@ const ScoreDisplay = ({
                     </div>
                   </div>
                   {/* Non-Striker */}
-                  <div className="p-2 bg-muted/50 rounded">
+                  <div className={`p-2 rounded ${(nonStriker.runs || 0) >= 100 ? 'bg-yellow-500/20 border border-yellow-500/50' : (nonStriker.runs || 0) >= 50 ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-muted/50'}`}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-foreground">{nonStriker.name}</span>
-                      <span className="text-lg font-bold text-foreground">{nonStriker.runs || 0}</span>
+                      <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                        {nonStriker.name}
+                        {(nonStriker.runs || 0) >= 100 && (
+                          <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-yellow-500 text-yellow-950 animate-scale-in flex items-center gap-0.5">
+                            <Trophy className="w-3 h-3" /> 100
+                          </Badge>
+                        )}
+                        {(nonStriker.runs || 0) >= 50 && (nonStriker.runs || 0) < 100 && (
+                          <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-amber-500 text-amber-950 animate-scale-in flex items-center gap-0.5">
+                            <Star className="w-3 h-3" /> 50
+                          </Badge>
+                        )}
+                      </span>
+                      <span className={`text-lg font-bold ${(nonStriker.runs || 0) >= 100 ? 'text-yellow-500' : (nonStriker.runs || 0) >= 50 ? 'text-amber-500' : 'text-foreground'}`}>{nonStriker.runs || 0}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 text-xs">
                       <div><span className="text-muted-foreground">B:</span> <span className="font-medium text-foreground">{nonStriker.balls || 0}</span></div>
@@ -315,10 +337,22 @@ const ScoreDisplay = ({
                 Bowler
               </div>
               {currentBowler?.name ? (
-                <div className="p-2 bg-destructive/10 border border-destructive/30 rounded">
+                <div className={`p-2 rounded border ${(currentBowler.wickets || 0) >= 5 ? 'bg-purple-500/20 border-purple-500/50' : (currentBowler.wickets || 0) >= 3 ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-destructive/10 border-destructive/30'}`}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-destructive">{currentBowler.name}</span>
-                    <span className="text-lg font-bold text-foreground">
+                    <span className="text-sm font-medium text-destructive flex items-center gap-1">
+                      {currentBowler.name}
+                      {(currentBowler.wickets || 0) >= 5 && (
+                        <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-purple-500 text-purple-950 animate-scale-in flex items-center gap-0.5">
+                          <Award className="w-3 h-3" /> 5-fer
+                        </Badge>
+                      )}
+                      {(currentBowler.wickets || 0) >= 3 && (currentBowler.wickets || 0) < 5 && (
+                        <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-indigo-500 text-indigo-950 animate-scale-in flex items-center gap-0.5">
+                          <Star className="w-3 h-3" /> 3-fer
+                        </Badge>
+                      )}
+                    </span>
+                    <span className={`text-lg font-bold ${(currentBowler.wickets || 0) >= 5 ? 'text-purple-500' : (currentBowler.wickets || 0) >= 3 ? 'text-indigo-500' : 'text-foreground'}`}>
                       {currentBowler.wickets || 0}-{currentBowler.runs || 0}
                     </span>
                   </div>
