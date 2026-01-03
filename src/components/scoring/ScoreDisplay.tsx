@@ -259,21 +259,39 @@ const ScoreDisplay = ({
               )}
             </div>
             
-            {/* Batsmen Status */}
+            {/* Batsmen Status with Stats */}
             <div className="p-3 bg-muted/30 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+              <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 Batsmen
               </div>
               {striker.name && striker.name !== 'Not Selected' ? (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">
-                    {striker.name}* <span className="text-primary">{striker.runs || 0}</span>
-                    <span className="text-muted-foreground text-xs ml-1">({striker.balls || 0})</span>
+                <div className="space-y-3">
+                  {/* Striker */}
+                  <div className="p-2 bg-success/10 border border-success/30 rounded">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-success flex items-center gap-1">
+                        {striker.name} <Badge variant="outline" className="text-[10px] px-1 py-0 border-success text-success">*</Badge>
+                      </span>
+                      <span className="text-lg font-bold text-primary">{striker.runs || 0}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-xs">
+                      <div><span className="text-muted-foreground">B:</span> <span className="font-medium text-foreground">{striker.balls || 0}</span></div>
+                      <div><span className="text-muted-foreground">SR:</span> <span className="font-medium text-foreground">{calculateStrikeRate(striker.runs || 0, striker.balls || 0).toFixed(1)}</span></div>
+                      <div><span className="text-muted-foreground">4/6:</span> <span className="font-medium text-foreground">{striker.fours || 0}/{striker.sixes || 0}</span></div>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {nonStriker.name} <span>{nonStriker.runs || 0}</span>
-                    <span className="text-xs ml-1">({nonStriker.balls || 0})</span>
+                  {/* Non-Striker */}
+                  <div className="p-2 bg-muted/50 rounded">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-foreground">{nonStriker.name}</span>
+                      <span className="text-lg font-bold text-foreground">{nonStriker.runs || 0}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 text-xs">
+                      <div><span className="text-muted-foreground">B:</span> <span className="font-medium text-foreground">{nonStriker.balls || 0}</span></div>
+                      <div><span className="text-muted-foreground">SR:</span> <span className="font-medium text-foreground">{calculateStrikeRate(nonStriker.runs || 0, nonStriker.balls || 0).toFixed(1)}</span></div>
+                      <div><span className="text-muted-foreground">4/6:</span> <span className="font-medium text-foreground">{nonStriker.fours || 0}/{nonStriker.sixes || 0}</span></div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -281,19 +299,23 @@ const ScoreDisplay = ({
               )}
             </div>
             
-            {/* Bowler Status */}
+            {/* Bowler Status with Stats */}
             <div className="p-3 bg-muted/30 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+              <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                 <Target className="w-3 h-3" />
                 Bowler
               </div>
               {currentBowler?.name ? (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">
-                    {currentBowler.name}
+                <div className="p-2 bg-destructive/10 border border-destructive/30 rounded">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-destructive">{currentBowler.name}</span>
+                    <span className="text-lg font-bold text-foreground">
+                      {currentBowler.wickets || 0}-{currentBowler.runs || 0}
+                    </span>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {currentBowler.wickets || 0}-{currentBowler.runs || 0} ({(currentBowler.overs || 0).toFixed(1)} ov)
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <div><span className="text-muted-foreground">Overs:</span> <span className="font-medium text-foreground">{(currentBowler.overs || 0).toFixed(1)}</span></div>
+                    <div><span className="text-muted-foreground">Econ:</span> <span className="font-medium text-foreground">{calculateEconomy(currentBowler.runs || 0, currentBowler.overs || 1).toFixed(2)}</span></div>
                   </div>
                 </div>
               ) : (
