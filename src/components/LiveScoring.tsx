@@ -21,6 +21,7 @@ import { useRealtimeMatch } from "@/hooks/useRealtimeMatch";
 import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { notificationService } from "@/services/notificationService";
 import { useScoringSound } from "@/hooks/useScoringSound";
+import { scoringPersistenceService } from "@/services/scoringPersistenceService";
 
 interface Match {
   id: string;
@@ -402,6 +403,42 @@ const LiveScoring = () => {
       setCurrentBowler(updatedBowler);
     }
 
+    // Save ball to database for realtime updates
+    if (selectedMatch && currentBatsmen[strikeBatsmanIndex]?.id && currentBowler?.id) {
+      scoringPersistenceService.saveBall({
+        matchId: selectedMatch.id,
+        innings: currentInnings,
+        overNumber: currentOver,
+        ballNumber: currentBallInOver,
+        batsmanId: currentBatsmen[strikeBatsmanIndex].id,
+        bowlerId: currentBowler.id,
+        runs: runs,
+        extras: 0,
+        isWicket: false
+      });
+
+      // Update batsman stats
+      scoringPersistenceService.upsertPlayerStats({
+        matchId: selectedMatch.id,
+        playerId: currentBatsmen[strikeBatsmanIndex].id,
+        innings: currentInnings,
+        runsScored: updatedBatsmen[strikeBatsmanIndex].runs,
+        ballsFaced: updatedBatsmen[strikeBatsmanIndex].balls,
+        fours: updatedBatsmen[strikeBatsmanIndex].fours,
+        sixes: updatedBatsmen[strikeBatsmanIndex].sixes
+      });
+
+      // Update bowler stats
+      scoringPersistenceService.upsertPlayerStats({
+        matchId: selectedMatch.id,
+        playerId: currentBowler.id,
+        innings: currentInnings,
+        oversBowled: (currentOver * 6 + currentBallInOver + 1) / 6,
+        runsConceded: (currentBowler.runs || 0) + runs,
+        wicketsTaken: currentBowler.wickets || 0
+      });
+    }
+
     // Track ball in current over
     setCurrentOverBalls(prev => [...prev, { runs, isWicket: false, isExtra: false }]);
 
@@ -509,6 +546,45 @@ const LiveScoring = () => {
       }
     }
 
+    // Save wicket ball to database for realtime updates
+    if (selectedMatch && dismissedBatsman?.id && currentBowler?.id) {
+      scoringPersistenceService.saveBall({
+        matchId: selectedMatch.id,
+        innings: currentInnings,
+        overNumber: currentOver,
+        ballNumber: currentBallInOver,
+        batsmanId: dismissedBatsman.id,
+        bowlerId: currentBowler.id,
+        runs: 0,
+        extras: 0,
+        isWicket: true,
+        wicketType: dismissalType,
+        dismissedPlayerId: dismissedBatsman.id
+      });
+
+      // Update dismissed batsman stats
+      scoringPersistenceService.upsertPlayerStats({
+        matchId: selectedMatch.id,
+        playerId: dismissedBatsman.id,
+        innings: currentInnings,
+        runsScored: updatedBatsmen[strikeBatsmanIndex].runs,
+        ballsFaced: updatedBatsmen[strikeBatsmanIndex].balls,
+        fours: updatedBatsmen[strikeBatsmanIndex].fours,
+        sixes: updatedBatsmen[strikeBatsmanIndex].sixes,
+        dismissalType: dismissalType
+      });
+
+      // Update bowler stats
+      scoringPersistenceService.upsertPlayerStats({
+        matchId: selectedMatch.id,
+        playerId: currentBowler.id,
+        innings: currentInnings,
+        oversBowled: (currentOver * 6 + currentBallInOver + 1) / 6,
+        runsConceded: currentBowler.runs || 0,
+        wicketsTaken: (currentBowler.wickets || 0) + 1
+      });
+    }
+
     // Track wicket in current over
     setCurrentOverBalls(prev => [...prev, { runs: 0, isWicket: true, isExtra: false }]);
 
@@ -583,6 +659,31 @@ const LiveScoring = () => {
       const updatedBowler = { ...currentBowler };
       updatedBowler.runs = (updatedBowler.runs || 0) + runs;
       setCurrentBowler(updatedBowler);
+    }
+
+    // Save extra ball to database for realtime updates
+    if (selectedMatch && currentBatsmen[strikeBatsmanIndex]?.id && currentBowler?.id) {
+      scoringPersistenceService.saveBall({
+        matchId: selectedMatch.id,
+        innings: currentInnings,
+        overNumber: currentOver,
+        ballNumber: currentBallInOver,
+        batsmanId: currentBatsmen[strikeBatsmanIndex].id,
+        bowlerId: currentBowler.id,
+        runs: 0,
+        extras: runs,
+        extraType: extraType,
+        isWicket: false
+      });
+
+      // Update bowler stats
+      scoringPersistenceService.upsertPlayerStats({
+        matchId: selectedMatch.id,
+        playerId: currentBowler.id,
+        innings: currentInnings,
+        runsConceded: (currentBowler.runs || 0) + runs,
+        wicketsTaken: currentBowler.wickets || 0
+      });
     }
 
     // Wide and No-ball don't count as legal deliveries
