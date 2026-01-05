@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { guaranteedNonEmptyValue } from "@/utils/selectUtils";
 
 const TossSelector = ({ 
   match,
@@ -66,11 +65,11 @@ const TossSelector = ({
 
   if (!match) return null;
 
-  // Create safe team values using the utility function - ensure they're never empty
-  const team1Value = guaranteedNonEmptyValue(match.team1?.name || `team1_${match.id}`, 'team1');
-  const team2Value = guaranteedNonEmptyValue(match.team2?.name || `team2_${match.id}`, 'team2');
+  // Use team IDs as values for proper comparison in handleTossComplete
+  const team1Id = match.team1_id || match.team1?.id;
+  const team2Id = match.team2_id || match.team2?.id;
 
-  console.log('TossSelector: Team values:', { team1Value, team2Value });
+  console.log('TossSelector: Team IDs:', { team1Id, team2Id });
 
   return (
     <Card>
@@ -85,10 +84,10 @@ const TossSelector = ({
               <SelectValue placeholder="Select toss winner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={team1Value}>
+              <SelectItem value={team1Id}>
                 {match.team1?.name || 'Team 1'}
               </SelectItem>
-              <SelectItem value={team2Value}>
+              <SelectItem value={team2Id}>
                 {match.team2?.name || 'Team 2'}
               </SelectItem>
             </SelectContent>
@@ -102,10 +101,10 @@ const TossSelector = ({
               <SelectValue placeholder="Select decision" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={guaranteedNonEmptyValue('bat', 'bat_decision')}>
+              <SelectItem value="bat">
                 Chose to bat first
               </SelectItem>
-              <SelectItem value={guaranteedNonEmptyValue('bowl', 'bowl_decision')}>
+              <SelectItem value="bowl">
                 Chose to bowl first
               </SelectItem>
             </SelectContent>
