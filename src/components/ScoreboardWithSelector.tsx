@@ -229,8 +229,15 @@ const ScoreboardWithSelector = () => {
           console.log('Scoreboard realtime status:', status);
         });
 
+      // Fallback polling every 30 seconds
+      const pollingInterval = setInterval(() => {
+        console.log('Polling for score updates...');
+        fetchMatchDetails(selectedMatch.id, true);
+      }, 30000);
+
       return () => {
         supabase.removeChannel(channel);
+        clearInterval(pollingInterval);
       };
     }
   }, [selectedMatch, fetchMatchDetails]);
