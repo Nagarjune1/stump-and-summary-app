@@ -8,7 +8,6 @@ import { Play, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { guaranteedNonEmptyValue } from '@/utils/selectUtils';
 
 const CricketScoreboard = ({ 
   matchData, 
@@ -149,14 +148,11 @@ const CricketScoreboard = ({
                 <SelectValue placeholder="Select a live match" />
               </SelectTrigger>
               <SelectContent>
-                {liveMatches.map((match, index) => {
-                  const matchValue = guaranteedNonEmptyValue(match.id, `match_${index}`);
-                  return (
-                    <SelectItem key={`match_${index}_${match.id}`} value={matchValue}>
-                      {match.team1?.name} vs {match.team2?.name} - {match.venue}
-                    </SelectItem>
-                  );
-                })}
+                {liveMatches.map((match, index) => (
+                  <SelectItem key={`match_${index}_${match.id}`} value={match.id || `match_${index}`}>
+                    {match.team1?.name} vs {match.team2?.name} - {match.venue}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </CardContent>
