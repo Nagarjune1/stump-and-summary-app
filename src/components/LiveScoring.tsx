@@ -202,9 +202,217 @@ const LiveScoring = () => {
     }
   };
 
-  const handleMatchSelect = (match: Match) => {
+  const handleMatchSelect = async (match: Match) => {
     setSelectedMatch(match);
+    
+    // Check if match is already in progress (has ball-by-ball data)
+    try {
+      const { data: existingBalls, error: ballsError } = await supabase
+        .from('ball_by_ball')
+        .select('*')
+        .eq('match_id', match.id)
+        .order('innings')
+        .order('over_number')
+        .order('ball_number');
+
+      if (ballsError) throw ballsError;
+
+      // If match has existing data, restore the state
+      if (existingBalls && existingBalls.length > 0) {
+        console.log('Restoring match state from', existingBalls.length, 'balls');
+        await restoreMatchState(match, existingBalls);
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking existing match data:', error);
+    }
+
+    // No existing data, start fresh with toss
     setCurrentStep('toss');
+  };
+
+  const restoreMatchState = async (match: Match, balls: any[]) => {
+    try {
+      // Fetch match stats for player data
+      const { data: stats, error: statsError } = await supabase
+        .from('match_stats')
+        .select('*, player:players(id, name, role, team_id)')
+        .eq('match_id', match.id);
+
+      if (statsError) throw statsError;
+
+      // Fetch full match details to get toss info
+      const { data: matchDetails, error: matchError } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('id', match.id)
+        .single();
+
+      if (matchError) throw matchError;
+
+      // Determine current innings
+      const innings1Balls = balls.filter(b => b.innings === 1);
+      const innings2Balls = balls.filter(b => b.innings === 2);
+      const restoredInnings = innings2Balls.length > 0 ? 2 : 1;
+      const currentBalls = restoredInnings === 2 ? innings2Balls : innings1Balls;
+
+      // Calculate innings data
+      const calculateInningsData = (inningsBalls: any[]) => {
+        const runs = inningsBalls.reduce((sum, ball) => sum + (ball.runs || 0) + (ball.extras || 0), 0);
+        const wickets = inningsBalls.filter(b => b.is_wicket).length;
+        const totalBalls = inningsBalls.filter(b => !b.extra_type || (b.extra_type !== 'wides' && b.extra_type !== 'noballs')).length;
+        const overs = Math.floor(totalBalls / 6);
+        const ballsInOver = totalBalls % 6;
+        const extras = {
+          wides: inningsBalls.filter(b => b.extra_type === 'wides').reduce((sum, b) => sum + (b.extras || 1), 0),
+          noballs: inningsBalls.filter(b => b.extra_type === 'noballs').reduce((sum, b) => sum + (b.extras || 1), 0),
+          byes: inningsBalls.filter(b => b.extra_type === 'byes').reduce((sum, b) => sum + (b.extras || 0), 0),
+          legbyes: inningsBalls.filter(b => b.extra_type === 'legbyes').reduce((sum, b) => sum + (b.extras || 0), 0),
+        };
+        return { runs, wickets, overs, ballsInOver, extras };
+      };
+
+      const innings1Data = calculateInningsData(innings1Balls);
+      const innings2Data = calculateInningsData(innings2Balls);
+
+      // Restore team innings
+      const restoredTeamInnings: TeamInnings[] = [
+        {
+          teamId: match.team1_id,
+          teamName: match.team1_name,
+          totalRuns: innings1Data.runs,
+          totalWickets: innings1Data.wickets,
+          overs: innings1Data.overs,
+          balls: innings1Data.ballsInOver,
+          extras: innings1Data.extras
+        },
+        {
+          teamId: match.team2_id,
+          teamName: match.team2_name,
+          totalRuns: innings2Data.runs,
+          totalWickets: innings2Data.wickets,
+          overs: innings2Data.overs,
+          balls: innings2Data.ballsInOver,
+          extras: innings2Data.extras
+        }
+      ];
+
+      // Determine which team is batting based on toss
+      const tossWinner = matchDetails.toss_winner;
+      const tossDecision = matchDetails.toss_decision;
+      let battingFirst = 1;
+      
+      if (tossWinner && tossDecision) {
+        const tossWinnerIsTeam1 = tossWinner === match.team1_id || tossWinner === match.team1_name;
+        if (tossDecision === 'bat') {
+          battingFirst = tossWinnerIsTeam1 ? 1 : 2;
+        } else {
+          battingFirst = tossWinnerIsTeam1 ? 2 : 1;
+        }
+      }
+
+      // Get current batsmen from stats (not dismissed in current innings)
+      const currentInningsStats = stats?.filter(s => 
+        s.innings === restoredInnings && 
+        (s.balls_faced || 0) > 0 && 
+        !s.dismissal_type
+      ) || [];
+      
+      currentInningsStats.sort((a: any, b: any) => (b.balls_faced || 0) - (a.balls_faced || 0));
+      
+      const restoredBatsmen = currentInningsStats.slice(0, 2).map((s: any) => ({
+        id: s.player_id,
+        name: s.player?.name || 'Unknown',
+        team_id: s.player?.team_id || '',
+        runs: s.runs_scored || 0,
+        balls: s.balls_faced || 0,
+        fours: s.fours || 0,
+        sixes: s.sixes || 0,
+        isOut: false
+      }));
+
+      // Get current bowler (most recent bowler from current innings)
+      const bowlingStats = stats?.filter(s => 
+        s.innings === restoredInnings && 
+        (s.overs_bowled || 0) > 0
+      ) || [];
+      
+      bowlingStats.sort((a: any, b: any) => (b.overs_bowled || 0) - (a.overs_bowled || 0));
+      
+      const restoredBowler = bowlingStats.length > 0 ? {
+        id: bowlingStats[0].player_id,
+        name: bowlingStats[0].player?.name || 'Unknown',
+        team_id: bowlingStats[0].player?.team_id || '',
+        overs: bowlingStats[0].overs_bowled || 0,
+        runs: bowlingStats[0].runs_conceded || 0,
+        wickets: bowlingStats[0].wickets_taken || 0
+      } : null;
+
+      // Current over balls
+      const currentOverData = restoredInnings === 2 ? innings2Data : innings1Data;
+      const lastCompletedOver = currentOverData.overs;
+      const currentOverBallsFromDb = currentBalls.filter(b => 
+        b.over_number === lastCompletedOver && 
+        (!b.extra_type || (b.extra_type !== 'wides' && b.extra_type !== 'noballs'))
+      );
+      
+      const restoredCurrentOverBalls = currentOverBallsFromDb.map((b: any) => ({
+        runs: b.runs || 0,
+        isWicket: b.is_wicket || false,
+        isExtra: !!b.extra_type,
+        extraType: b.extra_type
+      }));
+
+      // Set all restored state
+      setTossWinnerTeamId(tossWinner || '');
+      setTossDecision(tossDecision || '');
+      setBattingFirstTeam(battingFirst);
+      setCurrentInnings(restoredInnings);
+      setCurrentOver(currentOverData.overs);
+      setCurrentBallInOver(currentOverData.ballsInOver);
+      setTeamInnings(restoredTeamInnings);
+      setCurrentOverBalls(restoredCurrentOverBalls);
+      
+      if (restoredBatsmen.length === 2) {
+        setCurrentBatsmen(restoredBatsmen);
+      } else if (restoredBatsmen.length === 1) {
+        setCurrentBatsmen([
+          restoredBatsmen[0],
+          { id: '', name: '', team_id: '', runs: 0, balls: 0, fours: 0, sixes: 0 }
+        ]);
+      }
+      
+      if (restoredBowler) {
+        setCurrentBowler(restoredBowler);
+      }
+
+      // Set match setup defaults
+      setMatchSetup({
+        overs: match.overs || 20,
+        ballsPerOver: 6,
+        powerplayOvers: match.overs === 50 ? 10 : 6,
+        drsReviews: 2,
+        wideRuns: 1,
+        noBallRuns: 1
+      });
+
+      toast({
+        title: "Match Resumed",
+        description: `Continuing from ${currentOverData.overs}.${currentOverData.ballsInOver} overs`,
+      });
+
+      // Go directly to scoring
+      setCurrentStep('scoring');
+      
+    } catch (error) {
+      console.error('Error restoring match state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to restore match state. Starting fresh.",
+        variant: "destructive"
+      });
+      setCurrentStep('toss');
+    }
   };
 
   const handleTossComplete = (winnerTeamId: string, decision: string) => {
