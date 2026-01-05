@@ -66,8 +66,8 @@ const TossSelector = ({
   if (!match) return null;
 
   // Use team IDs as values for proper comparison in handleTossComplete
-  const team1Id = match.team1_id || match.team1?.id;
-  const team2Id = match.team2_id || match.team2?.id;
+  const team1Id = match.team1_id || match.team1?.id || `team1_${match.id}`;
+  const team2Id = match.team2_id || match.team2?.id || `team2_${match.id}`;
 
   console.log('TossSelector: Team IDs:', { team1Id, team2Id });
 
