@@ -150,6 +150,21 @@ const ScoreboardWithSelector = () => {
       }));
 
       setMatchData(match);
+
+      const oversBowled = currentScore.overs + currentScore.balls / 6;
+      const oversLimit = match.overs || 20;
+      const targetRuns = currentInnings === 2 ? innings1.runs + 1 : 0;
+      const runsRemaining = currentInnings === 2 ? Math.max(0, targetRuns - currentScore.runs) : 0;
+      const oversRemaining = currentInnings === 2 ? Math.max(0, oversLimit - oversBowled) : 0;
+
+      const currentRunRate = oversBowled > 0
+        ? ((currentScore.runs / oversBowled)).toFixed(2)
+        : '0.00';
+
+      const requiredRunRate = currentInnings === 2 && oversRemaining > 0 && runsRemaining > 0
+        ? ((runsRemaining / oversRemaining)).toFixed(2)
+        : '0.00';
+
       setScoreboardData({
         score: currentScore,
         currentBatsmen,
@@ -159,11 +174,9 @@ const ScoreboardWithSelector = () => {
         currentOver: currentScore.overs,
         currentBall: currentScore.balls,
         battingTeam: currentInnings,
-        target: currentInnings === 2 ? innings1.runs + 1 : 0,
-        requiredRunRate: currentInnings === 2 && innings1.runs > 0 
-          ? (((innings1.runs + 1 - innings2.runs) / ((match.overs || 20) - (currentScore.overs + currentScore.balls / 6))) * 6).toFixed(2)
-          : 0,
-        currentRunRate: ((currentScore.runs / (currentScore.overs + currentScore.balls / 6)) * 6).toFixed(2) || '0.00',
+        target: targetRuns,
+        requiredRunRate,
+        currentRunRate,
         recentBalls,
         ballByBallData,
         team1Players: battingStats,
