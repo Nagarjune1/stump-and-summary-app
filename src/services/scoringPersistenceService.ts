@@ -50,7 +50,6 @@ export const scoringPersistenceService = {
           extra_type: ballData.extraType || null,
           is_wicket: ballData.isWicket,
           wicket_type: ballData.wicketType || null,
-          dismissed_player_id: ballData.dismissedPlayerId || null,
           fielder_id: ballData.fielderId || null,
           shot_type: ballData.shotType || null,
           commentary: ballData.commentary || null
