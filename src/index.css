@@ -243,8 +243,82 @@
     background: hsl(var(--primary) / 0.7);
   }
 
-  /* Loading animation */
-  .loading-glow {
+/* Score update flash animations */
+@keyframes score-flash {
+  0% {
+    background-color: hsl(var(--primary) / 0.3);
+    transform: scale(1.05);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes score-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+  }
+}
+
+@keyframes wicket-flash {
+  0% {
+    background-color: hsl(var(--destructive) / 0.4);
+    transform: scale(1.05);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes boundary-flash {
+  0% {
+    background-color: hsl(var(--success) / 0.4);
+    transform: scale(1.05);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes six-flash {
+  0% {
+    background-color: hsl(var(--warning) / 0.4);
+    transform: scale(1.08);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.score-flash {
+  animation: score-flash 0.6s ease-out;
+}
+
+.score-pulse {
+  animation: score-pulse 0.8s ease-out;
+}
+
+.wicket-flash {
+  animation: wicket-flash 0.8s ease-out;
+}
+
+.boundary-flash {
+  animation: boundary-flash 0.6s ease-out;
+}
+
+.six-flash {
+  animation: six-flash 0.7s ease-out;
+}
+
+/* Loading animation */
+.loading-glow {
     animation: loading-pulse 1.5s ease-in-out infinite;
   }
 
