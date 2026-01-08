@@ -1004,6 +1004,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_score_match: { Args: { _match_id: string }; Returns: boolean }
       generate_profile_id:
         | { Args: never; Returns: string }
         | { Args: { _full_name?: string }; Returns: string }
@@ -1012,6 +1013,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_match_creator_or_admin: {
+        Args: { _match_id: string }
         Returns: boolean
       }
       search_profiles_for_scorer: {
