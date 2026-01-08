@@ -8,8 +8,9 @@ import { Play, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useScoreboardAnimation } from "@/hooks/useScoreAnimation";
 
-const CricketScoreboard = ({ 
+const CricketScoreboard = ({
   matchData, 
   score, 
   currentBatsmen, 
@@ -32,6 +33,9 @@ const CricketScoreboard = ({
   const [selectedMatchData, setSelectedMatchData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Score animation hook
+  const { animationClass } = useScoreboardAnimation(score);
 
   useEffect(() => {
     fetchLiveMatches();
@@ -303,11 +307,11 @@ const CricketScoreboard = ({
       )}
 
       {/* Current Innings Score */}
-      <Card className="border-success/30">
+      <Card className={`border-success/30 transition-all ${animationClass}`}>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <span className="text-foreground">{battingTeamName} Innings</span>
-            <span className="text-3xl font-bold text-primary">
+            <span className={`text-3xl font-bold text-primary transition-transform ${animationClass ? 'scale-105' : ''}`}>
               {score?.runs}-{score?.wickets} ({formatOvers(currentOver, currentBall)} Ov)
             </span>
           </CardTitle>
@@ -381,16 +385,29 @@ const CricketScoreboard = ({
               <h4 className="font-semibold mb-2 text-accent">Recent Balls</h4>
               <div className="flex gap-1 text-sm">
                 <span className="text-muted-foreground">Recent:</span>
-                {recentBalls.slice(-10).map((ball, index) => (
-                  <span key={index} className={`px-2 py-1 rounded font-semibold ${
-                    ball === 'W' ? 'bg-destructive/20 text-destructive border border-destructive/30' :
-                    ball === '4' ? 'bg-success/20 text-success border border-success/30' :
-                    ball === '6' ? 'bg-warning/20 text-warning border border-warning/30' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {ball}
-                  </span>
-                ))}
+                {recentBalls.slice(-10).map((ball, index) => {
+                  const isLastBall = index === recentBalls.slice(-10).length - 1;
+                  const ballAnimationClass = isLastBall ? (
+                    ball === 'W' ? 'wicket-flash' :
+                    ball === '6' ? 'six-flash' :
+                    ball === '4' ? 'boundary-flash' :
+                    'score-flash'
+                  ) : '';
+                  
+                  return (
+                    <span 
+                      key={index} 
+                      className={`px-2 py-1 rounded font-semibold transition-all ${ballAnimationClass} ${
+                        ball === 'W' ? 'bg-destructive/20 text-destructive border border-destructive/30' :
+                        ball === '4' ? 'bg-success/20 text-success border border-success/30' :
+                        ball === '6' ? 'bg-warning/20 text-warning border border-warning/30' :
+                        'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {ball}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}

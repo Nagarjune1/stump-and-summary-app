@@ -4,6 +4,7 @@ import MatchSelectorForScoreboard from './scoring/MatchSelectorForScoreboard';
 import EnhancedCricketScoreboard from './EnhancedCricketScoreboard';
 import { Badge } from '@/components/ui/badge';
 import { Radio } from 'lucide-react';
+import { useScoreboardAnimation } from '@/hooks/useScoreAnimation';
 
 const ScoreboardWithSelector = () => {
   const [selectedMatch, setSelectedMatch] = useState(null);
@@ -190,7 +191,8 @@ const ScoreboardWithSelector = () => {
         })) || [],
         bowlers: bowlingStats,
         wickets: balls?.filter(b => b.is_wicket) || [],
-        oversData: []
+        oversData: [],
+        isRealtimeUpdate
       });
       
       setLastUpdate(new Date());
