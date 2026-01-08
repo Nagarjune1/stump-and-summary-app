@@ -22,6 +22,7 @@ import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { notificationService } from "@/services/notificationService";
 import { useScoringSound } from "@/hooks/useScoringSound";
 import { scoringPersistenceService } from "@/services/scoringPersistenceService";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface Match {
   id: string;
@@ -129,6 +130,9 @@ const LiveScoring = () => {
 
   // Scoring sounds
   const { playSound } = useScoringSound();
+  
+  // Confetti for milestones
+  const { celebrateMilestone } = useConfetti();
 
   // Initialize notification service
   useEffect(() => {
@@ -596,6 +600,11 @@ const LiveScoring = () => {
       
       if (shouldNotify) {
         notificationService.sendLocalNotification(milestone);
+      }
+      
+      // Trigger confetti celebration for milestones
+      if (milestone.type === 'century' || milestone.type === 'half_century') {
+        celebrateMilestone(milestone.type);
       }
     }
 
