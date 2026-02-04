@@ -23,6 +23,7 @@ import { notificationService } from "@/services/notificationService";
 import { useScoringSound } from "@/hooks/useScoringSound";
 import { scoringPersistenceService } from "@/services/scoringPersistenceService";
 import { useConfetti } from "@/hooks/useConfetti";
+import { OfflineSyncIndicator } from "./OfflineSyncIndicator";
 
 interface Match {
   id: string;
@@ -1395,6 +1396,7 @@ const LiveScoring = () => {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-3xl font-bold text-primary">Live Cricket Scoring</CardTitle>
           <div className="flex items-center space-x-2">
+            <OfflineSyncIndicator />
             <Badge variant="secondary" className="border-primary/30 text-accent">
               <Clock className="mr-2 h-4 w-4" />
               {selectedMatch ? `${selectedMatch.team1_name} vs ${selectedMatch.team2_name}` : 'No Match Selected'}
