@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Play } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatOvers } from "@/utils/scoringUtils";
+import { useScoringSound } from "@/hooks/useScoringSound";
 
 interface ScoringControlsProps {
   onScore: (runs: number) => void;
@@ -37,7 +38,8 @@ const ScoringControls = ({
   isPowerplay = false,
   isFreehit = false
 }: ScoringControlsProps) => {
-  
+  const { playSound } = useScoringSound();
+
   const handleRunsClick = (runs: number) => {
     if (!isValidToScore) {
       toast({
@@ -49,10 +51,13 @@ const ScoringControls = ({
     }
     
     if (runs === 4) {
+      playSound('four');
       onBoundary('four');
     } else if (runs === 6) {
+      playSound('six');
       onBoundary('six');
     } else {
+      playSound('run');
       onScore(runs);
     }
   };
@@ -80,6 +85,7 @@ const ScoringControls = ({
       return;
     }
     
+    playSound('wicket');
     onWicket(wicketType);
   };
 
