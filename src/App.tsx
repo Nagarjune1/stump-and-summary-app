@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/components/MultiLanguageSupport";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -20,6 +21,7 @@ const App = () => (
         <LanguageProvider>
           <Toaster />
           <Sonner />
+          <PwaInstallBanner />
           <HashRouter>
             <Routes>
               <Route path="/*" element={<Index />} />
