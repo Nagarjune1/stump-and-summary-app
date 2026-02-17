@@ -338,6 +338,17 @@ class OfflineSyncService {
     });
   }
 
+  // Get all pending operations for display
+  async getPendingOperations(): Promise<QueuedOperation[]> {
+    return this.getAllPendingOperations();
+  }
+
+  // Remove a specific operation by id
+  async removeOperationById(id: string): Promise<void> {
+    await this.removeOperation(id);
+    await this.updatePendingCount();
+  }
+
   // Clear all pending operations (use with caution)
   async clearPendingOperations(): Promise<void> {
     if (!this.db) return;
