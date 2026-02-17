@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Wifi, WifiOff, Upload, Download, RotateCw, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { OfflineOperationsManager } from "./OfflineOperationsManager";
 
 interface OfflineDataItem {
   timestamp: number;
@@ -306,6 +307,9 @@ const OfflineScoring = () => {
         </CardContent>
       </Card>
 
+      {/* Offline Operations Queue Manager */}
+      <OfflineOperationsManager />
+
       {/* Recent Offline Activity */}
       {offlineData.length > 0 && (
         <Card>
@@ -315,10 +319,10 @@ const OfflineScoring = () => {
           <CardContent>
             <div className="space-y-3">
               {offlineData.slice(-5).reverse().map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <div className="font-medium">Data Entry #{offlineData.length - index}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {new Date(item.timestamp).toLocaleString()}
                     </div>
                   </div>
